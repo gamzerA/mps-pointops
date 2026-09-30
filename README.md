@@ -1,4 +1,4 @@
-<h1 align="center">mps-pointops</h1>
+<h1 align="center"><img src="docs/assets/pointops-mark.svg" width="42" height="42" alt=""> mps-pointops</h1>
 
 <p align="center">
   <a href="https://github.com/gamzerA/mps-pointops/actions/workflows/ci.yml"><img src="https://github.com/gamzerA/mps-pointops/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
@@ -6,12 +6,6 @@
   <a href="#quick-start"><img src="https://img.shields.io/badge/PyTorch-2.7%2B-EE4C2C?logo=pytorch&amp;logoColor=white" alt="PyTorch 2.7 or later"></a>
   <a href="#license"><img src="https://img.shields.io/badge/License-Apache--2.0%20AND%20MIT-4B5563" alt="Apache-2.0 AND MIT license"></a>
 </p>
-
-| Operator | Selection rule | Native result |
-|:--|:--|:--|
-| FPS | Farthest from the already selected centers | `int64` center indices |
-| kNN | Nearest `k`, sorted by squared distance then index | Euclidean distances, `int64` indices |
-| Ball Query | First `K` inside a strict radius, in input order | Squared distances, `int64` indices; `-1` padding |
 
 **Point-cloud operators for PyTorch on Apple Silicon.** Native Metal kernels
 run farthest point sampling, k nearest neighbors, and Ball Query on MPS.
@@ -45,6 +39,12 @@ centers = xyz.gather(1, centers_idx[..., None].expand(-1, -1, 3))
 distance, neighbor_idx = knn(centers, xyz, 128)
 distance2, radius_idx = ball_query(centers, xyz, 0.1, 64)
 ```
+
+| Operator | Selection rule | Native result |
+|:--|:--|:--|
+| FPS | Farthest from the already selected centers | `int64` center indices |
+| kNN | Nearest `k`, sorted by squared distance then index | Euclidean distances, `int64` indices |
+| Ball Query | First `K` inside a strict radius, in input order | Squared distances, `int64` indices; `-1` padding |
 
 For a query $q_i$ and reference point $x_j$, the shared distance is
 $s_{ij}=\sum_{d=0}^{2}(q_{id}-x_{jd})^2$; each operator selects indices by a
