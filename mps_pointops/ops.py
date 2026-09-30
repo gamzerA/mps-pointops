@@ -23,22 +23,42 @@ _KNN_MAX_K = 256
 
 
 @cache
+def _check_simd_width() -> None:
+    """The kernels assume 32-wide simdgroups. Check once, on first use."""
+    lib = torch.mps.compile_shader(
+        "kernel void width(device long* out, uint w [[threads_per_simdgroup]]) { out[0] = w; }"
+    )
+    out = torch.zeros(1, dtype=torch.long, device="mps")
+    lib.width(out, threads=1, group_size=1)
+    width = int(out.item())
+    if width != 32:
+        raise RuntimeError(f"mps_pointops kernels need 32-wide simdgroups, this GPU uses {width}")
+
+
+@cache
 def _library(name: str):
+    _check_simd_width()
     source = resources.files(__package__).joinpath("kernels", f"{name}.metal").read_text()
     return torch.mps.compile_shader(source)
 
 
-def furthest_point_sample(xyz: Tensor, npoint: int, start_idx: int = 0) -> Tensor:
-    """Farthest point sampling, like ``pointnet2_ops.furthest_point_sample``.
+def furthest_point_sample(
+    xyz: Tensor, npoint: int, start_idx: int = 0, skip_near_origin: bool = False
+) -> Tensor:
+    """Farthest point sampling.
 
     Same contract as ``reference.furthest_point_sample``: sampling starts at
     ``start_idx`` and ties go to the smaller index. Once every point has been
-    sampled, the remaining slots repeat index 0.
+    sampled, the remaining slots repeat index 0. For a drop-in replacement of
+    ``pointnet2_ops`` (int32 output, points near the origin skipped), use
+    ``mps_pointops.compat``.
 
     Args:
         xyz: (B, N, 3) float32 points.
         npoint: number of points to sample.
         start_idx: first sampled index.
+        skip_near_origin: never pick points with x^2 + y^2 + z^2 <= 1e-3,
+            other than the start index, like pointnet2_ops.
 
     Returns:
         (B, npoint) int64 indices into ``xyz``.
@@ -53,7 +73,7 @@ def furthest_point_sample(xyz: Tensor, npoint: int, start_idx: int = 0) -> Tenso
     if npoint > 0 and not 0 <= start_idx < N:
         raise IndexError(f"start_idx {start_idx} is out of range for {N} points")
     if xyz.device.type != "mps":
-        return reference.furthest_point_sample(xyz, npoint, start_idx)
+        return reference.furthest_point_sample(xyz, npoint, start_idx, skip_near_origin)
     if xyz.dtype != torch.float32:
         raise TypeError(f"xyz must be float32 on MPS, got {xyz.dtype}")
 
@@ -63,7 +83,7 @@ def furthest_point_sample(xyz: Tensor, npoint: int, start_idx: int = 0) -> Tenso
     xyz = xyz.contiguous()
     min_d2 = torch.empty(B, N, dtype=torch.float32, device=xyz.device)
     _library("fps").furthest_point_sample(
-        xyz, min_d2, out, N, npoint, start_idx,
+        xyz, min_d2, out, N, npoint, start_idx, int(skip_near_origin),
         threads=(_THREADS, B), group_size=(_THREADS, 1),
     )
     return out

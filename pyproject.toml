@@ -13,6 +13,7 @@ dependencies = ["torch>=2.6", "numpy"]
 
 [project.optional-dependencies]
 bench = ["scipy", "fpsample"]
+examples = ["scipy", "fpsample", "open3d", "timm"]
 
 [tool.setuptools]
 packages = ["mps_pointops"]

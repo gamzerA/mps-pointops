@@ -9,6 +9,13 @@ using namespace metal;
 // min_d2. Each step reduces (distance, index) to the farthest point with
 // simdgroup and threadgroup reductions. Ties go to the smaller index, like
 // torch.argmax.
+//
+// With skip_near_origin set, points with x^2 + y^2 + z^2 <= 1e-3 are never
+// picked (only the start index can be one), matching pointnet2_ops. The float
+// comparison mag < 1e-3f is the same as pointnet2_ops' mag <= 1e-3 in double:
+// fl32(1e-3) is just above 1e-3, and no float lies between them.
+//
+// The reductions assume 32-wide simdgroups, which ops.py checks at load time.
 kernel void furthest_point_sample(
     device const float* xyz    [[buffer(0)]],  // (B, N, 3)
     device float*       min_d2 [[buffer(1)]],  // (B, N) scratch
@@ -16,6 +23,7 @@ kernel void furthest_point_sample(
     constant long&      N      [[buffer(3)]],
     constant long&      npoint [[buffer(4)]],
     constant long&      start  [[buffer(5)]],
+    constant long&      skip_near_origin [[buffer(6)]],
     uint2 group     [[threadgroup_position_in_grid]],
     uint2 group_dim [[threads_per_threadgroup]],
     uint  tid       [[thread_index_in_threadgroup]],
@@ -49,9 +57,20 @@ kernel void furthest_point_sample(
         float best = -INFINITY;
         uint best_index = UINT_MAX;
         for (uint j = tid; j < n; j += T) {
-            const float dx = p[j * 3 + 0] - cx;
-            const float dy = p[j * 3 + 1] - cy;
-            const float dz = p[j * 3 + 2] - cz;
+            const float x = p[j * 3 + 0];
+            const float y = p[j * 3 + 1];
+            const float z = p[j * 3 + 2];
+            if (skip_near_origin != 0) {
+                float mag = x * x;
+                mag = mag + y * y;
+                mag = mag + z * z;
+                if (mag < 1e-3f) {
+                    continue;
+                }
+            }
+            const float dx = x - cx;
+            const float dy = y - cy;
+            const float dz = z - cz;
             float d = dx * dx;
             d = d + dy * dy;
             d = d + dz * dz;
@@ -82,6 +101,7 @@ kernel void furthest_point_sample(
             }
         }
         threadgroup_barrier(mem_flags::mem_threadgroup);
-        farthest = farthest_shared;
+        // UINT_MAX means every point was skipped; fall back to 0 like pointnet2_ops.
+        farthest = farthest_shared == UINT_MAX ? 0 : farthest_shared;
     }
 }

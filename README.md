@@ -1,19 +1,31 @@
 # mps-pointops
 
 Point cloud ops for PyTorch on Apple Silicon (MPS): farthest point sampling,
-k nearest neighbors and ball query.
+k nearest neighbors and ball query, plus drop-in stand-ins for the CUDA-only
+`pointnet2_ops` and `knn_cuda` packages.
 
-**Status:** farthest point sampling and kNN have Metal kernels. Ball query is
-benchmarked but still pure PyTorch.
+**Status:** FPS and kNN have Metal kernels. Ball query is still pure PyTorch.
+MulSen-AD's own Point-MAE grouping code runs unmodified on the Mac GPU through
+the stand-ins, checked on real MulSen-AD point clouds.
 
 ```python
 import torch
 from mps_pointops import furthest_point_sample, knn
 
 xyz = torch.randn(1, 100_000, 3, device="mps")
-idx = furthest_point_sample(xyz, 1024)           # (1, 1024), like pointnet2_ops
+idx = furthest_point_sample(xyz, 1024)           # (1, 1024) int64
 centers = xyz[:, idx[0]]
-dist, nbr = knn(centers, xyz, 128)                # (1, 1024, 128), like knn_cuda
+dist, nbr = knn(centers, xyz, 128)                # (1, 1024, 128)
+```
+
+Existing code written for `pointnet2_ops` and `knn_cuda`:
+
+```python
+import mps_pointops.compat
+mps_pointops.compat.install()  # before the imports below
+
+from pointnet2_ops import pointnet2_utils  # served by mps_pointops
+from knn_cuda import KNN
 ```
 
 ## Why
@@ -28,54 +40,92 @@ ends up slower than its own CPU.
 The goal of this project is drop-in Metal kernels for these ops that beat the
 best CPU implementations on the same machine.
 
+## Real data: MulSen-AD grouping
+
+[examples/mulsen_grouping.py](examples/mulsen_grouping.py) loads MulSen-AD
+point clouds the way MulSen-AD's dataset code does (open3d, duplicate vertices
+removed, centered) and runs MulSen-AD's own `models.models.Group(num_group=1024,
+group_size=128)`, unmodified, on MPS with `compat.install()`.
+
+30 clouds, 2 from each of the 15 classes, 21,168 to 117,259 points, Apple M5
+Pro:
+
+| | min | median | max |
+|---|---:|---:|---:|
+| MulSen `Group` on MPS with mps-pointops (FPS + gather + kNN + indexing) | 10.5 ms | 36.0 ms | 49.1 ms |
+| Best CPU libraries (fpsample FPS + scipy cKDTree kNN, nothing else) | 40.1 ms | 163.4 ms | 221.9 ms |
+| Plain PyTorch on MPS (FPS loop + `cdist`/`topk`) | 131.1 ms | 330.6 ms | 423.7 ms |
+
+- mps-pointops is 3.0x to 5.0x faster than the CPU libraries (median 4.5x)
+  and 7.6x to 13x faster than plain PyTorch on MPS (median 9.2x).
+- FPS centers match the pointnet2_ops-contract reference and neighbors match
+  an exact float32 oracle: 0 mismatches in all 30 clouds.
+- None of these clouds has points within the near-origin cutoff that
+  pointnet2_ops skips (see [Compatibility](#compatibility)), so that rule did
+  not come into play here.
+
+Per-cloud numbers: [examples/results/mulsen_grouping.json](examples/results/mulsen_grouping.json).
+The full MulSen-AD pipeline also needs pretrained DINO ViT-B/8 and Point-MAE
+weights and has not been run yet.
+
 ## Benchmark
 
-MulSen-AD scale: 20k to 100k points per object, batch 1, 1024 FPS centers,
-k = 128 neighbors (Point-MAE `num_group` and `group_size`). Median of 5 runs.
-Full tables: [random point order](bench/results/2026-10-01-apple-m5-pro.md),
+Synthetic points near a unit sphere, MulSen-AD scale: batch 1, 1024 FPS
+centers, k = 128 neighbors. Median of 5 runs. Full tables:
+[random point order](bench/results/2026-10-01-apple-m5-pro.md),
 [spatially sorted point order](bench/results/2026-10-01-apple-m5-pro-sorted.md).
 
 Apple M5 Pro, 48 GB, macOS 26.5.2, torch 2.14.1, random point order:
 
 | op | points | **mps-pointops (Metal)** | torch on MPS | torch on CPU | best CPU library |
 |---|---:|---:|---:|---:|---:|
-| FPS (1024 samples) | 20,000 | **7.7 ms** | 133.7 ms | 117.8 ms | 34.8 ms (fpsample) |
-| | 100,000 | **32.6 ms** | 192.7 ms | 619.3 ms | 173.6 ms (fpsample) |
-| kNN (1024 queries, k=128) | 20,000 | **3.2 ms** | 18.6 ms | 10.6 ms | 5.0 ms (scipy cKDTree) |
-| | 100,000 | **5.7 ms** | 116.1 ms | 39.6 ms | 17.8 ms (scipy cKDTree) |
-| Ball query (1024 queries, K=64, r=0.1) | 20,000 | not yet | 29.8 ms | 10.1 ms | 5.0 ms (scipy cKDTree) |
-| | 100,000 | not yet | 224.0 ms | 51.0 ms | 21.2 ms (scipy cKDTree) |
+| FPS (1024 samples) | 20,000 | **6.1 ms** | 112.4 ms | 95.2 ms | 35.0 ms (fpsample) |
+| | 100,000 | **33.3 ms** | 247.5 ms | 578.2 ms | 174.0 ms (fpsample) |
+| kNN (1024 queries, k=128) | 20,000 | **3.8 ms** | 15.1 ms | 10.9 ms | 5.2 ms (scipy cKDTree) |
+| | 100,000 | **6.1 ms** | 120.9 ms | 40.2 ms | 17.6 ms (scipy cKDTree) |
+| Ball query (1024 queries, K=64, r=0.1) | 20,000 | not yet | 64.1 ms | 35.0 ms | 6.1 ms (scipy cKDTree) |
+| | 100,000 | not yet | 299.7 ms | 160.8 ms | 23.0 ms (scipy cKDTree) |
 
 What this shows:
 
-- **The Metal kernels beat the best CPU libraries**: FPS is 4.5x to 5.3x
-  faster than fpsample, and kNN is 1.6x to 3.1x faster than scipy's KD-tree
-  (including its build). Against the same algorithms in plain PyTorch on MPS,
-  FPS is 6x to 17x faster and kNN 6x to 20x faster. Results are identical to
-  the references.
-- **Plain PyTorch FPS on MPS is overhead bound.** Going from 20k to 100k points
-  (5x the work) only takes it from 134 ms to 193 ms. The loop runs 1024
-  sequential steps of a few small kernels each, and the flat scaling says most
-  of the time is dispatch and scheduling, not math. The Metal kernel runs all
-  1024 steps in one dispatch.
-- **Plain PyTorch kNN and ball query are slower on MPS than on CPU.** `cdist`
-  builds the full 1024 x N distance matrix before `topk` picks from it. Ball
-  query is 3x to 4.4x slower than the same code on CPU and is next.
+- **The Metal kernels beat the best CPU libraries**: FPS is 5.2x to 5.8x
+  faster than fpsample and kNN is 1.4x to 2.9x faster than scipy's KD-tree
+  (including its build). Against plain PyTorch on MPS, FPS is 7x to 18x
+  faster and kNN 4x to 20x faster.
+- **Plain PyTorch FPS on MPS grows much slower than the work.** 5x the points
+  took it from 112 ms to 248 ms. Our hypothesis is a fixed cost per step (1024
+  sequential steps of several small kernels each: dispatch, scheduling,
+  synchronization). This has not been profiled. The Metal kernel runs all 1024
+  steps in one dispatch.
+- **Plain PyTorch kNN is not exact.** `cdist` uses a matrix multiply here, so
+  distances are off by up to 4.9e-4 and 40 to 313 neighbors land in the wrong
+  position; at 100k points 1 to 4 of the 131,072 true neighbors are missing.
 - **Point order matters for kNN, and the kernel handles it.** Real scans store
-  points in spatial order. With points sorted by x, the Metal kNN takes 2.4 to
-  5.4 ms, the same as random order. Without the scrambled scan order described
-  below it took 32 to 36 ms at 100k points.
+  points in spatial order. With points sorted by x, the Metal kNN takes 2.6 to
+  5.4 ms, about the same as random order. Without the scrambled scan order
+  described below it took 32 to 36 ms at 100k points.
 
-Every implementation returns the same result as the PyTorch CPU reference
-(FPS indices, ball query indices) or 100% recall against exact float64 search
-(kNN).
+Timings move by a few ms, sometimes more, between runs. The scipy times include
+building the KD-tree. fpsample's QuickFPS (`bucket_fps_kdline_sampling`) is not
+in the table because in fpsample 1.0.2 it ignores `start_idx` and returns a
+different, sorted sample set.
 
-Caveats: synthetic points near a unit sphere surface, batch 1, one machine.
-Timings move by a few ms between runs. The scipy times include building the
-KD-tree. scipy's ball query uses float64 and `<= r`, so a point exactly on the
-boundary can differ from the PyTorch3D contract. fpsample's QuickFPS
-(`bucket_fps_kdline_sampling`) is not in the table because in fpsample 1.0.2 it
-ignores `start_idx` and returns a different, sorted sample set.
+### Correctness checks
+
+Each benchmark row records counts, not percentages, so a single mismatch stays
+visible:
+
+- FPS: indices that differ from the PyTorch CPU reference.
+- kNN: against an exact float32 oracle (squared distances rounded like the
+  kernel, sorted by distance then index): true neighbors missing, neighbors in
+  the wrong position, and the largest distance error.
+- Ball query: indices and squared distances that differ from the
+  PyTorch3D-contract reference on CPU.
+
+On every input in the benchmarks, the tests and the MulSen-AD clouds, the Metal
+kernels had 0 index mismatches, and in the benchmarks 0 distance error. That is
+an observation on these inputs on one M5 Pro, not a guarantee for every input,
+GPU or compiler.
 
 ### Run it
 
@@ -84,18 +134,42 @@ uv venv --python 3.12 && uv pip install torch numpy scipy fpsample pytest
 .venv/bin/python bench/bench_pointops.py                 # random point order
 .venv/bin/python bench/bench_pointops.py --order sorted  # spatially sorted
 .venv/bin/python -m pytest tests
+
+# MulSen-AD grouping on real data (needs open3d and timm too)
+.venv/bin/python examples/mulsen_grouping.py \
+    --mulsen-code path/to/MulSen-AD --data path/to/MulSen_AD --per-class 2
 ```
 
-Options: `--sizes`, `--ops fps knn ball_query`, `--order`, `--npoint`, `--k`,
-`--ball-k`, `--radius`, `--repeat`. Results go to `bench/results/` as JSON and
-Markdown. Results from other Apple Silicon chips are welcome as pull requests.
+Results from other Apple Silicon chips are welcome as pull requests.
+
+## Compatibility
+
+`mps_pointops.compat.install()` registers `pointnet2_ops`,
+`pointnet2_ops.pointnet2_utils` and `knn_cuda` in `sys.modules`, unless a real
+package with that name is importable.
+
+| stand-in | behavior |
+|---|---|
+| `pointnet2_utils.furthest_point_sample(xyz, npoint)` | Metal kernel. int32 output, starts at index 0, and never picks points with x² + y² + z² <= 1e-3, as pointnet2_ops does |
+| `pointnet2_utils.gather_operation`, `grouping_operation` | `torch.gather`, differentiable |
+| `pointnet2_utils.ball_query(radius, nsample, xyz, new_xyz)` | pure PyTorch for now. int32, empty slots repeat the first neighbor, no neighbor gives all zeros |
+| `knn_cuda.KNN(k, transpose_mode)` | Metal kernel. Same layouts as knn_cuda, Euclidean distances, no gradients |
+
+Near ties can resolve differently from the CUDA packages: the kernels round
+each squared distance without FMA and break ties by the smaller index, while
+the CUDA kernels use their own arithmetic and reduction order.
+
+The native API (`mps_pointops.furthest_point_sample`, `mps_pointops.knn`)
+returns int64 and does not skip points near the origin. It is not a
+`torch_cluster` replacement either: its inputs are dense, batched (B, N, 3)
+tensors, not flat point lists with batch vectors.
 
 ## How the kernels work
 
 Both are in [mps_pointops/kernels/](mps_pointops/kernels/) and are compiled at
-runtime with `torch.mps.compile_shader`. FMA contraction is turned off in both,
-so squared distances round exactly like the PyTorch reference, which is why
-the results match bit for bit.
+runtime with `torch.mps.compile_shader`. FMA contraction is turned off and
+squared distances are summed in a fixed order, ((dx² + dy²) + dz²), to round
+like the PyTorch reference.
 
 **FPS** ([fps.metal](mps_pointops/kernels/fps.metal))
 
@@ -124,29 +198,35 @@ the results match bit for bit.
   The result does not depend on the order, since the list is sorted by
   (distance, index).
 
+Both kernels assume 32-wide simdgroups, as on Apple GPUs so far. The first
+call checks the width on the GPU and raises an error if it is different.
+
 ## Contracts
 
 The pure PyTorch versions in [mps_pointops/reference.py](mps_pointops/reference.py)
 define the behavior the kernels must match. Tensors that are not on MPS fall
 back to them.
 
-- `furthest_point_sample(xyz, npoint, start_idx=0)`: starts at `start_idx`
-  (0 by default, like `pointnet2_ops`), ties go to the smaller index, and once
-  every point is taken the remaining slots repeat index 0. Float32 only on MPS.
-- `knn(query, ref, k)`: Euclidean distances and indices, like
-  `knn_cuda.KNN(k, transpose_mode=True)`, sorted by squared distance and then
-  by index. `k <= N`, and `k <= 256` on MPS. Float32 only on MPS.
+- `furthest_point_sample(xyz, npoint, start_idx=0, skip_near_origin=False)`:
+  starts at `start_idx`, ties go to the smaller index, and once every point is
+  taken the remaining slots repeat index 0. Float32 only on MPS.
+- `knn(query, ref, k)`: Euclidean distances and indices, sorted by squared
+  distance and then by index. `k <= N`, and `k <= 256` on MPS. Float32 only on
+  MPS. (The reference itself uses `cdist` and `topk`, so it is only the
+  baseline; the tests use an exact oracle.)
 - `ball_query(query, ref, radius, K)`: PyTorch3D contract. The first `K`
-  points in input order with squared distance `< radius**2`, padded with
+  points in input order with squared distance `< radius**2`, computed as
+  ((dx² + dy²) + dz²) against `fl32(fl32(radius) * fl32(radius))`, padded with
   index -1 and distance 0.
 
 ## Roadmap
 
 1. ~~Metal kernel for FPS~~
 2. ~~Metal kernel for kNN~~
-3. Metal kernel for ball query
-4. Drop-in shims for `pointnet2_ops` and `knn_cuda`, with MulSen-AD as the
-   end-to-end example
+3. ~~Drop-in stand-ins for `pointnet2_ops` and `knn_cuda`, checked on real
+   MulSen-AD data~~
+4. Metal kernel for ball query
+5. Full MulSen-AD pipeline on MPS (needs the pretrained weights)
 
 ## License
 
