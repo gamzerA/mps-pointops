@@ -1,0 +1,550 @@
+{
+  "torch": "2.14.0",
+  "macos": "26.5.2",
+  "device": "MPS",
+  "PYTORCH_MPS_FAST_MATH": "0",
+  "default_source": [
+    {
+      "expression": "a*b+c",
+      "float": -1.4210854715202004e-14,
+      "bits": "0xa8800000"
+    },
+    {
+      "expression": "fma(a,b,c)",
+      "float": -1.4210854715202004e-14,
+      "bits": "0xa8800000"
+    },
+    {
+      "expression": "min_normal*0.5",
+      "float": 0.0,
+      "bits": "0x00000000"
+    },
+    {
+      "expression": "(2^24+1)-2^24",
+      "float": 0.0,
+      "bits": "0x00000000"
+    },
+    {
+      "expression": "0/0",
+      "float": "nan",
+      "bits": "0x7fc00000"
+    }
+  ],
+  "contract_off_source": [
+    {
+      "expression": "a*b+c",
+      "float": 0.0,
+      "bits": "0x00000000"
+    },
+    {
+      "expression": "fma(a,b,c)",
+      "float": -1.4210854715202004e-14,
+      "bits": "0xa8800000"
+    },
+    {
+      "expression": "min_normal*0.5",
+      "float": 0.0,
+      "bits": "0x00000000"
+    },
+    {
+      "expression": "(2^24+1)-2^24",
+      "float": 0.0,
+      "bits": "0x00000000"
+    },
+    {
+      "expression": "0/0",
+      "float": "nan",
+      "bits": "0x7fc00000"
+    }
+  ],
+  "radius_cases": [
+    {
+      "case": "small_component_0",
+      "input": {
+        "radius": 2.168404344971009e-19,
+        "delta": [
+          5.421010862427522e-20,
+          2.1250362580715887e-19,
+          0.0
+        ]
+      },
+      "output": {
+        "radius": {
+          "float": 2.168404344971009e-19,
+          "bits": "0x20800000"
+        },
+        "radius_sq": {
+          "float": 4.70197740328915e-38,
+          "bits": "0x01800000"
+        },
+        "direct_sq": {
+          "float": 4.515779309322604e-38,
+          "bits": "0x0175dcc7"
+        },
+        "normalized_sq": {
+          "float": 1.0228999853134155,
+          "bits": "0x3f82ee63"
+        },
+        "scaled_x": {
+          "float": 0.25,
+          "bits": "0x3e800000"
+        },
+        "scaled_y": {
+          "float": 0.9800000190734863,
+          "bits": "0x3f7ae148"
+        },
+        "scaled_z": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "direct_inside": {
+          "float": 1.0,
+          "bits": "0x3f800000"
+        },
+        "normalized_inside": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "reciprocal_radius": {
+          "float": 4.611686018427388e+18,
+          "bits": "0x5e800000"
+        },
+        "zero_div_radius": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "reconstructed_sq": {
+          "float": 4.809652616768483e-38,
+          "bits": "0x0182ee63"
+        }
+      }
+    },
+    {
+      "case": "small_component_1",
+      "input": {
+        "radius": 2.168404344971009e-19,
+        "delta": [
+          0.0,
+          5.421010862427522e-20,
+          2.1250362580715887e-19
+        ]
+      },
+      "output": {
+        "radius": {
+          "float": 2.168404344971009e-19,
+          "bits": "0x20800000"
+        },
+        "radius_sq": {
+          "float": 4.70197740328915e-38,
+          "bits": "0x01800000"
+        },
+        "direct_sq": {
+          "float": 4.515779309322604e-38,
+          "bits": "0x0175dcc7"
+        },
+        "normalized_sq": {
+          "float": 1.0228999853134155,
+          "bits": "0x3f82ee63"
+        },
+        "scaled_x": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "scaled_y": {
+          "float": 0.25,
+          "bits": "0x3e800000"
+        },
+        "scaled_z": {
+          "float": 0.9800000190734863,
+          "bits": "0x3f7ae148"
+        },
+        "direct_inside": {
+          "float": 1.0,
+          "bits": "0x3f800000"
+        },
+        "normalized_inside": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "reciprocal_radius": {
+          "float": 4.611686018427388e+18,
+          "bits": "0x5e800000"
+        },
+        "zero_div_radius": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "reconstructed_sq": {
+          "float": 4.809652616768483e-38,
+          "bits": "0x0182ee63"
+        }
+      }
+    },
+    {
+      "case": "small_component_2",
+      "input": {
+        "radius": 2.168404344971009e-19,
+        "delta": [
+          2.1250362580715887e-19,
+          0.0,
+          5.421010862427522e-20
+        ]
+      },
+      "output": {
+        "radius": {
+          "float": 2.168404344971009e-19,
+          "bits": "0x20800000"
+        },
+        "radius_sq": {
+          "float": 4.70197740328915e-38,
+          "bits": "0x01800000"
+        },
+        "direct_sq": {
+          "float": 4.809653177287869e-38,
+          "bits": "0x0182ee64"
+        },
+        "normalized_sq": {
+          "float": 1.022900104522705,
+          "bits": "0x3f82ee64"
+        },
+        "scaled_x": {
+          "float": 0.9800000190734863,
+          "bits": "0x3f7ae148"
+        },
+        "scaled_y": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "scaled_z": {
+          "float": 0.25,
+          "bits": "0x3e800000"
+        },
+        "direct_inside": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "normalized_inside": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "reciprocal_radius": {
+          "float": 4.611686018427388e+18,
+          "bits": "0x5e800000"
+        },
+        "zero_div_radius": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "reconstructed_sq": {
+          "float": 4.809653177287869e-38,
+          "bits": "0x0182ee64"
+        }
+      }
+    },
+    {
+      "case": "inside_small_component_0",
+      "input": {
+        "radius": 2.168404344971009e-19,
+        "delta": [
+          5.421010862427522e-20,
+          1.7347234759768072e-19,
+          0.0
+        ]
+      },
+      "output": {
+        "radius": {
+          "float": 2.168404344971009e-19,
+          "bits": "0x20800000"
+        },
+        "radius_sq": {
+          "float": 4.70197740328915e-38,
+          "bits": "0x01800000"
+        },
+        "direct_sq": {
+          "float": 3.0092657511024226e-38,
+          "bits": "0x0123d70b"
+        },
+        "normalized_sq": {
+          "float": 0.70250004529953,
+          "bits": "0x3f33d70b"
+        },
+        "scaled_x": {
+          "float": 0.25,
+          "bits": "0x3e800000"
+        },
+        "scaled_y": {
+          "float": 0.800000011920929,
+          "bits": "0x3f4ccccd"
+        },
+        "scaled_z": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "direct_inside": {
+          "float": 1.0,
+          "bits": "0x3f800000"
+        },
+        "normalized_inside": {
+          "float": 1.0,
+          "bits": "0x3f800000"
+        },
+        "reciprocal_radius": {
+          "float": 4.611686018427388e+18,
+          "bits": "0x5e800000"
+        },
+        "zero_div_radius": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "reconstructed_sq": {
+          "float": 3.3031393388079945e-38,
+          "bits": "0x0133d70b"
+        }
+      }
+    },
+    {
+      "case": "inside_small_component_1",
+      "input": {
+        "radius": 2.168404344971009e-19,
+        "delta": [
+          0.0,
+          5.421010862427522e-20,
+          1.7347234759768072e-19
+        ]
+      },
+      "output": {
+        "radius": {
+          "float": 2.168404344971009e-19,
+          "bits": "0x20800000"
+        },
+        "radius_sq": {
+          "float": 4.70197740328915e-38,
+          "bits": "0x01800000"
+        },
+        "direct_sq": {
+          "float": 3.0092657511024226e-38,
+          "bits": "0x0123d70b"
+        },
+        "normalized_sq": {
+          "float": 0.70250004529953,
+          "bits": "0x3f33d70b"
+        },
+        "scaled_x": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "scaled_y": {
+          "float": 0.25,
+          "bits": "0x3e800000"
+        },
+        "scaled_z": {
+          "float": 0.800000011920929,
+          "bits": "0x3f4ccccd"
+        },
+        "direct_inside": {
+          "float": 1.0,
+          "bits": "0x3f800000"
+        },
+        "normalized_inside": {
+          "float": 1.0,
+          "bits": "0x3f800000"
+        },
+        "reciprocal_radius": {
+          "float": 4.611686018427388e+18,
+          "bits": "0x5e800000"
+        },
+        "zero_div_radius": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "reconstructed_sq": {
+          "float": 3.3031393388079945e-38,
+          "bits": "0x0133d70b"
+        }
+      }
+    },
+    {
+      "case": "inside_small_component_2",
+      "input": {
+        "radius": 2.168404344971009e-19,
+        "delta": [
+          1.7347234759768072e-19,
+          0.0,
+          5.421010862427522e-20
+        ]
+      },
+      "output": {
+        "radius": {
+          "float": 2.168404344971009e-19,
+          "bits": "0x20800000"
+        },
+        "radius_sq": {
+          "float": 4.70197740328915e-38,
+          "bits": "0x01800000"
+        },
+        "direct_sq": {
+          "float": 3.3031393388079945e-38,
+          "bits": "0x0133d70b"
+        },
+        "normalized_sq": {
+          "float": 0.70250004529953,
+          "bits": "0x3f33d70b"
+        },
+        "scaled_x": {
+          "float": 0.800000011920929,
+          "bits": "0x3f4ccccd"
+        },
+        "scaled_y": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "scaled_z": {
+          "float": 0.25,
+          "bits": "0x3e800000"
+        },
+        "direct_inside": {
+          "float": 1.0,
+          "bits": "0x3f800000"
+        },
+        "normalized_inside": {
+          "float": 1.0,
+          "bits": "0x3f800000"
+        },
+        "reciprocal_radius": {
+          "float": 4.611686018427388e+18,
+          "bits": "0x5e800000"
+        },
+        "zero_div_radius": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "reconstructed_sq": {
+          "float": 3.3031393388079945e-38,
+          "bits": "0x0133d70b"
+        }
+      }
+    },
+    {
+      "case": "small_y_after_normal_accumulator",
+      "input": {
+        "radius": 2.168404344971009e-19,
+        "delta": [
+          2.1250362580715887e-19,
+          5.421010862427522e-20,
+          0.0
+        ]
+      },
+      "output": {
+        "radius": {
+          "float": 2.168404344971009e-19,
+          "bits": "0x20800000"
+        },
+        "radius_sq": {
+          "float": 4.70197740328915e-38,
+          "bits": "0x01800000"
+        },
+        "direct_sq": {
+          "float": 4.809653177287869e-38,
+          "bits": "0x0182ee64"
+        },
+        "normalized_sq": {
+          "float": 1.022900104522705,
+          "bits": "0x3f82ee64"
+        },
+        "scaled_x": {
+          "float": 0.9800000190734863,
+          "bits": "0x3f7ae148"
+        },
+        "scaled_y": {
+          "float": 0.25,
+          "bits": "0x3e800000"
+        },
+        "scaled_z": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "direct_inside": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "normalized_inside": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "reciprocal_radius": {
+          "float": 4.611686018427388e+18,
+          "bits": "0x5e800000"
+        },
+        "zero_div_radius": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "reconstructed_sq": {
+          "float": 4.809653177287869e-38,
+          "bits": "0x0182ee64"
+        }
+      }
+    },
+    {
+      "case": "identical_subnormal_radius",
+      "input": {
+        "radius": 1e-40,
+        "delta": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "output": {
+        "radius": {
+          "float": 9.99994610111476e-41,
+          "bits": "0x000116c2"
+        },
+        "radius_sq": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "direct_sq": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "normalized_sq": {
+          "float": "nan",
+          "bits": "0x7fc00000"
+        },
+        "scaled_x": {
+          "float": "nan",
+          "bits": "0x7fc00000"
+        },
+        "scaled_y": {
+          "float": "nan",
+          "bits": "0x7fc00000"
+        },
+        "scaled_z": {
+          "float": "nan",
+          "bits": "0x7fc00000"
+        },
+        "direct_inside": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "normalized_inside": {
+          "float": 0.0,
+          "bits": "0x00000000"
+        },
+        "reciprocal_radius": {
+          "float": "inf",
+          "bits": "0x7f800000"
+        },
+        "zero_div_radius": {
+          "float": "nan",
+          "bits": "0x7fc00000"
+        },
+        "reconstructed_sq": {
+          "float": "nan",
+          "bits": "0x7fc00000"
+        }
+      }
+    }
+  ]
+}

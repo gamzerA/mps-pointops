@@ -14,6 +14,7 @@ import torch
 from torch import Tensor
 
 from . import reference
+from ._ball_query_mps import ball_query as _metal_ball_query
 
 # Threads per threadgroup. 1024 is the Apple GPU maximum.
 _THREADS = 1024
@@ -138,3 +139,18 @@ def knn(query: Tensor, ref: Tensor, k: int) -> tuple[Tensor, Tensor]:
         threads=(groups * group, B), group_size=(group, 1),
     )
     return dist, idx
+
+
+def ball_query(query: Tensor, ref: Tensor, radius: float, K: int) -> tuple[Tensor, Tensor]:
+    """First-K radius search with squared distances and -1 padded indices.
+
+    Input and output shapes are (B, M, 3), (B, N, 3) and (B, M, K).
+    MPS float32/float16 inputs use the Metal kernel; other devices use the
+    PyTorch reference. The MPS kernel supports coordinate gradients.
+    """
+    if query.device.type == "mps" or ref.device.type == "mps":
+        result = _metal_ball_query(query, ref, radius=radius, k=K)
+        return result.distances, result.indices
+    if query.device != ref.device:
+        raise ValueError(f"query and ref are on different devices: {query.device} and {ref.device}")
+    return reference.ball_query(query, ref, radius, K)

@@ -19,7 +19,8 @@ Covered: ``furthest_point_sample``, ``gather_operation``,
 - Near ties can resolve differently. The kernels round each squared
   distance without FMA and break ties by the smaller index; the CUDA
   kernels use their own reduction order.
-- ``ball_query`` runs the pure PyTorch reference, not a Metal kernel yet.
+- ``ball_query`` uses the Metal kernel for MPS inputs and pads in the
+  ``pointnet2_ops`` convention.
 """
 
 from __future__ import annotations
@@ -31,7 +32,7 @@ import types
 import torch
 from torch import Tensor
 
-from . import ops, reference
+from . import ops
 
 
 # ---------------------------------------------------------------- pointnet2_ops
@@ -67,7 +68,7 @@ def ball_query(radius: float, nsample: int, xyz: Tensor, new_xyz: Tensor) -> Ten
     ``< radius**2``. Empty slots repeat the first neighbor, and a query with no
     neighbor gets all zeros, as in pointnet2_ops.
     """
-    _, idx = reference.ball_query(new_xyz, xyz, radius, nsample)
+    _, idx = ops.ball_query(new_xyz, xyz, radius, nsample)
     first = idx[..., :1].clamp(min=0)
     return torch.where(idx >= 0, idx, first).int()
 

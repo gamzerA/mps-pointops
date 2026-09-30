@@ -4,18 +4,19 @@ Point cloud ops for PyTorch on Apple Silicon (MPS): farthest point sampling,
 k nearest neighbors and ball query, plus drop-in stand-ins for the CUDA-only
 `pointnet2_ops` and `knn_cuda` packages.
 
-**Status:** FPS and kNN have Metal kernels. Ball query is still pure PyTorch.
+**Status:** FPS, kNN and Ball Query have Metal kernels on MPS.
 MulSen-AD's own Point-MAE grouping code runs unmodified on the Mac GPU through
 the stand-ins, checked on real MulSen-AD point clouds.
 
 ```python
 import torch
-from mps_pointops import furthest_point_sample, knn
+from mps_pointops import ball_query, furthest_point_sample, knn
 
 xyz = torch.randn(1, 100_000, 3, device="mps")
 idx = furthest_point_sample(xyz, 1024)           # (1, 1024) int64
 centers = xyz[:, idx[0]]
 dist, nbr = knn(centers, xyz, 128)                # (1, 1024, 128)
+dist2, within = ball_query(centers, xyz, 0.1, 64)  # first 64 in input order
 ```
 
 Existing code written for `pointnet2_ops` and `knn_cuda`:
@@ -71,9 +72,12 @@ weights and has not been run yet.
 ## Benchmark
 
 Synthetic points near a unit sphere, MulSen-AD scale: batch 1, 1024 FPS
-centers, k = 128 neighbors. Median of 5 runs. Full tables:
+centers, k = 128 neighbors. Median of 5 runs. FPS and kNN tables:
 [random point order](bench/results/2026-10-01-apple-m5-pro.md),
 [spatially sorted point order](bench/results/2026-10-01-apple-m5-pro-sorted.md).
+Ball Query was rerun after the Metal port:
+[random order](bench/results/2026-10-01-apple-m5-pro-ball-query-port.md),
+[sorted order](bench/results/2026-10-01-apple-m5-pro-ball-query-port-sorted.md).
 
 Apple M5 Pro, 48 GB, macOS 26.5.2, torch 2.14.1, random point order:
 
@@ -83,12 +87,12 @@ Apple M5 Pro, 48 GB, macOS 26.5.2, torch 2.14.1, random point order:
 | | 100,000 | **33.3 ms** | 247.5 ms | 578.2 ms | 174.0 ms (fpsample) |
 | kNN (1024 queries, k=128) | 20,000 | **3.8 ms** | 15.1 ms | 10.9 ms | 5.2 ms (scipy cKDTree) |
 | | 100,000 | **6.1 ms** | 120.9 ms | 40.2 ms | 17.6 ms (scipy cKDTree) |
-| Ball query (1024 queries, K=64, r=0.1) | 20,000 | not yet | 64.1 ms | 35.0 ms | 6.1 ms (scipy cKDTree) |
-| | 100,000 | not yet | 299.7 ms | 160.8 ms | 23.0 ms (scipy cKDTree) |
+| Ball query (1024 queries, K=64, r=0.1) | 20,000 | **6.5 ms** | 57.2 ms | 35.9 ms | 5.6 ms (scipy cKDTree) |
+| | 100,000 | **13.2 ms** | 286.4 ms | 169.8 ms | 21.3 ms (scipy cKDTree) |
 
 What this shows:
 
-- **The Metal kernels beat the best CPU libraries**: FPS is 5.2x to 5.8x
+- **The FPS and kNN Metal kernels beat the tested CPU libraries**: FPS is 5.2x to 5.8x
   faster than fpsample and kNN is 1.4x to 2.9x faster than scipy's KD-tree
   (including its build). Against plain PyTorch on MPS, FPS is 7x to 18x
   faster and kNN 4x to 20x faster.
@@ -104,11 +108,17 @@ What this shows:
   points in spatial order. With points sorted by x, the Metal kNN takes 2.6 to
   5.4 ms, about the same as random order. Without the scrambled scan order
   described below it took 32 to 36 ms at 100k points.
+- **Ball Query is faster at 100k with random point order:** 13.2 ms versus
+  scipy's 21.3 ms including tree construction. At 20k, scipy is faster
+  (5.6 ms versus 6.5 ms). With points sorted by x, the 100k Metal time is
+  32.5 ms versus scipy's 23.2 ms. Each query scans points in input order and
+  stops after K hits, so storage order affects runtime.
 
-Timings move by a few ms, sometimes more, between runs. The scipy times include
-building the KD-tree. fpsample's QuickFPS (`bucket_fps_kdline_sampling`) is not
-in the table because in fpsample 1.0.2 it ignores `start_idx` and returns a
-different, sorted sample set.
+Timings move by a few ms, sometimes more, between runs. Inputs are already
+resident on each implementation's device; transfer time is outside the timer.
+The scipy times include building the KD-tree. fpsample's QuickFPS
+(`bucket_fps_kdline_sampling`) is absent because in fpsample 1.0.2 it ignores
+`start_idx` and returns a different, sorted sample set.
 
 ### Correctness checks
 
@@ -122,10 +132,11 @@ visible:
 - Ball query: indices and squared distances that differ from the
   PyTorch3D-contract reference on CPU.
 
-On every input in the benchmarks, the tests and the MulSen-AD clouds, the Metal
-kernels had 0 index mismatches, and in the benchmarks 0 distance error. That is
-an observation on these inputs on one M5 Pro, not a guarantee for every input,
-GPU or compiler.
+On the listed synthetic inputs, the Metal kernels had 0 index mismatches.
+Ball Query's maximum squared-distance error against the separate-operation
+CPU reference was 1.9e-9; the FPS and kNN checks reported no distance error.
+These are observations on one M5 Pro, not a guarantee for every input, GPU or
+compiler.
 
 ### Run it
 
@@ -152,24 +163,25 @@ package with that name is importable.
 |---|---|
 | `pointnet2_utils.furthest_point_sample(xyz, npoint)` | Metal kernel. int32 output, starts at index 0, and never picks points with x² + y² + z² <= 1e-3, as pointnet2_ops does |
 | `pointnet2_utils.gather_operation`, `grouping_operation` | `torch.gather`, differentiable |
-| `pointnet2_utils.ball_query(radius, nsample, xyz, new_xyz)` | pure PyTorch for now. int32, empty slots repeat the first neighbor, no neighbor gives all zeros |
+| `pointnet2_utils.ball_query(radius, nsample, xyz, new_xyz)` | Metal on MPS. int32, empty slots repeat the first neighbor, no neighbor gives all zeros |
 | `knn_cuda.KNN(k, transpose_mode)` | Metal kernel. Same layouts as knn_cuda, Euclidean distances, no gradients |
 
-Near ties can resolve differently from the CUDA packages: the kernels round
-each squared distance without FMA and break ties by the smaller index, while
-the CUDA kernels use their own arithmetic and reduction order.
+Near ties can resolve differently from the CUDA packages. FPS and kNN round
+their squared distances without FMA; Ball Query uses explicit FMA. The CUDA
+kernels use their own arithmetic and reduction order.
 
-The native API (`mps_pointops.furthest_point_sample`, `mps_pointops.knn`)
-returns int64 and does not skip points near the origin. It is not a
+The native API (`mps_pointops.furthest_point_sample`, `mps_pointops.knn`,
+`mps_pointops.ball_query`) returns int64 indices; native FPS does not skip
+points near the origin. It is not a
 `torch_cluster` replacement either: its inputs are dense, batched (B, N, 3)
 tensors, not flat point lists with batch vectors.
 
 ## How the kernels work
 
-Both are in [mps_pointops/kernels/](mps_pointops/kernels/) and are compiled at
-runtime with `torch.mps.compile_shader`. FMA contraction is turned off and
-squared distances are summed in a fixed order, ((dx² + dy²) + dz²), to round
-like the PyTorch reference.
+All three kernels are in [mps_pointops/kernels/](mps_pointops/kernels/) and are
+compiled at runtime with `torch.mps.compile_shader`. FPS and kNN turn off FMA
+contraction and sum squared distances as ((dx² + dy²) + dz²). Ball Query uses
+an explicit FMA sequence and a documented policy for very small radii.
 
 **FPS** ([fps.metal](mps_pointops/kernels/fps.metal))
 
@@ -198,14 +210,27 @@ like the PyTorch reference.
   The result does not depend on the order, since the list is sorted by
   (distance, index).
 
-Both kernels assume 32-wide simdgroups, as on Apple GPUs so far. The first
+FPS and kNN assume 32-wide simdgroups, as on Apple GPUs so far. The first
 call checks the width on the GPU and raises an error if it is different.
+
+**Ball Query** ([ball_query.metal](mps_pointops/kernels/ball_query.metal))
+
+- One lane scans reference points for each query in input order, keeping the
+  first K matches and stopping once K are found.
+- The native output is squared distance plus `int64` index with `-1` padding.
+  The PointNet2 stand-in converts indices to `int32` and repeats the first
+  neighbor for padding. The Metal kernel supports float32/float16 coordinates
+  and coordinate gradients.
+- [Math and floating-point contract](docs/ball-query-math.md) records the
+  radius-square rounding, subnormal behavior, boundary policy and backward
+  equations. PyTorch3D's full call signature and bitwise parity remain future
+  compatibility work.
 
 ## Contracts
 
 The pure PyTorch versions in [mps_pointops/reference.py](mps_pointops/reference.py)
-define the behavior the kernels must match. Tensors that are not on MPS fall
-back to them.
+provide CPU fallbacks and benchmark baselines. MPS boundary arithmetic for
+Ball Query is specified separately in the numerical contract.
 
 - `furthest_point_sample(xyz, npoint, start_idx=0, skip_near_origin=False)`:
   starts at `start_idx`, ties go to the smaller index, and once every point is
@@ -214,10 +239,13 @@ back to them.
   distance and then by index. `k <= N`, and `k <= 256` on MPS. Float32 only on
   MPS. (The reference itself uses `cdist` and `topk`, so it is only the
   baseline; the tests use an exact oracle.)
-- `ball_query(query, ref, radius, K)`: PyTorch3D contract. The first `K`
-  points in input order with squared distance `< radius**2`, computed as
-  ((dx² + dy²) + dz²) against `fl32(fl32(radius) * fl32(radius))`, padded with
-  index -1 and distance 0.
+- `ball_query(query, ref, radius, K)`: PyTorch3D-style first-K contract. It
+  returns the first `K` points in input order satisfying strict radius
+  membership, with index `-1` and distance `0` padding. The threshold is
+  `fl32(fl32(radius) * fl32(radius))`. MPS uses an explicit FMA accumulation
+  and a small-radius normalization policy, so boundary decisions and final
+  distance bits can differ from the separate-operation CPU reference. See
+  [the numerical contract](docs/ball-query-math.md).
 
 ## Roadmap
 
@@ -225,9 +253,15 @@ back to them.
 2. ~~Metal kernel for kNN~~
 3. ~~Drop-in stand-ins for `pointnet2_ops` and `knn_cuda`, checked on real
    MulSen-AD data~~
-4. Metal kernel for ball query
+4. ~~Metal kernel for ball query~~ — improve performance on spatially sorted
+   inputs and finish the PyTorch3D API compatibility surface
 5. Full MulSen-AD pipeline on MPS (needs the pretrained weights)
 
 ## License
 
-Apache-2.0
+Apache-2.0 for the repository. The Ball Query kernel, Python implementation,
+contract tests, numerical documentation and probe were ported from an earlier
+MIT-licensed local prototype; its full notice is retained in
+[LICENSES/MIT-ball-query.txt](LICENSES/MIT-ball-query.txt). No PyTorch3D or
+PointNet++ source was copied into those files. See the
+[provenance note](docs/ball-query-provenance.md).

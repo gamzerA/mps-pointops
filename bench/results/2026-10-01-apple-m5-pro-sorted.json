@@ -22,8 +22,7 @@
     "warmup": "2",
     "repeat": "5",
     "seed": "0",
-    "order": "sorted",
-    "out": "/Users/iyeyeong/Documents/project/mps-pointops/bench/results"
+    "order": "sorted"
   },
   "rows": [
     {

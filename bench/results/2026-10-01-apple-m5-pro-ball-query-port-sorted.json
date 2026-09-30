@@ -1,0 +1,147 @@
+{
+  "env": {
+    "chip": "Apple M5 Pro",
+    "memory_gb": 48,
+    "macos": "26.5.2",
+    "python": "3.12.13",
+    "torch": "2.14.1",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "fpsample": "1.0.2",
+    "mps_fallback": "0"
+  },
+  "args": {
+    "sizes": "[20000, 100000]",
+    "ops": "['ball_query']",
+    "batch": "1",
+    "npoint": "1024",
+    "queries": "1024",
+    "k": "128",
+    "ball_k": "64",
+    "radius": "0.1",
+    "warmup": "2",
+    "repeat": "5",
+    "seed": "0",
+    "order": "sorted"
+  },
+  "rows": [
+    {
+      "op": "ball_query",
+      "n_points": 20000,
+      "batch": 1,
+      "impl": "torch mask+topk (MPS)",
+      "device": "mps",
+      "median_ms": 67.26429203990847,
+      "min_ms": 39.69870903529227,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "max_dist2_err": 0.0,
+        "summary": "idx mismatches 0/65536, max dist^2 err 0.0e+00"
+      }
+    },
+    {
+      "op": "ball_query",
+      "n_points": 20000,
+      "batch": 1,
+      "impl": "mps-pointops Metal (MPS)",
+      "device": "mps",
+      "median_ms": 5.9989579021930695,
+      "min_ms": 4.359000013209879,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "max_dist2_err": 1.862645149230957e-09,
+        "summary": "idx mismatches 0/65536, max dist^2 err 1.9e-09"
+      }
+    },
+    {
+      "op": "ball_query",
+      "n_points": 20000,
+      "batch": 1,
+      "impl": "torch mask+topk (CPU)",
+      "device": "cpu",
+      "median_ms": 34.60970800369978,
+      "min_ms": 32.437333022244275,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "max_dist2_err": 0.0,
+        "summary": "idx mismatches 0/65536, max dist^2 err 0.0e+00"
+      }
+    },
+    {
+      "op": "ball_query",
+      "n_points": 20000,
+      "batch": 1,
+      "impl": "scipy cKDTree build+query (CPU)",
+      "device": "cpu",
+      "median_ms": 4.872084013186395,
+      "min_ms": 4.767959006130695,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "summary": "idx mismatches 0/65536"
+      }
+    },
+    {
+      "op": "ball_query",
+      "n_points": 100000,
+      "batch": 1,
+      "impl": "torch mask+topk (MPS)",
+      "device": "mps",
+      "median_ms": 277.5931250071153,
+      "min_ms": 267.81400002073497,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "max_dist2_err": 0.0,
+        "summary": "idx mismatches 0/65536, max dist^2 err 0.0e+00"
+      }
+    },
+    {
+      "op": "ball_query",
+      "n_points": 100000,
+      "batch": 1,
+      "impl": "mps-pointops Metal (MPS)",
+      "device": "mps",
+      "median_ms": 32.517542014829814,
+      "min_ms": 26.507958071306348,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "max_dist2_err": 1.862645149230957e-09,
+        "summary": "idx mismatches 0/65536, max dist^2 err 1.9e-09"
+      }
+    },
+    {
+      "op": "ball_query",
+      "n_points": 100000,
+      "batch": 1,
+      "impl": "torch mask+topk (CPU)",
+      "device": "cpu",
+      "median_ms": 165.5579999787733,
+      "min_ms": 156.03262500371784,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "max_dist2_err": 0.0,
+        "summary": "idx mismatches 0/65536, max dist^2 err 0.0e+00"
+      }
+    },
+    {
+      "op": "ball_query",
+      "n_points": 100000,
+      "batch": 1,
+      "impl": "scipy cKDTree build+query (CPU)",
+      "device": "cpu",
+      "median_ms": 23.204582976177335,
+      "min_ms": 21.551707992330194,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "summary": "idx mismatches 0/65536"
+      }
+    }
+  ]
+}

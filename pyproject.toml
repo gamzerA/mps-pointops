@@ -8,6 +8,7 @@ version = "0.0.1"
 description = "Point cloud ops (FPS, kNN, ball query) for PyTorch on Apple Silicon (MPS)"
 readme = "README.md"
 license = "Apache-2.0"
+license-files = ["LICENSE", "LICENSES/MIT-ball-query.txt"]
 requires-python = ">=3.10"
 dependencies = ["torch>=2.6", "numpy"]
 
@@ -16,7 +17,10 @@ bench = ["scipy", "fpsample"]
 examples = ["scipy", "fpsample", "open3d", "timm"]
 
 [tool.setuptools]
-packages = ["mps_pointops"]
+packages = ["mps_pointops", "mps_pointops.kernels"]
 
 [tool.setuptools.package-data]
 mps_pointops = ["kernels/*.metal"]
+
+[tool.pytest.ini_options]
+markers = ["mps: requires an Apple GPU available to PyTorch MPS"]

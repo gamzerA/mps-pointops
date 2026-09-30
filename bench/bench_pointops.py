@@ -230,6 +230,7 @@ def ball_cases(pts, q, args):
     if HAS_MPS:
         pm, qm = pts.to("mps"), q.to("mps")
         cases.append(("torch mask+topk (MPS)", "mps", lambda: ref.ball_query(qm, pm, r, K)))
+        cases.append(("mps-pointops Metal (MPS)", "mps", lambda: ops.ball_query(qm, pm, r, K)))
     cases.append(("torch mask+topk (CPU)", "cpu", lambda: ref.ball_query(q, pts, r, K)))
     if cKDTree is not None:
         arr, qarr = pts.numpy(), q.numpy()
@@ -341,7 +342,7 @@ def main() -> None:
     if args.order != "random":
         stem += f"-{args.order}"
     (args.out / f"{stem}.json").write_text(
-        json.dumps({"env": env, "args": {k: str(v) for k, v in vars(args).items()}, "rows": rows}, indent=2)
+        json.dumps({"env": env, "args": {k: str(v) for k, v in vars(args).items() if k != "out"}, "rows": rows}, indent=2)
     )
     md = markdown(rows, env, args)
     (args.out / f"{stem}.md").write_text(md + "\n")
