@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Apple Silicon runners. MPS tests run if the runner exposes the GPU
+          # to PyTorch and are skipped otherwise; the log says which.
+          - os: macos-latest
+            python: "3.10"
+          - os: macos-latest
+            python: "3.12"
+          # CPU-only: reference implementations, fallbacks and the stand-ins.
+          - os: ubuntu-latest
+            python: "3.12"
+    env:
+      PYTORCH_ENABLE_MPS_FALLBACK: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install PyTorch (CPU build)
+        if: runner.os == 'Linux'
+        run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Install PyTorch
+        if: runner.os == 'macOS'
+        run: python -m pip install torch
+      - name: Install the package and test dependencies
+        # A regular (non-editable) install, so the tests use the built package
+        # and its bundled .metal files.
+        run: python -m pip install . pytest numpy
+      - name: Environment
+        run: |
+          python -c "import platform, torch, mps_pointops; print(platform.platform()); print('torch', torch.__version__, '| mps_pointops', mps_pointops.__version__); print('MPS available:', torch.backends.mps.is_available())"
+      - name: Tests (Metal safe math)
+        # `pytest` rather than `python -m pytest`, so the repository directory is
+        # not put on sys.path ahead of the installed package.
+        run: pytest -ra tests
+      - name: Tests (Metal fast math)
+        if: runner.os == 'macOS'
+        env:
+          PYTORCH_MPS_FAST_MATH: "1"
+        run: pytest -ra tests
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install build
+          python -m build
+      - name: Check the wheel contents
+        run: |
+          python - <<'EOF'
+          import glob, zipfile
+          names = set(zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist())
+          required = {
+              "mps_pointops/kernels/fps.metal",
+              "mps_pointops/kernels/knn.metal",
+              "mps_pointops/kernels/ball_query.metal",
+          }
+          missing = required - names
+          licenses = [n for n in names if "/licenses/" in n]
+          print("licenses:", licenses)
+          assert not missing, f"missing from wheel: {missing}"
+          assert len(licenses) >= 2, "LICENSE files missing from wheel"
+          EOF
