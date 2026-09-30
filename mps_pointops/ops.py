@@ -6,6 +6,7 @@ Tensors on other devices fall back to the pure PyTorch versions in
 
 from __future__ import annotations
 
+import math
 from functools import cache
 from importlib import resources
 
@@ -16,6 +17,9 @@ from . import reference
 
 # Threads per threadgroup. 1024 is the Apple GPU maximum.
 _THREADS = 1024
+# Must match QUERIES_PER_GROUP and MAX_K in kernels/knn.metal.
+_KNN_QUERIES_PER_GROUP = 8
+_KNN_MAX_K = 256
 
 
 @cache
@@ -63,3 +67,54 @@ def furthest_point_sample(xyz: Tensor, npoint: int, start_idx: int = 0) -> Tenso
         threads=(_THREADS, B), group_size=(_THREADS, 1),
     )
     return out
+
+
+def knn(query: Tensor, ref: Tensor, k: int) -> tuple[Tensor, Tensor]:
+    """Brute-force k nearest neighbors, like ``knn_cuda.KNN(k, transpose_mode=True)``.
+
+    Neighbors are sorted by squared distance, then by index, so ties are
+    deterministic. On MPS, ``k`` can be at most 256.
+
+    Args:
+        query: (B, M, 3) float32 query points.
+        ref: (B, N, 3) float32 reference points.
+        k: number of neighbors, at most N.
+
+    Returns:
+        dist: (B, M, k) Euclidean distances, ascending.
+        idx: (B, M, k) int64 indices into ``ref``.
+    """
+    if query.dim() != 3 or query.shape[-1] != 3:
+        raise ValueError(f"query must have shape (B, M, 3), got {tuple(query.shape)}")
+    if ref.dim() != 3 or ref.shape[-1] != 3:
+        raise ValueError(f"ref must have shape (B, N, 3), got {tuple(ref.shape)}")
+    if query.device != ref.device:
+        raise ValueError(f"query and ref are on different devices: {query.device} and {ref.device}")
+    if query.shape[0] != ref.shape[0]:
+        raise ValueError(f"batch sizes differ: {query.shape[0]} and {ref.shape[0]}")
+    B, M, _ = query.shape
+    N = ref.shape[1]
+    if not 0 <= k <= N:
+        raise ValueError(f"k must be in [0, {N}], got {k}")
+    if query.device.type != "mps" or ref.device.type != "mps":
+        return reference.knn(query, ref, k)
+    if query.dtype != torch.float32 or ref.dtype != torch.float32:
+        raise TypeError(f"query and ref must be float32 on MPS, got {query.dtype} and {ref.dtype}")
+    if k > _KNN_MAX_K:
+        raise ValueError(f"k must be at most {_KNN_MAX_K} on MPS, got {k}")
+
+    dist = torch.empty(B, M, k, dtype=torch.float32, device=query.device)
+    idx = torch.empty(B, M, k, dtype=torch.long, device=query.device)
+    if B == 0 or M == 0 or k == 0:
+        return dist, idx
+    groups = -(-M // _KNN_QUERIES_PER_GROUP)
+    chunks = -(-N // 32)
+    stride = round(chunks * 0.6180339887) % chunks
+    while math.gcd(stride, chunks) != 1:
+        stride += 1
+    group = 32 * _KNN_QUERIES_PER_GROUP
+    _library("knn").knn(
+        query.contiguous(), ref.contiguous(), dist, idx, M, N, k, stride,
+        threads=(groups * group, B), group_size=(group, 1),
+    )
+    return dist, idx

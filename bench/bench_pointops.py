@@ -66,12 +66,18 @@ def measure(fn, device: str, warmup: int, repeat: int):
     return out, times
 
 
-def make_cloud(n: int, batch: int, seed: int) -> torch.Tensor:
-    """Points near a unit sphere surface, like the shell of a scanned object."""
+def make_cloud(n: int, batch: int, seed: int, order: str = "random") -> torch.Tensor:
+    """Points near a unit sphere surface, like the shell of a scanned object.
+
+    order="sorted" stores them sorted by x, like the spatially ordered vertices
+    of a real scan. The points themselves are the same.
+    """
     g = torch.Generator().manual_seed(seed)
     p = torch.randn(batch, n, 3, generator=g)
     p = p / p.norm(dim=-1, keepdim=True)
     p = p + 0.01 * torch.randn(batch, n, 3, generator=g)
+    if order == "sorted":
+        p = torch.stack([c[c[:, 0].argsort()] for c in p])
     return p.float().contiguous()
 
 
@@ -158,6 +164,7 @@ def knn_cases(pts, q, args):
     if HAS_MPS:
         pm, qm = pts.to("mps"), q.to("mps")
         cases.append(("torch cdist+topk (MPS)", "mps", lambda: ref.knn(qm, pm, k)[1]))
+        cases.append(("mps-pointops Metal (MPS)", "mps", lambda: ops.knn(qm, pm, k)[1]))
     cases.append(("torch cdist+topk (CPU)", "cpu", lambda: ref.knn(q, pts, k)[1]))
     arr, qarr = pts.numpy(), q.numpy()
     if cKDTree is not None:
@@ -204,7 +211,7 @@ def ball_cases(pts, q, args):
 def run(args) -> list[dict]:
     rows = []
     for n in args.sizes:
-        pts = make_cloud(n, args.batch, args.seed)
+        pts = make_cloud(n, args.batch, args.seed, args.order)
         q = pick_queries(pts, args.queries, args.seed)
         builders = {
             "fps": lambda: fps_cases(pts, args),
@@ -239,7 +246,7 @@ def markdown(rows: list[dict], env: dict, args) -> str:
         f"- macOS {env['macos']}, Python {env['python']}, torch {env['torch']}, "
         f"scipy {env['scipy']}, fpsample {env['fpsample']}",
         f"- batch={args.batch}, FPS npoint={args.npoint}, kNN queries={args.queries} k={args.k}, "
-        f"ball query queries={args.queries} K={args.ball_k} radius={args.radius}",
+        f"ball query queries={args.queries} K={args.ball_k} radius={args.radius}, point order={args.order}",
         f"- median of {args.repeat} runs after {args.warmup} warmup, "
         f"PYTORCH_ENABLE_MPS_FALLBACK={env['mps_fallback']}",
         "- speedup: torch (MPS) time / this time (>1 means faster than pure PyTorch on MPS)",
@@ -274,6 +281,8 @@ def main() -> None:
     p.add_argument("--warmup", type=int, default=2)
     p.add_argument("--repeat", type=int, default=5)
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--order", choices=["random", "sorted"], default="random",
+                   help="storage order of the points; sorted mimics real scans")
     p.add_argument("--out", type=Path, default=ROOT / "bench" / "results")
     args = p.parse_args()
 
@@ -285,6 +294,8 @@ def main() -> None:
 
     args.out.mkdir(parents=True, exist_ok=True)
     stem = f"{dt.date.today().isoformat()}-{env['chip'].replace(' ', '-').lower()}"
+    if args.order != "random":
+        stem += f"-{args.order}"
     (args.out / f"{stem}.json").write_text(
         json.dumps({"env": env, "args": {k: str(v) for k, v in vars(args).items()}, "rows": rows}, indent=2)
     )
