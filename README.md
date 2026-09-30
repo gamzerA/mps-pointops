@@ -8,6 +8,21 @@ k nearest neighbors and ball query, plus drop-in stand-ins for the CUDA-only
 MulSen-AD's own Point-MAE grouping code runs unmodified on the Mac GPU through
 the stand-ins, checked on real MulSen-AD point clouds.
 
+## Install
+
+Needs an Apple Silicon Mac and PyTorch with MPS (`torch>=2.6`, for
+`torch.mps.compile_shader`). Tested with PyTorch 2.14.1 on macOS 26.5, M5 Pro.
+
+```bash
+pip install "git+https://github.com/gamzerA/mps-pointops.git@v0.1.0"
+```
+
+The Metal kernels are compiled on first use. Tensors on other devices fall back
+to the pure PyTorch reference implementations.
+
+Licensed under Apache-2.0. The Ball Query kernel and its wrapper are MIT; see
+[LICENSES/MIT-ball-query.txt](LICENSES/MIT-ball-query.txt).
+
 ```python
 import torch
 from mps_pointops import ball_query, furthest_point_sample, knn

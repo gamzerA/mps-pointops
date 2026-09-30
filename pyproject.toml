@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mps-pointops"
-version = "0.0.1"
+version = "0.1.0"
 description = "Point cloud ops (FPS, kNN, ball query) for PyTorch on Apple Silicon (MPS)"
 readme = "README.md"
-license = "Apache-2.0"
+license = "Apache-2.0 AND MIT"
 license-files = ["LICENSE", "LICENSES/MIT-ball-query.txt"]
 requires-python = ">=3.10"
 dependencies = ["torch>=2.6", "numpy"]
