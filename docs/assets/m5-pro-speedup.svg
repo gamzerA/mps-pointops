@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 375" role="img" aria-labelledby="title description">
+<title id="title">M5 Pro speedups against tested CPU libraries</title>
+<desc id="description">At 100,000 randomly ordered reference points: FPS 5.2 times, kNN 2.9 times, and Ball Query 1.6 times faster than the fastest tested CPU implementations.</desc>
+<defs>
+<pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#9fb9d4" stroke-opacity=".07"/></pattern>
+<linearGradient id="base" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0b1421"/><stop offset="1" stop-color="#172438"/></linearGradient>
+</defs>
+<rect width="1200" height="375" rx="18" fill="url(#base)"/>
+<text x="54" y="55" fill="#f4f8ff" font-family="system-ui,-apple-system,sans-serif" font-size="35" font-weight="750">Measured speedup on M5 Pro</text>
+<text x="56" y="83" fill="#b5c5d7" font-family="system-ui,-apple-system,sans-serif" font-size="21">100k reference points · random order · median of 5 · vs tested CPU library</text>
+<path d="M56 101H1144" stroke="#5d7693" stroke-opacity=".45"/>
+<text x="56" y="140" fill="#f4f8ff" font-family="system-ui,-apple-system,sans-serif" font-size="29" font-weight="700">FPS</text>
+<text x="56" y="164" fill="#a9bed3" font-family="system-ui,-apple-system,sans-serif" font-size="19">1,024 samples</text>
+<rect x="347" y="120" width="630" height="28" rx="6" fill="#25344a"/>
+<rect x="347" y="120" width="549.5" height="28" rx="6" fill="#61d6c2"/>
+<text x="910.5" y="143" fill="#61d6c2" font-family="system-ui,-apple-system,sans-serif" font-size="29" font-weight="750">5.2×</text>
+<text x="349" y="175" fill="#bbcadb" font-family="ui-monospace,SFMono-Regular,monospace" font-size="18">Metal 33.3 ms  /  CPU 174.0 ms</text>
+<text x="56" y="222" fill="#f4f8ff" font-family="system-ui,-apple-system,sans-serif" font-size="29" font-weight="700">kNN</text>
+<text x="56" y="246" fill="#a9bed3" font-family="system-ui,-apple-system,sans-serif" font-size="19">1,024 queries · k=128</text>
+<rect x="347" y="202" width="630" height="28" rx="6" fill="#25344a"/>
+<rect x="347" y="202" width="301.5" height="28" rx="6" fill="#80aaff"/>
+<text x="662.5" y="225" fill="#80aaff" font-family="system-ui,-apple-system,sans-serif" font-size="29" font-weight="750">2.9×</text>
+<text x="349" y="257" fill="#bbcadb" font-family="ui-monospace,SFMono-Regular,monospace" font-size="18">Metal 6.1 ms  /  CPU 17.6 ms</text>
+<text x="56" y="304" fill="#f4f8ff" font-family="system-ui,-apple-system,sans-serif" font-size="29" font-weight="700">Ball Query</text>
+<text x="56" y="328" fill="#a9bed3" font-family="system-ui,-apple-system,sans-serif" font-size="19">1,024 queries · K=64</text>
+<rect x="347" y="284" width="630" height="28" rx="6" fill="#25344a"/>
+<rect x="347" y="284" width="170.0" height="28" rx="6" fill="#f2ba73"/>
+<text x="531.0" y="307" fill="#f2ba73" font-family="system-ui,-apple-system,sans-serif" font-size="29" font-weight="750">1.6×</text>
+<text x="349" y="339" fill="#bbcadb" font-family="ui-monospace,SFMono-Regular,monospace" font-size="18">Metal 13.2 ms  /  CPU 21.3 ms</text>
+</svg>
