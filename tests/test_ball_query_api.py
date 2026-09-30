@@ -29,3 +29,29 @@ def test_public_metal_and_pointnet_padding() -> None:
     padded = compat.ball_query(1.0, 3, points, queries)
     assert padded.dtype == torch.int32
     assert padded.cpu().tolist() == [[[0, 0, 0], [0, 0, 0]]]
+
+
+DEVICES = ["cpu"] + (["mps"] if torch.backends.mps.is_available() else [])
+
+
+@pytest.mark.parametrize("device", DEVICES)
+@pytest.mark.parametrize("radius", [-0.1, float("inf"), float("nan"), 1e-40, 1e39, True])
+def test_public_api_rejects_bad_radius_on_every_device(device: str, radius: float) -> None:
+    xyz = torch.rand(1, 20, 3, device=device)
+    with pytest.raises(ValueError):
+        ball_query(xyz[:, :4], xyz, radius, 4)
+
+
+@pytest.mark.parametrize("device", DEVICES)
+@pytest.mark.parametrize("K", [-1, 1.5, True])
+def test_public_api_rejects_bad_k_on_every_device(device: str, K: int) -> None:
+    xyz = torch.rand(1, 20, 3, device=device)
+    with pytest.raises(ValueError):
+        ball_query(xyz[:, :4], xyz, 0.5, K)
+
+
+@pytest.mark.parametrize("device", DEVICES)
+def test_public_api_zero_radius_has_no_neighbors(device: str) -> None:
+    xyz = torch.rand(1, 20, 3, device=device)
+    dist2, idx = ball_query(xyz[:, :4], xyz, 0.0, 3)
+    assert (idx == -1).all() and (dist2 == 0).all()

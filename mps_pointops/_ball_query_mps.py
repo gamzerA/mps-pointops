@@ -27,8 +27,16 @@ class BallQueryResult(NamedTuple):
     indices: torch.Tensor
 
 
+def _require_compile_shader() -> None:
+    if not hasattr(torch.mps, "compile_shader"):
+        raise RuntimeError(
+            f"mps_pointops needs PyTorch 2.7 or later (torch.mps.compile_shader); found {torch.__version__}"
+        )
+
+
 @lru_cache(maxsize=1)
 def _shader_library():
+    _require_compile_shader()
     source = files(__package__).joinpath("kernels", "ball_query.metal").read_text()
     return torch.mps.compile_shader(source)
 
@@ -45,6 +53,41 @@ def _lengths_or_full(
     if torch.any((lengths < 0) | (lengths > count)).item():
         raise ValueError(f"{name} values must lie in [0, {count}]")
     return lengths.contiguous()
+
+
+def _checked_radius_and_k(radius: float, k: int) -> tuple[float, float]:
+    """Validate ``radius`` and ``k`` for every ball query path, on any device.
+
+    Returns ``(radius_f32, radius_squared)``: the radius rounded to float32 and
+    fl32(fl32(radius) * fl32(radius)).
+    """
+    if not isinstance(k, int) or isinstance(k, bool) or k < 0 or k > (1 << 63) - 1:
+        raise ValueError("k must be a non-negative integer")
+    if not isinstance(radius, (int, float)) or isinstance(radius, bool):
+        raise ValueError("radius must be a finite non-negative number")
+    try:
+        radius = float(radius)
+    except OverflowError as exc:
+        raise ValueError("radius must be a finite non-negative number") from exc
+    if not math.isfinite(radius) or radius < 0:
+        raise ValueError("radius must be a finite non-negative number")
+
+    try:
+        radius_f32 = struct.unpack("f", struct.pack("f", radius))[0]
+    except OverflowError as exc:
+        raise ValueError("radius must fit in float32") from exc
+    if not math.isfinite(radius_f32) or (radius > 0 and radius_f32 < _MIN_SUPPORTED_RADIUS_F32):
+        raise ValueError("positive radius must round to a normal float32 value at least 2**-112")
+
+    # This is fl32(fl32(radius) * fl32(radius)), as in PyTorch3D's float
+    # radius2 = radius * radius. Two binary32 operands multiply exactly in
+    # binary64 (at most 48 significant bits); struct.pack rounds once to f32.
+    radius_squared = float(radius_f32) * float(radius_f32)
+    try:
+        radius_squared = struct.unpack("f", struct.pack("f", radius_squared))[0]
+    except OverflowError as exc:
+        radius_squared = math.inf
+    return radius_f32, radius_squared
 
 
 class _BallQuery(torch.autograd.Function):
@@ -165,32 +208,7 @@ def ball_query(
         raise ValueError("queries and points must be on the same MPS device")
     if queries.dtype not in (torch.float32, torch.float16) or points.dtype != queries.dtype:
         raise TypeError("queries and points must have the same float32 or float16 dtype")
-    if not isinstance(k, int) or isinstance(k, bool) or k < 0 or k > (1 << 63) - 1:
-        raise ValueError("k must be a non-negative integer")
-    if not isinstance(radius, (int, float)) or isinstance(radius, bool):
-        raise ValueError("radius must be a finite non-negative number")
-    try:
-        radius = float(radius)
-    except OverflowError as exc:
-        raise ValueError("radius must be a finite non-negative number") from exc
-    if not math.isfinite(radius) or radius < 0:
-        raise ValueError("radius must be a finite non-negative number")
-
-    try:
-        radius_f32 = struct.unpack("f", struct.pack("f", radius))[0]
-    except OverflowError as exc:
-        raise ValueError("radius must fit in float32") from exc
-    if not math.isfinite(radius_f32) or (radius > 0 and radius_f32 < _MIN_SUPPORTED_RADIUS_F32):
-        raise ValueError("positive radius must round to a normal float32 value at least 2**-112")
-
-    # This is fl32(fl32(radius) * fl32(radius)), as in PyTorch3D's float
-    # radius2 = radius * radius. Two binary32 operands multiply exactly in
-    # binary64 (at most 48 significant bits); struct.pack rounds once to f32.
-    radius_squared = float(radius_f32) * float(radius_f32)
-    try:
-        radius_squared = struct.unpack("f", struct.pack("f", radius_squared))[0]
-    except OverflowError as exc:
-        radius_squared = math.inf
+    radius_f32, radius_squared = _checked_radius_and_k(radius, k)
 
     batch, query_count, _ = queries.shape
     point_count = points.shape[1]

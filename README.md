@@ -11,11 +11,13 @@ the same validation metrics as the original CUDA runs in all 45 runs
 
 ## Install
 
-Needs an Apple Silicon Mac and PyTorch with MPS (`torch>=2.6`, for
-`torch.mps.compile_shader`). Tested with PyTorch 2.14.1 on macOS 26.5, M5 Pro.
+Needs an Apple Silicon Mac and PyTorch 2.7 or later with MPS (the kernels are
+compiled with `torch.mps.compile_shader`, which PyTorch 2.6 does not have).
+Tested with PyTorch 2.7.0 and 2.14.1 on an M5 Pro (macOS 26.5), and in CI on
+GitHub's Apple Silicon macOS runners.
 
 ```bash
-pip install "git+https://github.com/gamzerA/mps-pointops.git@v0.1.0"
+pip install "git+https://github.com/gamzerA/mps-pointops.git@v0.1.1"
 ```
 
 The Metal kernels are compiled on first use. Tensors on other devices fall back

@@ -14,7 +14,7 @@ import torch
 from torch import Tensor
 
 from . import reference
-from ._ball_query_mps import ball_query as _metal_ball_query
+from ._ball_query_mps import _checked_radius_and_k, _require_compile_shader, ball_query as _metal_ball_query
 
 # Threads per threadgroup. 1024 is the Apple GPU maximum.
 _THREADS = 1024
@@ -26,6 +26,7 @@ _KNN_MAX_K = 256
 @cache
 def _check_simd_width() -> None:
     """The kernels assume 32-wide simdgroups. Check once, on first use."""
+    _require_compile_shader()
     lib = torch.mps.compile_shader(
         "kernel void width(device long* out, uint w [[threads_per_simdgroup]]) { out[0] = w; }"
     )
@@ -148,9 +149,16 @@ def ball_query(query: Tensor, ref: Tensor, radius: float, K: int) -> tuple[Tenso
     MPS float32/float16 inputs use the Metal kernel; other devices use the
     PyTorch reference. The MPS kernel supports coordinate gradients.
     """
+    # Same radius and K rules on every device, so CPU and MPS accept and
+    # reject the same arguments.
+    _checked_radius_and_k(radius, K)
     if query.device.type == "mps" or ref.device.type == "mps":
         result = _metal_ball_query(query, ref, radius=radius, k=K)
         return result.distances, result.indices
+    if query.dim() != 3 or ref.dim() != 3 or query.shape[-1] != 3 or ref.shape[-1] != 3:
+        raise ValueError("query and ref must have shapes (B, M, 3) and (B, N, 3)")
+    if query.shape[0] != ref.shape[0]:
+        raise ValueError("query and ref must have the same batch size")
     if query.device != ref.device:
         raise ValueError(f"query and ref are on different devices: {query.device} and {ref.device}")
     return reference.ball_query(query, ref, radius, K)

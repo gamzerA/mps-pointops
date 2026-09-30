@@ -1,0 +1,6 @@
+# The source distribution also carries the material the README links to.
+graft docs
+graft bench
+graft examples
+graft tools
+global-exclude __pycache__ *.py[cod] .DS_Store

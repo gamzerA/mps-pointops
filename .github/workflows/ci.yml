@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: test (${{ matrix.os }}, Python ${{ matrix.python }})
+    name: test (${{ matrix.os }}, Python ${{ matrix.python }}, torch ${{ matrix.torch || 'latest' }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -20,6 +20,10 @@ jobs:
             python: "3.10"
           - os: macos-latest
             python: "3.12"
+          # Oldest supported combination: torch.mps.compile_shader is new in 2.7.
+          - os: macos-latest
+            python: "3.10"
+            torch: "2.7.0"
           # CPU-only: reference implementations, fallbacks and the stand-ins.
           - os: ubuntu-latest
             python: "3.12"
@@ -34,14 +38,18 @@ jobs:
         if: runner.os == 'Linux'
         run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
       - name: Install PyTorch
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && !matrix.torch
         run: python -m pip install torch
+      - name: Install PyTorch ${{ matrix.torch }}
+        if: runner.os == 'macOS' && matrix.torch
+        run: python -m pip install "torch==${{ matrix.torch }}"
       - name: Install the package and test dependencies
         # A regular (non-editable) install, so the tests use the built package
         # and its bundled .metal files.
         run: python -m pip install . pytest numpy
       - name: Environment
         run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then sysctl -n machdep.cpu.brand_string; fi
           python -c "import platform, torch, mps_pointops; print(platform.platform()); print('torch', torch.__version__, '| mps_pointops', mps_pointops.__version__); print('MPS available:', torch.backends.mps.is_available())"
       - name: Tests (Metal safe math)
         # `pytest` rather than `python -m pytest`, so the repository directory is
