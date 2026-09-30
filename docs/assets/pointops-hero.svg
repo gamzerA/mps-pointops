@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 276" role="img" aria-labelledby="title description">
+<title id="title">Three point-cloud operators on Apple Silicon</title>
+<desc id="description">Farthest point sampling selects spread-out centers; k nearest neighbors ranks by distance; Ball Query keeps the first K points inside a radius.</desc>
+<defs>
+<pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#9fb9d4" stroke-opacity=".07"/></pattern>
+<linearGradient id="base" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0b1421"/><stop offset="1" stop-color="#172438"/></linearGradient>
+</defs>
+<rect width="1200" height="276" rx="18" fill="url(#base)"/>
+<rect x="16" y="16" width="376" height="244" rx="12" fill="#142237" stroke="#30445e" stroke-width="1"/>
+<rect x="17" y="17" width="374" height="242" rx="11" fill="url(#grid)"/>
+<rect x="33" y="34" width="30" height="28" rx="5" fill="#61d6c2" fill-opacity=".15"/>
+<text x="39" y="54" fill="#61d6c2" font-family="ui-monospace,SFMono-Regular,monospace" font-size="19" font-weight="700">01</text>
+<text x="76" y="55" fill="#f4f8ff" font-family="system-ui,-apple-system,sans-serif" font-size="27" font-weight="750">FPS</text>
+<path d="M34 73H374" stroke="#5d7693" stroke-opacity=".4"/>
+<text x="35" y="240" fill="#c4d2e2" font-family="system-ui,-apple-system,sans-serif" font-size="22">select spread-out centers</text>
+<rect x="412" y="16" width="376" height="244" rx="12" fill="#142237" stroke="#30445e" stroke-width="1"/>
+<rect x="413" y="17" width="374" height="242" rx="11" fill="url(#grid)"/>
+<rect x="429" y="34" width="30" height="28" rx="5" fill="#80aaff" fill-opacity=".15"/>
+<text x="435" y="54" fill="#80aaff" font-family="ui-monospace,SFMono-Regular,monospace" font-size="19" font-weight="700">02</text>
+<text x="472" y="55" fill="#f4f8ff" font-family="system-ui,-apple-system,sans-serif" font-size="27" font-weight="750">kNN</text>
+<path d="M430 73H770" stroke="#5d7693" stroke-opacity=".4"/>
+<text x="431" y="240" fill="#c4d2e2" font-family="system-ui,-apple-system,sans-serif" font-size="22">rank by squared distance</text>
+<rect x="808" y="16" width="376" height="244" rx="12" fill="#142237" stroke="#30445e" stroke-width="1"/>
+<rect x="809" y="17" width="374" height="242" rx="11" fill="url(#grid)"/>
+<rect x="825" y="34" width="30" height="28" rx="5" fill="#f2ba73" fill-opacity=".15"/>
+<text x="831" y="54" fill="#f2ba73" font-family="ui-monospace,SFMono-Regular,monospace" font-size="19" font-weight="700">03</text>
+<text x="868" y="55" fill="#f4f8ff" font-family="system-ui,-apple-system,sans-serif" font-size="27" font-weight="750">BALL QUERY</text>
+<path d="M826 73H1166" stroke="#5d7693" stroke-opacity=".4"/>
+<text x="827" y="240" fill="#c4d2e2" font-family="system-ui,-apple-system,sans-serif" font-size="22">first K inside the radius</text>
+<circle cx="71" cy="139" r="4" fill="#7993ad"/>
+<circle cx="94" cy="103" r="4" fill="#7993ad"/>
+<circle cx="119" cy="160" r="4" fill="#7993ad"/>
+<circle cx="151" cy="119" r="4" fill="#7993ad"/>
+<circle cx="174" cy="187" r="4" fill="#7993ad"/>
+<circle cx="207" cy="91" r="4" fill="#7993ad"/>
+<circle cx="225" cy="158" r="4" fill="#7993ad"/>
+<circle cx="253" cy="115" r="4" fill="#7993ad"/>
+<circle cx="281" cy="179" r="4" fill="#7993ad"/>
+<circle cx="307" cy="102" r="4" fill="#7993ad"/>
+<circle cx="339" cy="153" r="4" fill="#7993ad"/>
+<circle cx="329" cy="201" r="4" fill="#7993ad"/>
+<path d="M329 201L253 115" stroke="#61d6c2" stroke-opacity=".65" stroke-width="1.7" stroke-dasharray="5 6"/>
+<circle cx="94" cy="103" r="11" fill="#61d6c2" fill-opacity=".13" stroke="#61d6c2" stroke-width="2"/>
+<circle cx="253" cy="115" r="11" fill="#61d6c2" fill-opacity=".13" stroke="#61d6c2" stroke-width="2"/>
+<circle cx="329" cy="201" r="15" fill="#61d6c2" fill-opacity=".12" stroke="#61d6c2" stroke-width="2.5"/>
+<path d="M310 188L298 174" stroke="#61d6c2" stroke-width="1.5"/>
+<text x="92" y="207" fill="#8ce6d6" font-family="ui-monospace,SFMono-Regular,monospace" font-size="19">max min d²</text>
+<circle cx="469" cy="109" r="4" fill="#7993ad"/>
+<circle cx="494" cy="177" r="4" fill="#7993ad"/>
+<circle cx="529" cy="94" r="4" fill="#7993ad"/>
+<circle cx="559" cy="126" r="4" fill="#7993ad"/>
+<circle cx="570" cy="181" r="4" fill="#7993ad"/>
+<circle cx="609" cy="83" r="4" fill="#7993ad"/>
+<circle cx="635" cy="145" r="4" fill="#7993ad"/>
+<circle cx="671" cy="94" r="4" fill="#7993ad"/>
+<circle cx="705" cy="177" r="4" fill="#7993ad"/>
+<circle cx="749" cy="129" r="4" fill="#7993ad"/>
+<path d="M609 146L635 145" stroke="#80aaff" stroke-width="2" stroke-opacity=".85"/>
+<circle cx="635" cy="145" r="10" fill="#80aaff"/>
+<text x="631" y="150" fill="#142237" font-family="ui-monospace,SFMono-Regular,monospace" font-size="13" font-weight="700">1</text>
+<path d="M609 146L570 181" stroke="#80aaff" stroke-width="2" stroke-opacity=".85"/>
+<circle cx="570" cy="181" r="10" fill="#80aaff"/>
+<text x="566" y="186" fill="#142237" font-family="ui-monospace,SFMono-Regular,monospace" font-size="13" font-weight="700">2</text>
+<path d="M609 146L559 126" stroke="#80aaff" stroke-width="2" stroke-opacity=".85"/>
+<circle cx="559" cy="126" r="10" fill="#80aaff"/>
+<text x="555" y="131" fill="#142237" font-family="ui-monospace,SFMono-Regular,monospace" font-size="13" font-weight="700">3</text>
+<circle cx="609" cy="146" r="9" fill="#f4f8ff" stroke="#80aaff" stroke-width="2"/>
+<text x="621" y="204" fill="#a9c3ff" font-family="ui-monospace,SFMono-Regular,monospace" font-size="19">query → top-k</text>
+<circle cx="1000" cy="148" r="66" fill="#f2ba73" fill-opacity=".07" stroke="#f2ba73" stroke-width="2" stroke-dasharray="6 6"/>
+<circle cx="1000" cy="148" r="7" fill="#f4f8ff"/>
+<text x="1102" y="107" fill="#f2ba73" font-family="ui-monospace,SFMono-Regular,monospace" font-size="19">K = 3</text>
+<circle cx="968" cy="121" r="12" fill="#f2ba73"/>
+<text x="964" y="126" fill="#172438" font-family="ui-monospace,SFMono-Regular,monospace" font-size="14" font-weight="700">0</text>
+<circle cx="1030" cy="140" r="12" fill="#f2ba73"/>
+<text x="1026" y="145" fill="#172438" font-family="ui-monospace,SFMono-Regular,monospace" font-size="14" font-weight="700">2</text>
+<circle cx="981" cy="182" r="12" fill="#f2ba73"/>
+<text x="977" y="187" fill="#172438" font-family="ui-monospace,SFMono-Regular,monospace" font-size="14" font-weight="700">4</text>
+<circle cx="1018" cy="102" r="10" fill="#7993ad" fill-opacity=".4" stroke="#7993ad"/>
+<text x="1014" y="107" fill="#d6e0ed" font-family="ui-monospace,SFMono-Regular,monospace" font-size="13">7</text>
+<circle cx="1087" cy="179" r="4" fill="#7993ad"/>
+</svg>

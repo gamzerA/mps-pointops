@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title description">
+  <title id="title">mps-pointops mark</title>
+  <desc id="description">Five connected point-cloud samples form the letter M.</desc>
+  <path d="M8 48 19 16 32 39 45 16 56 48" fill="none" stroke="#667f9e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="8" cy="48" r="7" fill="#18a98f" fill-opacity=".18"/>
+  <circle cx="19" cy="16" r="7" fill="#4f7fe0" fill-opacity=".18"/>
+  <circle cx="32" cy="39" r="7" fill="#de953b" fill-opacity=".18"/>
+  <circle cx="45" cy="16" r="7" fill="#4f7fe0" fill-opacity=".18"/>
+  <circle cx="56" cy="48" r="7" fill="#18a98f" fill-opacity=".18"/>
+  <circle cx="8" cy="48" r="4" fill="#18a98f"/>
+  <circle cx="19" cy="16" r="4" fill="#4f7fe0"/>
+  <circle cx="32" cy="39" r="4" fill="#de953b"/>
+  <circle cx="45" cy="16" r="4" fill="#4f7fe0"/>
+  <circle cx="56" cy="48" r="4" fill="#18a98f"/>
+</svg>

@@ -1,53 +1,77 @@
-# mps-pointops
+<h1 align="center"><img src="docs/assets/pointops-mark.svg" width="42" height="42" alt=""> mps-pointops</h1>
 
-[![CI](https://github.com/gamzerA/mps-pointops/actions/workflows/ci.yml/badge.svg)](https://github.com/gamzerA/mps-pointops/actions/workflows/ci.yml)
+<p align="center">
+  <a href="https://github.com/gamzerA/mps-pointops/actions/workflows/ci.yml"><img src="https://github.com/gamzerA/mps-pointops/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&amp;logoColor=white" alt="Python 3.10 or later"></a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/PyTorch-2.7%2B-EE4C2C?logo=pytorch&amp;logoColor=white" alt="PyTorch 2.7 or later"></a>
+  <a href="#license"><img src="https://img.shields.io/badge/License-Apache--2.0%20AND%20MIT-4B5563" alt="Apache-2.0 AND MIT license"></a>
+</p>
 
-Point cloud ops for PyTorch on Apple Silicon (MPS): farthest point sampling,
-k nearest neighbors and ball query, plus drop-in stand-ins for the CUDA-only
-`pointnet2_ops` and `knn_cuda` packages.
+**Point-cloud operators for PyTorch on Apple Silicon.** Native Metal kernels
+run farthest point sampling, k nearest neighbors, and Ball Query on MPS.
+Compatibility stand-ins cover the supported `pointnet2_ops` and `knn_cuda`
+call sites; CPU tensors use PyTorch reference implementations.
 
-**Status:** FPS, kNN and Ball Query have Metal kernels on MPS. A MulSen-AD
-Point-MAE anomaly detector re-fit on the Mac GPU through the stand-ins gives
-the same validation metrics as the original CUDA runs in all 45 runs
-([details](#real-data-a-mulsen-ad-3d-detector-gives-the-same-results-as-on-cuda)).
+<p align="center">
+  <img src="docs/assets/pointops-hero.svg" width="1200" alt="Three operator diagrams: FPS chooses spread-out centers; kNN ranks neighbors by distance; Ball Query retains the first K points inside a radius.">
+</p>
 
-## Install
+[Quick start](#quick-start) · [Results](#benchmark) ·
+[Equations](#the-operators-in-equations) · [Compatibility](#compatibility) ·
+[Numerical contract](docs/ball-query-math.md)
 
-Needs an Apple Silicon Mac and PyTorch 2.7 or later with MPS (the kernels are
-compiled with `torch.mps.compile_shader`, which PyTorch 2.6 does not have).
-Tested with PyTorch 2.7.0 and 2.14.1 on an M5 Pro (macOS 26.5), and in CI on
-GitHub's Apple Silicon macOS runners.
+## Quick start
+
+Requires an Apple Silicon Mac, Python 3.10 or later, and PyTorch 2.7 or later
+with MPS. The Metal kernels compile on first use.
 
 ```bash
-pip install "git+https://github.com/gamzerA/mps-pointops.git@v0.1.1"
+python -m pip install "git+https://github.com/gamzerA/mps-pointops.git@v0.1.1"
 ```
-
-The Metal kernels are compiled on first use. Tensors on other devices fall back
-to the pure PyTorch reference implementations.
-
-Licensed under Apache-2.0. The Ball Query kernel and its wrapper are MIT; see
-[LICENSES/MIT-ball-query.txt](LICENSES/MIT-ball-query.txt).
 
 ```python
 import torch
 from mps_pointops import ball_query, furthest_point_sample, knn
 
 xyz = torch.randn(1, 100_000, 3, device="mps")
-idx = furthest_point_sample(xyz, 1024)           # (1, 1024) int64
-centers = xyz[:, idx[0]]
-dist, nbr = knn(centers, xyz, 128)                # (1, 1024, 128)
-dist2, within = ball_query(centers, xyz, 0.1, 64)  # first 64 in input order
+centers_idx = furthest_point_sample(xyz, 1024)
+centers = xyz.gather(1, centers_idx[..., None].expand(-1, -1, 3))
+distance, neighbor_idx = knn(centers, xyz, 128)
+distance2, radius_idx = ball_query(centers, xyz, 0.1, 64)
 ```
 
-Existing code written for `pointnet2_ops` and `knn_cuda`:
+| Operator | Selection rule | Native result |
+|:--|:--|:--|
+| FPS | Farthest from the already selected centers | `int64` center indices |
+| kNN | Nearest `k`, sorted by squared distance then index | Euclidean distances, `int64` indices |
+| Ball Query | First `K` inside a strict radius, in input order | Squared distances, `int64` indices; `-1` padding |
+
+For a query $q_i$ and reference point $x_j$, the shared distance is
+$s_{ij}=\sum_{d=0}^{2}(q_{id}-x_{jd})^2$; each operator selects indices by a
+different rule. [The equations](#the-operators-in-equations) give the full
+selection and gradient formulas. On MPS, Ball Query supports coordinate
+gradients for its squared distances; FPS and kNN do not implement backward.
+
+**Measured on one M5 Pro, with 100k randomly ordered reference points:** FPS
+**5.2×**, kNN **2.9×**, and Ball Query **1.6×** faster than the fastest tested
+CPU library for each operation. Ball Query is slower on spatially sorted input
+(32.5 ms versus SciPy's 23.2 ms at 100k points). The
+[benchmark](#benchmark) states the setup and links the raw results.
+
+For existing CUDA-oriented imports, call `mps_pointops.compat.install()`
+*before* importing `pointnet2_ops` or `knn_cuda`:
 
 ```python
 import mps_pointops.compat
-mps_pointops.compat.install()  # before the imports below
+mps_pointops.compat.install()
 
-from pointnet2_ops import pointnet2_utils  # served by mps_pointops
+from pointnet2_ops import pointnet2_utils
 from knn_cuda import KNN
 ```
+
+The native API is dense and batched. A flat `torch_cluster`/PyG API is
+[planned](#roadmap). See [Compatibility](#compatibility) for the stand-ins'
+behavior and [License](#license) for component notices.
 
 ## Why
 
@@ -111,13 +135,23 @@ weights and has not been run yet.
 
 ## Benchmark
 
-Synthetic points near a unit sphere, MulSen-AD scale: batch 1, 1024 FPS
-centers, k = 128 neighbors. Median of 5 runs. FPS and kNN tables:
-[random point order](bench/results/2026-10-01-apple-m5-pro.md),
-[spatially sorted point order](bench/results/2026-10-01-apple-m5-pro-sorted.md).
-Ball Query was rerun after the Metal port:
-[random order](bench/results/2026-10-01-apple-m5-pro-ball-query-port.md),
-[sorted order](bench/results/2026-10-01-apple-m5-pro-ball-query-port-sorted.md).
+![M5 Pro measured speedups at 100,000 randomly ordered reference points: FPS 5.2 times, kNN 2.9 times, Ball Query 1.6 times faster than the fastest tested CPU libraries](docs/assets/m5-pro-speedup.svg)
+
+The figure compares each Metal kernel with the fastest tested CPU library for
+that operation on the **same M5 Pro**. It uses batch 1, 100,000 reference
+points, 1,024 samples or queries, random input order, and the median of five
+runs. SciPy times include KD-tree construction; device transfer is excluded.
+**Sorted-input exception:** Ball Query takes 32.5 ms on Metal versus 23.2 ms
+with SciPy. The chart is generated directly from the committed
+[benchmark JSON](bench/results/2026-10-01-apple-m5-pro.json) and
+[Ball Query JSON](bench/results/2026-10-01-apple-m5-pro-ball-query-port.json)
+using [this script](tools/render_readme_assets.py).
+
+The synthetic points lie near a unit sphere and use MulSen-AD scale. Full
+result tables: [FPS/kNN random order](bench/results/2026-10-01-apple-m5-pro.md),
+[FPS/kNN sorted order](bench/results/2026-10-01-apple-m5-pro-sorted.md),
+[Ball Query random order](bench/results/2026-10-01-apple-m5-pro-ball-query-port.md),
+and [Ball Query sorted order](bench/results/2026-10-01-apple-m5-pro-ball-query-port-sorted.md).
 
 Apple M5 Pro, 48 GB, macOS 26.5.2, torch 2.14.1, random point order:
 
@@ -176,7 +210,10 @@ On the listed synthetic inputs, the Metal kernels had 0 index mismatches.
 Ball Query's maximum squared-distance error against the separate-operation
 CPU reference was 1.9e-9; the FPS and kNN checks reported no distance error.
 These are observations on one M5 Pro, not a guarantee for every input, GPU or
-compiler.
+compiler. On this v0.1.1-based branch with PyTorch 2.7.0 and MPS available, the
+Safe and Fast Math test processes each reported **105 passed, 7 skipped**
+([Safe log](docs/pytest-safe-torch27-2026-10-01.log),
+[Fast log](docs/pytest-fast-torch27-2026-10-01.log)).
 
 ### Run it
 
@@ -215,6 +252,107 @@ The native API (`mps_pointops.furthest_point_sample`, `mps_pointops.knn`,
 points near the origin. It is not a
 `torch_cluster` replacement either: its inputs are dense, batched (B, N, 3)
 tensors, not flat point lists with batch vectors.
+
+## The operators in equations
+
+For batch `b`, let `q[b, i]` be query `i`, where `0 ≤ i < Q`, and let
+`x[b, j]` be reference point `j`, where `0 ≤ j < P`. Both have three
+coordinates, indexed by `d = 0, 1, 2`. The mathematical squared distance is
+
+$$
+s_{bij} = \sum_{d=0}^{2}\bigl(q_{bid}-x_{bjd}\bigr)^2.
+$$
+
+### Farthest point sampling
+
+Starting at `c₀ = start_idx`, keep each point's distance to its **closest
+already selected center**, then choose the farthest (smaller index on a tie):
+
+$$
+m_j^{(t)} = \min_{0\le u\le t}
+  \sum_{d=0}^{2}(x_{bjd}-x_{b,c_u,d})^2,
+\qquad
+c_{t+1} = \min\{j:m_j^{(t)}=\max_{\ell}m_{\ell}^{(t)}\}.
+$$
+
+The outer minimum makes the smaller input index win a tie. This is the
+native FPS rule for finite coordinates;
+degenerate clouds can select an index more than once. The PointNet2 stand-in
+also skips points near the origin except for its initial center.
+
+### k nearest neighbors
+
+For each query, sort candidate indices by squared distance and then input
+index. The returned distance is **Euclidean**, while sorting uses its square:
+
+$$
+\pi_{bi}=\mathrm{argsort}_{j}\bigl(s_{bij},j\bigr),
+\qquad
+I_{bik}=\pi_{bi}[k],
+\qquad
+D_{bik}=\sqrt{s_{bi,I_{bik}}}.
+$$
+
+The MPS kernel uses this tie rule; the CPU fallback uses
+`torch.cdist(...).topk(...)` and can resolve near ties differently.
+
+### Ball Query: first K within a radius
+
+The radius is rounded to `float32` **before** it is squared, matching the
+PyTorch3D threshold construction:
+
+$$
+R_2=\mathrm{fl}_{32}\left(
+  \mathrm{fl}_{32}(r)\cdot\mathrm{fl}_{32}(r)
+\right),\qquad
+J_{bi}=\bigl[j\in\{0,\ldots,P-1\}:s_{bij}<R_2\bigr]_{\text{input order}}.
+$$
+
+$$
+(I_{bik},S_{bik})=
+\begin{cases}
+\bigl(J_{bi}[k],s_{bi,J_{bi}[k]}\bigr),
+  & k<\min(K,|J_{bi}|),\\
+(-1,0), & \text{otherwise}.
+\end{cases}
+$$
+
+These equations give the selection contract. The Metal kernel accumulates
+the distance with explicit FMA operations and uses a normalized comparison
+at very small radii; near a floating-point boundary, its result can differ
+from evaluating the real-valued `s` above. See the
+[numerical contract](docs/ball-query-math.md) for the exact policy.
+
+The boundary is strict (`<`), and **first K in input order** is different
+from the k nearest points. A zero squared distance can be a real match:
+check `I >= 0` to detect padding. On MPS, `S` is `float32`, `I` is
+`int64`, and the inputs can be `float32` or `float16`.
+
+For a fixed selected index, let `G[b,i,k] = ∂L/∂S[b,i,k]`. The squared-distance
+gradient first gives
+`∂s/∂q[b,i,d] = 2(q[b,i,d] - x[b,j,d])` and
+`∂s/∂x[b,j,d] = -2(q[b,i,d] - x[b,j,d])`. The chain rule then propagates
+to both coordinate tensors:
+
+$$
+\frac{\partial L}{\partial q_{bid}}
+=2\sum_{k:I_{bik}\ge0}G_{bik}
+  \bigl(q_{bid}-x_{b,I_{bik},d}\bigr),
+\qquad
+\frac{\partial L}{\partial x_{bjd}}
+=2\sum_{i,k:I_{bik}=j}G_{bik}
+  \bigl(x_{bjd}-q_{bid}\bigr).
+$$
+
+Indices and the Python scalar radius have no gradient. The equations describe
+the selected squared-distance function, not differentiation through the
+discrete neighbor choice or float32 rounding. At tiny radii the Metal kernel
+uses a normalized comparison, and FMA/flush behavior can change boundary
+bits; [the detailed contract](docs/ball-query-math.md) gives its precise
+policy, derivation, tests, and limitations.
+The formulas state established geometric operations; the
+[provenance note](docs/ball-query-provenance.md) separates paper concepts,
+external implementation contracts, and this project's code.
 
 ## How the kernels work
 
