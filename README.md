@@ -1,5 +1,7 @@
 # mps-pointops
 
+[![CI](https://github.com/gamzerA/mps-pointops/actions/workflows/ci.yml/badge.svg)](https://github.com/gamzerA/mps-pointops/actions/workflows/ci.yml)
+
 Point cloud ops for PyTorch on Apple Silicon (MPS): farthest point sampling,
 k nearest neighbors and ball query, plus drop-in stand-ins for the CUDA-only
 `pointnet2_ops` and `knn_cuda` packages.
