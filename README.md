@@ -4,9 +4,10 @@ Point cloud ops for PyTorch on Apple Silicon (MPS): farthest point sampling,
 k nearest neighbors and ball query, plus drop-in stand-ins for the CUDA-only
 `pointnet2_ops` and `knn_cuda` packages.
 
-**Status:** FPS, kNN and Ball Query have Metal kernels on MPS.
-MulSen-AD's own Point-MAE grouping code runs unmodified on the Mac GPU through
-the stand-ins, checked on real MulSen-AD point clouds.
+**Status:** FPS, kNN and Ball Query have Metal kernels on MPS. A MulSen-AD
+Point-MAE anomaly detector re-fit on the Mac GPU through the stand-ins gives
+the same validation metrics as the original CUDA runs in all 45 runs
+([details](#real-data-a-mulsen-ad-3d-detector-gives-the-same-results-as-on-cuda)).
 
 ## Install
 
@@ -55,6 +56,26 @@ ends up slower than its own CPU.
 
 The goal of this project is drop-in Metal kernels for these ops that beat the
 best CPU implementations on the same machine.
+
+## Real data: a MulSen-AD 3D detector gives the same results as on CUDA
+
+The Point-MAE 3D-only anomaly detector from the MulSen-AD baseline (MulSen-AD's
+released feature extractor, coreset memory bank and object score) was fit and
+scored on the Mac GPU with `compat.install()` providing `pointnet2_ops` and
+`knn_cuda`, and compared with the same runs made earlier on CUDA with the real
+extensions (Windows, RTX 2080, PyTorch 2.9.1 + CUDA 13).
+
+- 45 runs: 15 MulSen-AD categories x 3 seeds, fit on normal samples of a
+  frozen research split and scored on its validation samples. The same sample
+  IDs and labels were used on both machines.
+- Object AUROC, object AP, 3D-label AUROC and 3D-label AP: identical to the
+  CUDA runs in all 45 runs.
+- Per-sample anomaly scores: largest relative difference 9.85e-5, and the same
+  ranking of samples in every run.
+
+This is a validation-set comparison from a separate research project, so the
+split, scores and runner scripts are not part of this repository. Setup:
+Apple M5 Pro, macOS 26.5.2, PyTorch 2.14.1, this package at commit 80bbca5.
 
 ## Real data: MulSen-AD grouping
 
@@ -270,7 +291,10 @@ Ball Query is specified separately in the numerical contract.
    MulSen-AD data~~
 4. ~~Metal kernel for ball query~~ — improve performance on spatially sorted
    inputs and finish the PyTorch3D API compatibility surface
-5. Full MulSen-AD pipeline on MPS (needs the pretrained weights)
+5. ~~MulSen-AD Point-MAE 3D detector on MPS, matching the CUDA runs~~ — the
+   full TripleAD pipeline (RGB + IR + 3D) is next
+6. `torch_cluster`-style `radius`, `knn` and `fps` (flat inputs with batch
+   vectors) for PyG point cloud models
 
 ## License
 
