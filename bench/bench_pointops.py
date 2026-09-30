@@ -114,25 +114,71 @@ def environment() -> dict:
 
 
 # ---------------------------------------------------------------- checks
+#
+# Each check returns counts that go into the JSON as they are, plus a summary
+# for the tables. Counts rather than percentages, so one mismatch stays
+# visible.
 
 
-def fps_check(idx, want) -> str:
-    """Fraction of indices equal to the torch-cpu result."""
-    a, b = to_np(idx), to_np(want)
-    return f"idx match {100 * (a == b).mean():.1f}%"
+def exact_knn(query: np.ndarray, points: np.ndarray, k: int, chunk: int = 64):
+    """Oracle: float32 squared distances rounded like the kernel, sorted by (distance, index)."""
+    B, M, _ = query.shape
+    N = points.shape[1]
+    dist = np.empty((B, M, k), dtype=np.float32)
+    idx = np.empty((B, M, k), dtype=np.int64)
+    index = np.arange(N, dtype=np.uint64)
+    for b in range(B):
+        for lo in range(0, M, chunk):
+            diff = query[b, lo : lo + chunk, None, :] - points[b, None, :, :]
+            s = diff[..., 0] * diff[..., 0]
+            s = s + diff[..., 1] * diff[..., 1]
+            s = s + diff[..., 2] * diff[..., 2]
+            # Bit patterns of non-negative floats sort like their values, so
+            # (bits << 32 | index) is one sortable (distance, index) key.
+            key = (s.view(np.uint32).astype(np.uint64) << np.uint64(32)) | index
+            top = np.partition(key, k - 1, axis=-1)[:, :k]
+            top.sort(axis=-1)
+            sel = (top & np.uint64(0xFFFFFFFF)).astype(np.int64)
+            idx[b, lo : lo + chunk] = sel
+            dist[b, lo : lo + chunk] = np.sqrt(np.take_along_axis(s, sel, -1))
+    return dist, idx
 
 
-def knn_check(idx, want) -> str:
-    """Mean recall of neighbor sets against exact float64 search."""
-    a, b = to_np(idx), to_np(want)
-    k = a.shape[-1]
-    hit = (a[..., :, None] == b[..., None, :]).any(-1).sum(-1) / k
-    return f"recall {100 * hit.mean():.2f}%"
+def fps_check(out, want) -> dict:
+    a, b = to_np(out), to_np(want)
+    bad = int((a != b).sum())
+    return {"idx_mismatches": bad, "total": int(b.size), "summary": f"idx mismatches {bad}/{b.size}"}
 
 
-def ball_check(idx, want) -> str:
-    a, b = to_np(idx), to_np(want)
-    return f"idx match {100 * (a == b).mean():.2f}%"
+def knn_check(out, want_dist, want_idx) -> dict:
+    """Against the exact float32 oracle: neighbor sets, positions and distances."""
+    d, i = (to_np(x) for x in out)
+    total = int(want_idx.size)
+    missing = total - int((i[..., :, None] == want_idx[..., None, :]).any(-1).sum())
+    moved = int((i != want_idx).sum())
+    err = float(np.abs(d.astype(np.float64) - want_dist.astype(np.float64)).max())
+    return {
+        "missing_neighbors": missing,
+        "position_mismatches": moved,
+        "total": total,
+        "max_dist_err": err,
+        "summary": f"missing {missing}/{total}, position mismatches {moved}, max dist err {err:.1e}",
+    }
+
+
+def ball_check(out, want) -> dict:
+    """Against the PyTorch3D-contract reference on CPU."""
+    want_d2, want_idx = (to_np(x) for x in want)
+    d2, i = (to_np(x) for x in out) if isinstance(out, tuple) else (None, to_np(out))
+    bad = int((i != want_idx).sum())
+    result = {"idx_mismatches": bad, "total": int(want_idx.size)}
+    summary = f"idx mismatches {bad}/{want_idx.size}"
+    if d2 is not None:
+        err = float(np.abs(d2.astype(np.float64) - want_d2.astype(np.float64)).max())
+        result["max_dist2_err"] = err
+        summary += f", max dist^2 err {err:.1e}"
+    result["summary"] = summary
+    return result
 
 
 # ---------------------------------------------------------------- cases
@@ -163,22 +209,19 @@ def knn_cases(pts, q, args):
     cases = []
     if HAS_MPS:
         pm, qm = pts.to("mps"), q.to("mps")
-        cases.append(("torch cdist+topk (MPS)", "mps", lambda: ref.knn(qm, pm, k)[1]))
-        cases.append(("mps-pointops Metal (MPS)", "mps", lambda: ops.knn(qm, pm, k)[1]))
-    cases.append(("torch cdist+topk (CPU)", "cpu", lambda: ref.knn(q, pts, k)[1]))
+        cases.append(("torch cdist+topk (MPS)", "mps", lambda: ref.knn(qm, pm, k)))
+        cases.append(("mps-pointops Metal (MPS)", "mps", lambda: ops.knn(qm, pm, k)))
+    cases.append(("torch cdist+topk (CPU)", "cpu", lambda: ref.knn(q, pts, k)))
     arr, qarr = pts.numpy(), q.numpy()
     if cKDTree is not None:
-        cases.append((
-            "scipy cKDTree build+query (CPU)", "cpu",
-            lambda: np.stack([cKDTree(a).query(b, k=k, workers=-1)[1] for a, b in zip(arr, qarr)]),
-        ))
-        exact = np.stack([
-            cKDTree(a.astype(np.float64)).query(b.astype(np.float64), k=k)[1]
-            for a, b in zip(arr, qarr)
-        ])
-    else:
-        exact = to_np(ref.knn(q.double(), pts.double(), k)[1])
-    return cases, lambda out: knn_check(out, exact)
+
+        def scipy_knn():
+            found = [cKDTree(a).query(b, k=k, workers=-1) for a, b in zip(arr, qarr)]
+            return np.stack([f[0] for f in found]), np.stack([f[1] for f in found])
+
+        cases.append(("scipy cKDTree build+query (CPU)", "cpu", scipy_knn))
+    want_dist, want_idx = exact_knn(qarr, arr, k)
+    return cases, lambda out: knn_check(out, want_dist, want_idx)
 
 
 def ball_cases(pts, q, args):
@@ -186,8 +229,8 @@ def ball_cases(pts, q, args):
     cases = []
     if HAS_MPS:
         pm, qm = pts.to("mps"), q.to("mps")
-        cases.append(("torch cdist+mask+topk (MPS)", "mps", lambda: ref.ball_query(qm, pm, r, K)[1]))
-    cases.append(("torch cdist+mask+topk (CPU)", "cpu", lambda: ref.ball_query(q, pts, r, K)[1]))
+        cases.append(("torch mask+topk (MPS)", "mps", lambda: ref.ball_query(qm, pm, r, K)))
+    cases.append(("torch mask+topk (CPU)", "cpu", lambda: ref.ball_query(q, pts, r, K)))
     if cKDTree is not None:
         arr, qarr = pts.numpy(), q.numpy()
 
@@ -201,7 +244,7 @@ def ball_cases(pts, q, args):
             return out
 
         cases.append(("scipy cKDTree build+query (CPU)", "cpu", scipy_ball))
-    want = ref.ball_query(q, pts, r, K)[1]
+    want = ref.ball_query(q, pts, r, K)
     return cases, lambda out: ball_check(out, want)
 
 
@@ -233,7 +276,8 @@ def run(args) -> list[dict]:
                     row.update(median_ms=None, min_ms=None, check=None, error=f"{type(e).__name__}: {e}"[:200])
                 rows.append(row)
                 ms = f"{row['median_ms']:10.1f} ms" if row["median_ms"] is not None else "     error"
-                print(f"{op:10s} N={n:>7d}  {name:34s} {ms}  {row.get('check') or row.get('error')}", flush=True)
+                note = row["check"]["summary"] if row.get("check") else row.get("error")
+                print(f"{op:10s} N={n:>7d}  {name:34s} {ms}  {note}", flush=True)
             if HAS_MPS:
                 torch.mps.empty_cache()
     return rows
@@ -263,7 +307,7 @@ def markdown(rows: list[dict], env: dict, args) -> str:
                     lines.append(f"| {n:,} | {r['impl']} | error | | {r['error']} |")
                     continue
                 speed = f"{base / r['median_ms']:.2f}x" if base else ""
-                lines.append(f"| {n:,} | {r['impl']} | {r['median_ms']:.1f} | {speed} | {r['check']} |")
+                lines.append(f"| {n:,} | {r['impl']} | {r['median_ms']:.1f} | {speed} | {r['check']['summary']} |")
         lines.append("")
     return "\n".join(lines)
 

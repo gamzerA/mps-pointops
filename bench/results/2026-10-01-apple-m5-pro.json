@@ -32,9 +32,13 @@
       "batch": 1,
       "impl": "torch (MPS)",
       "device": "mps",
-      "median_ms": 133.70141701307148,
-      "min_ms": 120.31566700898111,
-      "check": "idx match 100.0%"
+      "median_ms": 112.41629195865244,
+      "min_ms": 109.40762492828071,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
     },
     {
       "op": "fps",
@@ -42,9 +46,13 @@
       "batch": 1,
       "impl": "mps-pointops Metal (MPS)",
       "device": "mps",
-      "median_ms": 7.717165979556739,
-      "min_ms": 5.845999927259982,
-      "check": "idx match 100.0%"
+      "median_ms": 6.0649169608950615,
+      "min_ms": 5.760167026892304,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
     },
     {
       "op": "fps",
@@ -52,9 +60,13 @@
       "batch": 1,
       "impl": "torch (CPU)",
       "device": "cpu",
-      "median_ms": 117.75933299213648,
-      "min_ms": 116.75804201513529,
-      "check": "idx match 100.0%"
+      "median_ms": 95.22670810110867,
+      "min_ms": 94.63212499395013,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
     },
     {
       "op": "fps",
@@ -62,9 +74,13 @@
       "batch": 1,
       "impl": "fpsample vanilla (CPU)",
       "device": "cpu",
-      "median_ms": 34.77491601370275,
-      "min_ms": 34.694792004302144,
-      "check": "idx match 100.0%"
+      "median_ms": 35.00154195353389,
+      "min_ms": 34.69333390239626,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
     },
     {
       "op": "knn",
@@ -72,9 +88,15 @@
       "batch": 1,
       "impl": "torch cdist+topk (MPS)",
       "device": "mps",
-      "median_ms": 18.592249951325357,
-      "min_ms": 10.755458963103592,
-      "check": "recall 100.00%"
+      "median_ms": 15.060790930874646,
+      "min_ms": 10.029167053289711,
+      "check": {
+        "missing_neighbors": 0,
+        "position_mismatches": 48,
+        "total": 131072,
+        "max_dist_err": 0.00048828125,
+        "summary": "missing 0/131072, position mismatches 48, max dist err 4.9e-04"
+      }
     },
     {
       "op": "knn",
@@ -82,9 +104,15 @@
       "batch": 1,
       "impl": "mps-pointops Metal (MPS)",
       "device": "mps",
-      "median_ms": 3.161667031235993,
-      "min_ms": 2.616042038425803,
-      "check": "recall 100.00%"
+      "median_ms": 3.7791250506415963,
+      "min_ms": 2.8690421022474766,
+      "check": {
+        "missing_neighbors": 0,
+        "position_mismatches": 0,
+        "total": 131072,
+        "max_dist_err": 0.0,
+        "summary": "missing 0/131072, position mismatches 0, max dist err 0.0e+00"
+      }
     },
     {
       "op": "knn",
@@ -92,9 +120,15 @@
       "batch": 1,
       "impl": "torch cdist+topk (CPU)",
       "device": "cpu",
-      "median_ms": 10.590750025585294,
-      "min_ms": 10.521459043957293,
-      "check": "recall 100.00%"
+      "median_ms": 10.910334065556526,
+      "min_ms": 10.680916020646691,
+      "check": {
+        "missing_neighbors": 0,
+        "position_mismatches": 40,
+        "total": 131072,
+        "max_dist_err": 0.00048828125,
+        "summary": "missing 0/131072, position mismatches 40, max dist err 4.9e-04"
+      }
     },
     {
       "op": "knn",
@@ -102,29 +136,45 @@
       "batch": 1,
       "impl": "scipy cKDTree build+query (CPU)",
       "device": "cpu",
-      "median_ms": 4.991416004486382,
-      "min_ms": 4.853124963119626,
-      "check": "recall 100.00%"
+      "median_ms": 5.166625021956861,
+      "min_ms": 4.658833961002529,
+      "check": {
+        "missing_neighbors": 0,
+        "position_mismatches": 0,
+        "total": 131072,
+        "max_dist_err": 2.2060964638415115e-08,
+        "summary": "missing 0/131072, position mismatches 0, max dist err 2.2e-08"
+      }
     },
     {
       "op": "ball_query",
       "n_points": 20000,
       "batch": 1,
-      "impl": "torch cdist+mask+topk (MPS)",
+      "impl": "torch mask+topk (MPS)",
       "device": "mps",
-      "median_ms": 29.82466691173613,
-      "min_ms": 29.237958951853216,
-      "check": "idx match 100.00%"
+      "median_ms": 64.12762496620417,
+      "min_ms": 47.64474998228252,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "max_dist2_err": 0.0,
+        "summary": "idx mismatches 0/65536, max dist^2 err 0.0e+00"
+      }
     },
     {
       "op": "ball_query",
       "n_points": 20000,
       "batch": 1,
-      "impl": "torch cdist+mask+topk (CPU)",
+      "impl": "torch mask+topk (CPU)",
       "device": "cpu",
-      "median_ms": 10.129209025762975,
-      "min_ms": 9.73312498535961,
-      "check": "idx match 100.00%"
+      "median_ms": 35.03654105588794,
+      "min_ms": 34.66337500140071,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "max_dist2_err": 0.0,
+        "summary": "idx mismatches 0/65536, max dist^2 err 0.0e+00"
+      }
     },
     {
       "op": "ball_query",
@@ -132,9 +182,13 @@
       "batch": 1,
       "impl": "scipy cKDTree build+query (CPU)",
       "device": "cpu",
-      "median_ms": 4.965375061146915,
-      "min_ms": 4.90924995392561,
-      "check": "idx match 100.00%"
+      "median_ms": 6.131042027845979,
+      "min_ms": 5.494582932442427,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "summary": "idx mismatches 0/65536"
+      }
     },
     {
       "op": "fps",
@@ -142,9 +196,13 @@
       "batch": 1,
       "impl": "torch (MPS)",
       "device": "mps",
-      "median_ms": 131.10158301424235,
-      "min_ms": 111.66245792992413,
-      "check": "idx match 100.0%"
+      "median_ms": 181.04279192630202,
+      "min_ms": 155.18112503923476,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
     },
     {
       "op": "fps",
@@ -152,9 +210,13 @@
       "batch": 1,
       "impl": "mps-pointops Metal (MPS)",
       "device": "mps",
-      "median_ms": 16.39829098712653,
-      "min_ms": 14.242458972148597,
-      "check": "idx match 100.0%"
+      "median_ms": 14.887958066537976,
+      "min_ms": 14.294874970801175,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
     },
     {
       "op": "fps",
@@ -162,9 +224,13 @@
       "batch": 1,
       "impl": "torch (CPU)",
       "device": "cpu",
-      "median_ms": 192.9470410104841,
-      "min_ms": 188.92016692552716,
-      "check": "idx match 100.0%"
+      "median_ms": 218.58591691125184,
+      "min_ms": 212.3046659398824,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
     },
     {
       "op": "fps",
@@ -172,9 +238,13 @@
       "batch": 1,
       "impl": "fpsample vanilla (CPU)",
       "device": "cpu",
-      "median_ms": 86.83558402117342,
-      "min_ms": 86.80683304555714,
-      "check": "idx match 100.0%"
+      "median_ms": 86.68795903213322,
+      "min_ms": 86.62950003053993,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
     },
     {
       "op": "knn",
@@ -182,9 +252,15 @@
       "batch": 1,
       "impl": "torch cdist+topk (MPS)",
       "device": "mps",
-      "median_ms": 50.14270800165832,
-      "min_ms": 43.255082913674414,
-      "check": "recall 100.00%"
+      "median_ms": 52.840166026726365,
+      "min_ms": 36.76816599909216,
+      "check": {
+        "missing_neighbors": 0,
+        "position_mismatches": 122,
+        "total": 131072,
+        "max_dist_err": 0.00048828125,
+        "summary": "missing 0/131072, position mismatches 122, max dist err 4.9e-04"
+      }
     },
     {
       "op": "knn",
@@ -192,9 +268,15 @@
       "batch": 1,
       "impl": "mps-pointops Metal (MPS)",
       "device": "mps",
-      "median_ms": 4.1432499419897795,
-      "min_ms": 3.3512089867144823,
-      "check": "recall 100.00%"
+      "median_ms": 3.471040981821716,
+      "min_ms": 3.294958034530282,
+      "check": {
+        "missing_neighbors": 0,
+        "position_mismatches": 0,
+        "total": 131072,
+        "max_dist_err": 0.0,
+        "summary": "missing 0/131072, position mismatches 0, max dist err 0.0e+00"
+      }
     },
     {
       "op": "knn",
@@ -202,9 +284,15 @@
       "batch": 1,
       "impl": "torch cdist+topk (CPU)",
       "device": "cpu",
-      "median_ms": 21.65116707328707,
-      "min_ms": 20.87058301549405,
-      "check": "recall 100.00%"
+      "median_ms": 21.596833015792072,
+      "min_ms": 21.489165956154466,
+      "check": {
+        "missing_neighbors": 0,
+        "position_mismatches": 132,
+        "total": 131072,
+        "max_dist_err": 0.00048828125,
+        "summary": "missing 0/131072, position mismatches 132, max dist err 4.9e-04"
+      }
     },
     {
       "op": "knn",
@@ -212,29 +300,45 @@
       "batch": 1,
       "impl": "scipy cKDTree build+query (CPU)",
       "device": "cpu",
-      "median_ms": 9.634750080294907,
-      "min_ms": 9.575875010341406,
-      "check": "recall 100.00%"
+      "median_ms": 9.711832972243428,
+      "min_ms": 9.364249999634922,
+      "check": {
+        "missing_neighbors": 0,
+        "position_mismatches": 2,
+        "total": 131072,
+        "max_dist_err": 1.1344268191493256e-08,
+        "summary": "missing 0/131072, position mismatches 2, max dist err 1.1e-08"
+      }
     },
     {
       "op": "ball_query",
       "n_points": 50000,
       "batch": 1,
-      "impl": "torch cdist+mask+topk (MPS)",
+      "impl": "torch mask+topk (MPS)",
       "device": "mps",
-      "median_ms": 99.94254191406071,
-      "min_ms": 81.02058398071676,
-      "check": "idx match 100.00%"
+      "median_ms": 141.25233294907957,
+      "min_ms": 137.74745899718255,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "max_dist2_err": 0.0,
+        "summary": "idx mismatches 0/65536, max dist^2 err 0.0e+00"
+      }
     },
     {
       "op": "ball_query",
       "n_points": 50000,
       "batch": 1,
-      "impl": "torch cdist+mask+topk (CPU)",
+      "impl": "torch mask+topk (CPU)",
       "device": "cpu",
-      "median_ms": 25.767500046640635,
-      "min_ms": 25.469333049841225,
-      "check": "idx match 100.00%"
+      "median_ms": 80.1562910201028,
+      "min_ms": 79.09670902881771,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "max_dist2_err": 0.0,
+        "summary": "idx mismatches 0/65536, max dist^2 err 0.0e+00"
+      }
     },
     {
       "op": "ball_query",
@@ -242,9 +346,13 @@
       "batch": 1,
       "impl": "scipy cKDTree build+query (CPU)",
       "device": "cpu",
-      "median_ms": 10.999165941029787,
-      "min_ms": 10.721708997152746,
-      "check": "idx match 100.00%"
+      "median_ms": 11.926874984055758,
+      "min_ms": 11.42287498805672,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "summary": "idx mismatches 0/65536"
+      }
     },
     {
       "op": "fps",
@@ -252,9 +360,13 @@
       "batch": 1,
       "impl": "torch (MPS)",
       "device": "mps",
-      "median_ms": 192.65754194930196,
-      "min_ms": 189.10170800518245,
-      "check": "idx match 100.0%"
+      "median_ms": 247.53470800351351,
+      "min_ms": 223.6258330522105,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
     },
     {
       "op": "fps",
@@ -262,9 +374,13 @@
       "batch": 1,
       "impl": "mps-pointops Metal (MPS)",
       "device": "mps",
-      "median_ms": 32.63041703030467,
-      "min_ms": 29.83879204839468,
-      "check": "idx match 100.0%"
+      "median_ms": 33.25687500182539,
+      "min_ms": 30.83441697526723,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
     },
     {
       "op": "fps",
@@ -272,9 +388,13 @@
       "batch": 1,
       "impl": "torch (CPU)",
       "device": "cpu",
-      "median_ms": 619.3331250688061,
-      "min_ms": 609.499791986309,
-      "check": "idx match 100.0%"
+      "median_ms": 578.2034168951213,
+      "min_ms": 572.1131670288742,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
     },
     {
       "op": "fps",
@@ -282,9 +402,13 @@
       "batch": 1,
       "impl": "fpsample vanilla (CPU)",
       "device": "cpu",
-      "median_ms": 173.64962492138147,
-      "min_ms": 173.41237503569573,
-      "check": "idx match 100.0%"
+      "median_ms": 174.04112499207258,
+      "min_ms": 173.5289579955861,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
     },
     {
       "op": "knn",
@@ -292,9 +416,15 @@
       "batch": 1,
       "impl": "torch cdist+topk (MPS)",
       "device": "mps",
-      "median_ms": 116.06899998150766,
-      "min_ms": 107.56520798895508,
-      "check": "recall 100.00%"
+      "median_ms": 120.86262495722622,
+      "min_ms": 111.67666700202972,
+      "check": {
+        "missing_neighbors": 1,
+        "position_mismatches": 235,
+        "total": 131072,
+        "max_dist_err": 0.00048828125,
+        "summary": "missing 1/131072, position mismatches 235, max dist err 4.9e-04"
+      }
     },
     {
       "op": "knn",
@@ -302,9 +432,15 @@
       "batch": 1,
       "impl": "mps-pointops Metal (MPS)",
       "device": "mps",
-      "median_ms": 5.722500034607947,
-      "min_ms": 4.114083014428616,
-      "check": "recall 100.00%"
+      "median_ms": 6.138790980912745,
+      "min_ms": 4.01404092554003,
+      "check": {
+        "missing_neighbors": 0,
+        "position_mismatches": 0,
+        "total": 131072,
+        "max_dist_err": 0.0,
+        "summary": "missing 0/131072, position mismatches 0, max dist err 0.0e+00"
+      }
     },
     {
       "op": "knn",
@@ -312,9 +448,15 @@
       "batch": 1,
       "impl": "torch cdist+topk (CPU)",
       "device": "cpu",
-      "median_ms": 39.617584086954594,
-      "min_ms": 39.49700004886836,
-      "check": "recall 100.00%"
+      "median_ms": 40.240957983769476,
+      "min_ms": 39.82820804230869,
+      "check": {
+        "missing_neighbors": 2,
+        "position_mismatches": 242,
+        "total": 131072,
+        "max_dist_err": 0.00048828125,
+        "summary": "missing 2/131072, position mismatches 242, max dist err 4.9e-04"
+      }
     },
     {
       "op": "knn",
@@ -322,29 +464,45 @@
       "batch": 1,
       "impl": "scipy cKDTree build+query (CPU)",
       "device": "cpu",
-      "median_ms": 17.767166020348668,
-      "min_ms": 17.243165988475084,
-      "check": "recall 100.00%"
+      "median_ms": 17.626042012125254,
+      "min_ms": 17.416125047020614,
+      "check": {
+        "missing_neighbors": 0,
+        "position_mismatches": 0,
+        "total": 131072,
+        "max_dist_err": 9.81005639222321e-09,
+        "summary": "missing 0/131072, position mismatches 0, max dist err 9.8e-09"
+      }
     },
     {
       "op": "ball_query",
       "n_points": 100000,
       "batch": 1,
-      "impl": "torch cdist+mask+topk (MPS)",
+      "impl": "torch mask+topk (MPS)",
       "device": "mps",
-      "median_ms": 223.98000000976026,
-      "min_ms": 206.68116596061736,
-      "check": "idx match 100.00%"
+      "median_ms": 299.6685840189457,
+      "min_ms": 292.0274999924004,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "max_dist2_err": 0.0,
+        "summary": "idx mismatches 0/65536, max dist^2 err 0.0e+00"
+      }
     },
     {
       "op": "ball_query",
       "n_points": 100000,
       "batch": 1,
-      "impl": "torch cdist+mask+topk (CPU)",
+      "impl": "torch mask+topk (CPU)",
       "device": "cpu",
-      "median_ms": 51.0107500012964,
-      "min_ms": 50.626666052266955,
-      "check": "idx match 100.00%"
+      "median_ms": 160.75258294586092,
+      "min_ms": 159.4266250031069,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "max_dist2_err": 0.0,
+        "summary": "idx mismatches 0/65536, max dist^2 err 0.0e+00"
+      }
     },
     {
       "op": "ball_query",
@@ -352,9 +510,13 @@
       "batch": 1,
       "impl": "scipy cKDTree build+query (CPU)",
       "device": "cpu",
-      "median_ms": 21.197166992351413,
-      "min_ms": 20.79133305232972,
-      "check": "idx match 100.00%"
+      "median_ms": 23.037999984808266,
+      "min_ms": 22.669792058877647,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "summary": "idx mismatches 0/65536"
+      }
     }
   ]
 }

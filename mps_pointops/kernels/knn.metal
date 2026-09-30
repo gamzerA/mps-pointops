@@ -15,6 +15,9 @@ using namespace metal;
 // order: walking toward the query makes almost every point a new nearest one.
 // The result does not depend on the order because the list is sorted by
 // (distance, index).
+//
+// Chunk size, list layout and the ballot mask assume 32-wide simdgroups,
+// which ops.py checks at load time.
 
 constant constexpr uint SIMD = 32;
 constant constexpr uint QUERIES_PER_GROUP = 8;  // simdgroups per threadgroup
