@@ -16,3 +16,6 @@ bench = ["scipy", "fpsample"]
 
 [tool.setuptools]
 packages = ["mps_pointops"]
+
+[tool.setuptools.package-data]
+mps_pointops = ["kernels/*.metal"]

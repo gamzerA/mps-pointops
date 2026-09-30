@@ -31,8 +31,18 @@
       "batch": 1,
       "impl": "torch (MPS)",
       "device": "mps",
-      "median_ms": 144.91483301389962,
-      "min_ms": 130.14054205268621,
+      "median_ms": 132.26441689766943,
+      "min_ms": 127.93349998537451,
+      "check": "idx match 100.0%"
+    },
+    {
+      "op": "fps",
+      "n_points": 20000,
+      "batch": 1,
+      "impl": "mps-pointops Metal (MPS)",
+      "device": "mps",
+      "median_ms": 7.7411249512806535,
+      "min_ms": 6.000791909173131,
       "check": "idx match 100.0%"
     },
     {
@@ -41,8 +51,8 @@
       "batch": 1,
       "impl": "torch (CPU)",
       "device": "cpu",
-      "median_ms": 125.63449994195253,
-      "min_ms": 117.54016706254333,
+      "median_ms": 118.92991699278355,
+      "min_ms": 116.68450001161546,
       "check": "idx match 100.0%"
     },
     {
@@ -51,8 +61,8 @@
       "batch": 1,
       "impl": "fpsample vanilla (CPU)",
       "device": "cpu",
-      "median_ms": 34.96316692326218,
-      "min_ms": 34.870625007897615,
+      "median_ms": 34.96154199820012,
+      "min_ms": 34.80579110328108,
       "check": "idx match 100.0%"
     },
     {
@@ -61,8 +71,8 @@
       "batch": 1,
       "impl": "torch cdist+topk (MPS)",
       "device": "mps",
-      "median_ms": 18.038125010207295,
-      "min_ms": 15.447624959051609,
+      "median_ms": 13.00233299843967,
+      "min_ms": 10.13304095249623,
       "check": "recall 100.00%"
     },
     {
@@ -71,8 +81,8 @@
       "batch": 1,
       "impl": "torch cdist+topk (CPU)",
       "device": "cpu",
-      "median_ms": 10.944374953396618,
-      "min_ms": 10.817707981914282,
+      "median_ms": 10.998458019457757,
+      "min_ms": 10.389917064458132,
       "check": "recall 100.00%"
     },
     {
@@ -81,8 +91,8 @@
       "batch": 1,
       "impl": "scipy cKDTree build+query (CPU)",
       "device": "cpu",
-      "median_ms": 5.179249914363027,
-      "min_ms": 4.929792019538581,
+      "median_ms": 5.081709008663893,
+      "min_ms": 4.890375072136521,
       "check": "recall 100.00%"
     },
     {
@@ -91,8 +101,8 @@
       "batch": 1,
       "impl": "torch cdist+mask+topk (MPS)",
       "device": "mps",
-      "median_ms": 42.201500036753714,
-      "min_ms": 18.94037495367229,
+      "median_ms": 29.69058300368488,
+      "min_ms": 22.380499984137714,
       "check": "idx match 100.00%"
     },
     {
@@ -101,8 +111,8 @@
       "batch": 1,
       "impl": "torch cdist+mask+topk (CPU)",
       "device": "cpu",
-      "median_ms": 10.117000085301697,
-      "min_ms": 9.991750004701316,
+      "median_ms": 10.162457940168679,
+      "min_ms": 9.960707975551486,
       "check": "idx match 100.00%"
     },
     {
@@ -111,8 +121,8 @@
       "batch": 1,
       "impl": "scipy cKDTree build+query (CPU)",
       "device": "cpu",
-      "median_ms": 5.079167080111802,
-      "min_ms": 5.0345000345259905,
+      "median_ms": 6.5887500531971455,
+      "min_ms": 5.075915949419141,
       "check": "idx match 100.00%"
     },
     {
@@ -121,8 +131,18 @@
       "batch": 1,
       "impl": "torch (MPS)",
       "device": "mps",
-      "median_ms": 132.69766699522734,
-      "min_ms": 120.22474990226328,
+      "median_ms": 134.33725002687424,
+      "min_ms": 110.92225008178502,
+      "check": "idx match 100.0%"
+    },
+    {
+      "op": "fps",
+      "n_points": 50000,
+      "batch": 1,
+      "impl": "mps-pointops Metal (MPS)",
+      "device": "mps",
+      "median_ms": 15.376875060610473,
+      "min_ms": 14.614999992772937,
       "check": "idx match 100.0%"
     },
     {
@@ -131,8 +151,8 @@
       "batch": 1,
       "impl": "torch (CPU)",
       "device": "cpu",
-      "median_ms": 240.22804107517004,
-      "min_ms": 219.61716702207923,
+      "median_ms": 201.73191709909588,
+      "min_ms": 188.72550001833588,
       "check": "idx match 100.0%"
     },
     {
@@ -141,8 +161,8 @@
       "batch": 1,
       "impl": "fpsample vanilla (CPU)",
       "device": "cpu",
-      "median_ms": 87.03870803583413,
-      "min_ms": 86.8552919710055,
+      "median_ms": 94.08787498250604,
+      "min_ms": 88.93508301116526,
       "check": "idx match 100.0%"
     },
     {
@@ -151,8 +171,8 @@
       "batch": 1,
       "impl": "torch cdist+topk (MPS)",
       "device": "mps",
-      "median_ms": 49.44729199633002,
-      "min_ms": 43.442416936159134,
+      "median_ms": 57.92258295696229,
+      "min_ms": 40.36762495525181,
       "check": "recall 100.00%"
     },
     {
@@ -161,8 +181,8 @@
       "batch": 1,
       "impl": "torch cdist+topk (CPU)",
       "device": "cpu",
-      "median_ms": 22.385249962098897,
-      "min_ms": 21.840958041138947,
+      "median_ms": 23.03333394229412,
+      "min_ms": 21.92016609478742,
       "check": "recall 100.00%"
     },
     {
@@ -171,8 +191,8 @@
       "batch": 1,
       "impl": "scipy cKDTree build+query (CPU)",
       "device": "cpu",
-      "median_ms": 10.774541995488107,
-      "min_ms": 9.604791994206607,
+      "median_ms": 9.930624975822866,
+      "min_ms": 9.63329104706645,
       "check": "recall 100.00%"
     },
     {
@@ -181,8 +201,8 @@
       "batch": 1,
       "impl": "torch cdist+mask+topk (MPS)",
       "device": "mps",
-      "median_ms": 100.79283395316452,
-      "min_ms": 76.22000004630536,
+      "median_ms": 99.02191697619855,
+      "min_ms": 77.51204096712172,
       "check": "idx match 100.00%"
     },
     {
@@ -191,8 +211,8 @@
       "batch": 1,
       "impl": "torch cdist+mask+topk (CPU)",
       "device": "cpu",
-      "median_ms": 26.727791992016137,
-      "min_ms": 26.432499988004565,
+      "median_ms": 25.69916599895805,
+      "min_ms": 25.286374962888658,
       "check": "idx match 100.00%"
     },
     {
@@ -201,8 +221,8 @@
       "batch": 1,
       "impl": "scipy cKDTree build+query (CPU)",
       "device": "cpu",
-      "median_ms": 11.167875025421381,
-      "min_ms": 10.767582920379937,
+      "median_ms": 11.011125054210424,
+      "min_ms": 10.677209007553756,
       "check": "idx match 100.00%"
     },
     {
@@ -211,8 +231,18 @@
       "batch": 1,
       "impl": "torch (MPS)",
       "device": "mps",
-      "median_ms": 190.55429205764085,
-      "min_ms": 186.54254195280373,
+      "median_ms": 197.1451670397073,
+      "min_ms": 173.2096669729799,
+      "check": "idx match 100.0%"
+    },
+    {
+      "op": "fps",
+      "n_points": 100000,
+      "batch": 1,
+      "impl": "mps-pointops Metal (MPS)",
+      "device": "mps",
+      "median_ms": 31.811041058972478,
+      "min_ms": 27.79654203914106,
       "check": "idx match 100.0%"
     },
     {
@@ -221,8 +251,8 @@
       "batch": 1,
       "impl": "torch (CPU)",
       "device": "cpu",
-      "median_ms": 635.0337499752641,
-      "min_ms": 628.3670419361442,
+      "median_ms": 586.3950420171022,
+      "min_ms": 577.4471249897033,
       "check": "idx match 100.0%"
     },
     {
@@ -231,8 +261,8 @@
       "batch": 1,
       "impl": "fpsample vanilla (CPU)",
       "device": "cpu",
-      "median_ms": 175.75187503825873,
-      "min_ms": 173.58804191462696,
+      "median_ms": 173.17216692026705,
+      "min_ms": 172.97341697849333,
       "check": "idx match 100.0%"
     },
     {
@@ -241,8 +271,8 @@
       "batch": 1,
       "impl": "torch cdist+topk (MPS)",
       "device": "mps",
-      "median_ms": 118.29608294647187,
-      "min_ms": 108.89975004829466,
+      "median_ms": 122.91675002779812,
+      "min_ms": 104.86437496729195,
       "check": "recall 100.00%"
     },
     {
@@ -251,8 +281,8 @@
       "batch": 1,
       "impl": "torch cdist+topk (CPU)",
       "device": "cpu",
-      "median_ms": 42.884291033260524,
-      "min_ms": 40.455417009070516,
+      "median_ms": 38.99091703351587,
+      "min_ms": 38.87937497347593,
       "check": "recall 100.00%"
     },
     {
@@ -261,8 +291,8 @@
       "batch": 1,
       "impl": "scipy cKDTree build+query (CPU)",
       "device": "cpu",
-      "median_ms": 19.161000032909214,
-      "min_ms": 18.466459005139768,
+      "median_ms": 17.203666968271136,
+      "min_ms": 17.048125038854778,
       "check": "recall 100.00%"
     },
     {
@@ -271,8 +301,8 @@
       "batch": 1,
       "impl": "torch cdist+mask+topk (MPS)",
       "device": "mps",
-      "median_ms": 214.639208978042,
-      "min_ms": 210.90354199986905,
+      "median_ms": 216.38583403546363,
+      "min_ms": 199.77195805404335,
       "check": "idx match 100.00%"
     },
     {
@@ -281,8 +311,8 @@
       "batch": 1,
       "impl": "torch cdist+mask+topk (CPU)",
       "device": "cpu",
-      "median_ms": 52.44216707069427,
-      "min_ms": 51.054832991212606,
+      "median_ms": 52.463166997767985,
+      "min_ms": 51.48237501271069,
       "check": "idx match 100.00%"
     },
     {
@@ -291,8 +321,8 @@
       "batch": 1,
       "impl": "scipy cKDTree build+query (CPU)",
       "device": "cpu",
-      "median_ms": 22.786415996961296,
-      "min_ms": 21.251584053970873,
+      "median_ms": 23.55058293323964,
+      "min_ms": 21.71062503475696,
       "check": "idx match 100.00%"
     }
   ]

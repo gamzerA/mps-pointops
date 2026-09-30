@@ -27,7 +27,7 @@ import torch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from mps_pointops import reference as ref  # noqa: E402
+from mps_pointops import ops, reference as ref  # noqa: E402
 
 try:
     import fpsample
@@ -138,6 +138,7 @@ def fps_cases(pts, args):
     if HAS_MPS:
         pm = pts.to("mps")
         cases.append(("torch (MPS)", "mps", lambda: ref.furthest_point_sample(pm, npoint)))
+        cases.append(("mps-pointops Metal (MPS)", "mps", lambda: ops.furthest_point_sample(pm, npoint)))
     cases.append(("torch (CPU)", "cpu", lambda: ref.furthest_point_sample(pts, npoint)))
     if fpsample is not None:
         arr = pts.numpy()
