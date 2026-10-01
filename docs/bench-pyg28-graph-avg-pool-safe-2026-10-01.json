@@ -14,6 +14,7 @@
   "edge_attr_features": 4,
   "positions": 3,
   "benchmark_script_commit": "a0b904d2264cdb3cf5fad09f301fffe0171183ac",
+  "benchmark_script_sha256": "f61453504df6406c8f0ba8ef7638b841cb704b27b74a2b864d6ba8d3344799ac",
   "backward_scope": "loss construction plus autograd backward and MPS synchronization",
   "cases": [
     {

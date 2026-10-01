@@ -140,7 +140,9 @@ PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=1 \
 
 The benchmark script was committed unchanged after the measurement at
 `a0b904d2264cdb3cf5fad09f301fffe0171183ac`; both JSON files annotate
-that script hash without modifying any timing samples. The composed-path
+that Git commit ID and the script's SHA-256
+`f61453504df6406c8f0ba8ef7638b841cb704b27b74a2b864d6ba8d3344799ac`
+without modifying any timing samples. The composed-path
 gradient test and refreshed full-suite logs are in
 `491ca7d71d91ce9c45b190935e4dd8a3dab962a2`. Their raw log paths are
 linked above. The cross-operation scope is recorded in the dated
