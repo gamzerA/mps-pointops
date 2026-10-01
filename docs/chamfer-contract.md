@@ -1,7 +1,7 @@
 # Chamfer distance experimental contract
 
-The `main` source tree includes an experimental squared-L2 bidirectional
-Chamfer implementation; PyPI v0.4.0 does not include it. MPS uses
+Version 0.5.0 includes an experimental squared-L2 bidirectional Chamfer
+implementation. MPS uses
 `kernels/chamfer_nn.metal` to find each nearest point; CPU and CUDA use a tiled
 PyTorch search. Both searches cost $O(BPQ)$ time. The CPU/CUDA path bounds
 temporary pair storage. The Metal path uses one 32-lane SIMD group per query

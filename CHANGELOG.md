@@ -1,20 +1,32 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 — 2026-10-01
+
+This release makes the new PointNet++ and Chamfer APIs available as
+**experimental operators**. It does not complete Phase 2: high-dimensional
+kNN and PointNet++ segmentation validation remain open.
 
 ### Added
 
-- Experimental, source-only `three_nn` and `three_interpolate` for PointNet++
+- Experimental `three_nn` and `three_interpolate` for PointNet++
   feature propagation on MPS, with a PyTorch CPU reference and native Metal
-  forward/interpolation backward. PyPI v0.4.0 does not include these APIs.
+  forward/interpolation backward.
   The [contract](docs/pointnet2-propagation.md) records the supported shapes,
   tie order, and gradient surface; full segmentation validation remains open.
-- Experimental, source-only squared-L2 `chamfer_distance`. Metal returns
+- Experimental squared-L2 `chamfer_distance`. Metal returns
   nearest indices and distances, while PyTorch `scatter_add_` accumulates the
   bidirectional first-order gradient. Supported lengths mask padding in both
   passes; point/batch reductions and weights scale the gradient as specified
-  in the [contract](docs/chamfer-contract.md). PyPI v0.4.0 does not include it;
-  direct PyTorch3D parity testing remains open.
+  in the [contract](docs/chamfer-contract.md).
+
+### Fixed
+
+- Chamfer's Metal nearest search now selects a valid first index even when
+  finite float32 coordinates overflow every squared distance to infinity;
+  the saved index remains safe for backward gathering (#20). CI also checks
+  that both new Python modules and Metal shaders are present in the wheel.
+- Match PyTorch3D's all-zero-weight Chamfer output shapes, normal-result slot,
+  and gradient connectivity for the supported API subset (#22).
 
 ### Survey and measurements
 
@@ -29,12 +41,35 @@
   batch 4 and 256–16,384 points per cloud. Neither backward timings nor a
   direct `scatter_add_` control showed a consistent contention slowdown in
   this range; larger clouds, other GPUs, and bidirectional losses are untested.
+- [Direct PyTorch3D Chamfer comparison](docs/chamfer-upstream-parity-0.5.0.md)
+  against a pinned, compiled upstream CPU extension passed 160 finite-input
+  cases and 1,080 output/gradient checks per port device on CPU, MPS Safe,
+  and MPS Fast. The MPS maximum absolute loss difference was `9.5367e-7`;
+  this result does not cover normals, `norm=1`, ties, or PyTorch3D CUDA.
+- [Direct PointNet++ CUDA comparison](docs/parity/pointnet2-upstream.md)
+  on an RTX 2080 passed two deterministic propagation fixtures against MPS
+  Safe and Fast. The 243 selected indices matched exactly; Safe Math had zero
+  observed difference in the compared arrays, while Fast Math differed only
+  in Euclidean distances by at most `2.3842e-7`. The original CUDA kernel
+  source was unchanged; two `setup.py` build settings were adapted for the
+  available Windows toolchain.
+- Final-candidate M5 Pro [Safe](bench/results/2026-10-01-apple-m5-pro-v050-final-safe.md)
+  and [Fast](bench/results/2026-10-01-apple-m5-pro-v050-final-fast.md)
+  benchmarks measure the public experimental APIs with synchronization,
+  four warmups, and 20 samples per case. The matching
+  [Safe JSON](bench/results/2026-10-01-apple-m5-pro-v050-final-safe.json) and
+  [Fast JSON](bench/results/2026-10-01-apple-m5-pro-v050-final-fast.json)
+  record every timing, source commit `7c1406e`, and source SHA-256 values.
 
 ### Verified
 
-- The integrated `main` source (`00fd654`) passed **240 tests with 12 expected
-  skips** in each M5 Pro Safe and Fast Math run with MPS fallback disabled;
-  all six required CI jobs passed on [PR #18](https://github.com/gamzerA/mps-pointops/pull/18).
+- The v0.5.0 release candidate passed **260 tests with 12 expected skips** in
+  separate M5 Pro [Safe](docs/pytest-v050-safe-torch214-2026-10-01.log) and
+  [Fast](docs/pytest-v050-fast-torch214-2026-10-01.log) processes with MPS
+  fallback disabled. The 12 local skips are seven existing `k > n` cases and
+  five PyG 2.8 checks requiring optional packages; the pinned PyG CI job
+  supplies those packages. The v0.5.0 wheel and source distribution built,
+  passed `twine check`, and contain the new operator code and licenses.
 
 ## 0.4.0 — 2026-10-01
 

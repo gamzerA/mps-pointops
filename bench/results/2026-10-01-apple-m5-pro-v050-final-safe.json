@@ -1,0 +1,364 @@
+{
+  "date_utc": "2026-10-01T11:19:08.097134+00:00",
+  "environment": {
+    "chip": "Apple M5 Pro",
+    "memory_gib": 48.0,
+    "macos": "26.5.2",
+    "architecture": "arm64",
+    "python": "3.12.13",
+    "torch": "2.14.1",
+    "torch_mps_is_available": true,
+    "pytorch_mps_fast_math": "0",
+    "pytorch_enable_mps_fallback": "0",
+    "source_commit": "7c1406ed537a9032fd34e2fd26708eeddccbed2a",
+    "operator_sources_clean": true,
+    "source_sha256": {
+      "mps_pointops/__init__.py": "6673fe390488d699146d26db55b014a1ffa5778dc805fadc721411337aabb658",
+      "mps_pointops/pointnet2.py": "55d946e1c4bfe32755566ecf51f643b0a08df3f94317f8ee6f1e07adf685a2e7",
+      "mps_pointops/kernels/pointnet2.metal": "c46238511f5d36a0d3dea3bbdbe8efe571f692a5f82350ee92425ea57b6569c1",
+      "mps_pointops/chamfer.py": "94fce0894f6d9dbaf313cc7e0cac80186036dc117b77f09b4f5c89967da9f14e",
+      "mps_pointops/kernels/chamfer_nn.metal": "498325d79ddc463af9338a2e844723bd670809cf8c0b978a516ebcba64dfd176"
+    },
+    "script_sha256": "c183af0e9d173c4ddc4ea1fbca759a51fdcd64946ef33607a6e8435bd9a696c6"
+  },
+  "method": {
+    "device": "mps",
+    "dtype": "float32",
+    "input": "seeded independent standard-normal coordinates/features; interpolation has random valid indices and normalized positive weights",
+    "timing": "host perf_counter_ns wall time; torch.mps.synchronize immediately before and after each public forward/backward call",
+    "warmup": 4,
+    "repeat": 20,
+    "seed": 27001,
+    "case_order": "table order, all repeats of one case before the next",
+    "chamfer": "bidirectional squared-L2, point mean and batch mean, no padding/normals/weights"
+  },
+  "command": "PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=0 python bench/bench_v050_ops.py --warmup 4 --repeat 20 --seed 27001 --output bench/results/2026-10-01-apple-m5-pro-v050-final-safe.json",
+  "results": [
+    {
+      "operator": "three_nn",
+      "shape": {
+        "B": 2,
+        "N_unknown": 512,
+        "M_known": 1024,
+        "D": 3
+      },
+      "validation": {
+        "shape_dtype_finite_and_index_bounds": true
+      },
+      "forward": {
+        "samples_ms": [
+          0.3355,
+          0.716625,
+          0.277166,
+          0.230458,
+          0.356958,
+          1.308625,
+          0.978458,
+          0.622042,
+          1.322458,
+          1.022125,
+          0.529458,
+          0.296958,
+          0.316167,
+          0.238125,
+          0.274875,
+          0.228541,
+          0.28375,
+          0.347334,
+          0.392042,
+          0.55475
+        ],
+        "median_ms": 0.35214599999999996
+      },
+      "backward": null
+    },
+    {
+      "operator": "three_nn",
+      "shape": {
+        "B": 2,
+        "N_unknown": 2048,
+        "M_known": 4096,
+        "D": 3
+      },
+      "validation": {
+        "shape_dtype_finite_and_index_bounds": true
+      },
+      "forward": {
+        "samples_ms": [
+          0.713417,
+          0.629375,
+          0.675667,
+          0.776167,
+          3.147125,
+          0.811542,
+          0.755708,
+          1.447208,
+          0.736,
+          1.489083,
+          1.053125,
+          0.786792,
+          0.615375,
+          0.9265,
+          0.921583,
+          1.253792,
+          1.130916,
+          0.832458,
+          2.889916,
+          0.773458
+        ],
+        "median_ms": 0.8220000000000001
+      },
+      "backward": null
+    },
+    {
+      "operator": "three_interpolate",
+      "shape": {
+        "B": 2,
+        "C": 32,
+        "M_source": 512,
+        "N_target": 2048,
+        "neighbors": 3
+      },
+      "validation": {
+        "shape_dtype_finite_and_finite_feature_gradient": true
+      },
+      "forward": {
+        "samples_ms": [
+          0.40225,
+          0.419583,
+          0.398084,
+          0.35825,
+          0.3995,
+          0.359459,
+          0.389875,
+          0.514292,
+          0.449125,
+          0.390334,
+          0.400875,
+          0.402,
+          0.43825,
+          0.470167,
+          0.42125,
+          0.394459,
+          0.416416,
+          0.371791,
+          0.542333,
+          0.571334
+        ],
+        "median_ms": 0.402125
+      },
+      "backward": {
+        "samples_ms": [
+          0.280459,
+          0.267417,
+          0.249666,
+          0.243334,
+          0.2595,
+          0.237125,
+          0.315875,
+          0.314583,
+          0.2485,
+          0.246,
+          0.248417,
+          0.25425,
+          0.269,
+          0.379667,
+          0.28175,
+          0.355167,
+          0.26225,
+          0.237125,
+          0.276084,
+          0.468292
+        ],
+        "median_ms": 0.2648335
+      }
+    },
+    {
+      "operator": "three_interpolate",
+      "shape": {
+        "B": 2,
+        "C": 64,
+        "M_source": 2048,
+        "N_target": 8192,
+        "neighbors": 3
+      },
+      "validation": {
+        "shape_dtype_finite_and_finite_feature_gradient": true
+      },
+      "forward": {
+        "samples_ms": [
+          0.570875,
+          0.484708,
+          0.541292,
+          0.518333,
+          0.500292,
+          0.683917,
+          0.543958,
+          0.804292,
+          2.928583,
+          2.113875,
+          0.864209,
+          0.61325,
+          4.146,
+          1.446583,
+          3.528542,
+          0.893875,
+          0.675333,
+          0.4905,
+          0.462708,
+          0.459333
+        ],
+        "median_ms": 0.6442915
+      },
+      "backward": {
+        "samples_ms": [
+          0.712875,
+          0.730958,
+          0.721916,
+          0.695375,
+          0.710292,
+          0.937917,
+          0.712417,
+          1.149584,
+          1.259291,
+          3.435708,
+          4.206166,
+          0.944458,
+          4.621792,
+          0.79525,
+          3.141458,
+          3.087417,
+          1.207375,
+          0.663209,
+          0.794542,
+          0.815292
+        ],
+        "median_ms": 0.8766045
+      }
+    },
+    {
+      "operator": "chamfer_distance",
+      "shape": {
+        "B": 2,
+        "P": 256,
+        "Q": 256,
+        "D": 3
+      },
+      "validation": {
+        "finite_loss_and_both_finite_coordinate_gradients": true
+      },
+      "forward": {
+        "samples_ms": [
+          1.444959,
+          1.266,
+          0.897292,
+          0.872375,
+          0.823625,
+          1.013333,
+          0.897125,
+          0.838959,
+          0.900375,
+          0.79625,
+          0.86625,
+          1.021708,
+          1.082875,
+          2.850667,
+          2.552875,
+          4.360709,
+          1.490084,
+          0.8495,
+          1.046958,
+          0.961541
+        ],
+        "median_ms": 0.987437
+      },
+      "backward": {
+        "samples_ms": [
+          0.972125,
+          0.733542,
+          0.473041,
+          0.395458,
+          0.370833,
+          0.716416,
+          0.456834,
+          0.398625,
+          0.3855,
+          0.418208,
+          0.427208,
+          0.427334,
+          0.974916,
+          0.609917,
+          3.05825,
+          0.646792,
+          0.55475,
+          0.450166,
+          0.715042,
+          0.45525
+        ],
+        "median_ms": 0.4649375
+      }
+    },
+    {
+      "operator": "chamfer_distance",
+      "shape": {
+        "B": 2,
+        "P": 1024,
+        "Q": 1024,
+        "D": 3
+      },
+      "validation": {
+        "finite_loss_and_both_finite_coordinate_gradients": true
+      },
+      "forward": {
+        "samples_ms": [
+          4.9,
+          2.326458,
+          5.036291,
+          1.65775,
+          1.481041,
+          0.770125,
+          0.936083,
+          3.935167,
+          2.172416,
+          3.108875,
+          2.009209,
+          1.046625,
+          0.914584,
+          0.884542,
+          1.034792,
+          0.881083,
+          0.878709,
+          0.962,
+          0.885917,
+          0.862625
+        ],
+        "median_ms": 1.0407085
+      },
+      "backward": {
+        "samples_ms": [
+          4.106333,
+          1.853125,
+          0.710292,
+          1.046958,
+          0.436792,
+          0.411917,
+          3.712709,
+          0.686125,
+          3.348708,
+          0.698541,
+          0.842084,
+          0.496542,
+          0.448708,
+          0.388417,
+          0.624083,
+          0.412208,
+          0.480209,
+          0.415708,
+          0.38975,
+          0.391833
+        ],
+        "median_ms": 0.5603125
+      }
+    }
+  ]
+}

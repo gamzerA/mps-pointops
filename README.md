@@ -12,6 +12,8 @@
 
 **Point-cloud operators for PyTorch on Apple Silicon.** Native Metal kernels
 run farthest point sampling, k nearest neighbors, and Ball Query on MPS.
+Version 0.5.0 also provides experimental PointNet++ feature propagation and
+squared-L2 Chamfer distance APIs.
 Compatibility stand-ins cover supported `pointnet2_ops`, `knn_cuda`, and
 `torch_cluster` call sites; CPU tensors use PyTorch reference implementations.
 
@@ -37,13 +39,16 @@ kernels compile on first use.
 python -m pip install mps-pointops
 ```
 
-Version 0.4.0 includes the dense SIMD Ball Query kernel, the PyTorch3D-style
-adapter, and the large-cloud FPS path for a single cloud.
-
-The `main` source also has experimental `three_nn`, `three_interpolate`, and
-`chamfer_distance` APIs. They are **source-only and unreleased**: PyPI v0.4.0
-does not include them. See the [PointNet++ propagation](docs/pointnet2-propagation.md)
-and [Chamfer](docs/chamfer-contract.md) contracts for their supported inputs.
+Version 0.5.0 includes dense SIMD Ball Query, the PyTorch3D-style Ball Query
+adapter, and the large-cloud FPS path for a single cloud. It adds experimental
+`three_nn`, `three_interpolate`, and squared-L2 `chamfer_distance` APIs. Their
+supported inputs and differences from upstream are specified in the
+[PointNet++ propagation](docs/pointnet2-propagation.md) and
+[Chamfer](docs/chamfer-contract.md) contracts.
+Direct comparisons against the
+[original PointNet++ CUDA extension](docs/parity/pointnet2-upstream.md) and
+[PyTorch3D Chamfer](docs/chamfer-upstream-parity-0.5.0.md) record the tested
+inputs, output and gradient errors, build adjustments, and source hashes.
 
 ### Minimal example
 
@@ -67,6 +72,23 @@ assert centers_idx.tolist() == [[0, 3]]
 assert neighbor_idx.tolist() == [[[0, 1], [3, 1]]]
 assert radius_idx.tolist() == [[[0, 1], [1, 2]]]
 print("MPS point ops OK")
+```
+
+The experimental 0.5.0 operators can be called directly:
+
+```python
+import torch
+from mps_pointops import chamfer_distance, three_interpolate, three_nn
+
+xyz = torch.tensor(
+    [[[0., 0., 0.], [1., 0., 0.], [0., 1., 0.]]], device="mps"
+)
+distances, indices = three_nn(xyz[:, :2], xyz[:, :3])
+weights = torch.full_like(distances, 1.0 / 3.0)
+features = torch.ones((1, 2, 3), device="mps", requires_grad=True)
+interpolated = three_interpolate(features, indices, weights)
+loss, _ = chamfer_distance(xyz[:, :2], xyz[:, :3])
+print(interpolated.shape, loss.item())
 ```
 
 | Operator | Selection rule | Native result |
@@ -348,12 +370,49 @@ PYTORCH_ENABLE_MPS_FALLBACK=0 .venv/bin/python bench/bench_pointops.py \
 PYTORCH_ENABLE_MPS_FALLBACK=0 .venv/bin/python bench/bench_fps_production.py \
   --sizes 500000 1000000 --samples 1024 \
   --output bench/results/local/fps-production.json
+PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=0 \
+  .venv/bin/python bench/bench_v050_ops.py \
+  --output bench/results/local/v050-safe.json
+PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=1 \
+  .venv/bin/python bench/bench_v050_ops.py \
+  --output bench/results/local/v050-fast.json
 .venv/bin/python -m pytest tests
 
 # MulSen-AD grouping on real data (needs open3d and timm too)
 .venv/bin/python examples/mulsen_grouping.py \
     --mulsen-code path/to/MulSen-AD --data path/to/MulSen_AD --per-class 2
 ```
+
+### Experimental v0.5.0 operator timings
+
+The new operators were measured on an Apple M5 Pro (48 GB, macOS 26.5.2,
+PyTorch 2.14.1) with float32 inputs already on MPS. Each public forward or
+backward call was bracketed by `torch.mps.synchronize()`; medians use four
+warmups and 20 timed calls. Safe and Fast Math ran in separate processes with
+MPS fallback disabled. Times include Python validation, allocation, dispatch,
+and autograd, rather than isolated shader execution. Chamfer uses the default
+bidirectional squared-L2 point and batch means without lengths, normals, or
+weights.
+
+| Operator and shape | Safe forward | Safe backward | Fast forward | Fast backward |
+| --- | ---: | ---: | ---: | ---: |
+| `three_nn`, B=2, N=512, M=1,024 | 0.352 ms | — | 0.333 ms | — |
+| `three_nn`, B=2, N=2,048, M=4,096 | 0.822 ms | — | 0.598 ms | — |
+| `three_interpolate`, B=2, C=32, M=512, N=2,048 | 0.402 ms | 0.265 ms | 0.366 ms | 0.241 ms |
+| `three_interpolate`, B=2, C=64, M=2,048, N=8,192 | 0.644 ms | 0.877 ms | 0.629 ms | 0.837 ms |
+| bidirectional Chamfer, B=2, P=Q=256 | 0.987 ms | 0.465 ms | 0.927 ms | 0.436 ms |
+| bidirectional Chamfer, B=2, P=Q=1,024 | 1.041 ms | 0.560 ms | 1.406 ms | 0.686 ms |
+
+The [benchmark script](bench/bench_v050_ops.py) and final
+[Safe JSON](bench/results/2026-10-01-apple-m5-pro-v050-final-safe.json),
+[Fast JSON](bench/results/2026-10-01-apple-m5-pro-v050-final-fast.json),
+[Safe table](bench/results/2026-10-01-apple-m5-pro-v050-final-safe.md), and
+[Fast table](bench/results/2026-10-01-apple-m5-pro-v050-final-fast.md) retain
+all samples, source commit `7c1406e`, and SHA-256 hashes of the measured code.
+The inputs are seeded synthetic data. These absolute timings do not establish
+a CPU or CUDA speedup, and Fast Math was slower for the larger Chamfer case in
+this run. See each operator's contract and the direct upstream comparisons
+above for accuracy and supported inputs.
 
 Results from other Apple Silicon chips are welcome as pull requests.
 
@@ -709,8 +768,10 @@ An operator counts as complete for a release after these four checks:
    Near ties and float boundaries can differ as documented.
 4. **Reproducible benchmarks**: raw results, environment and counterexamples.
 
-Status marks: `[x]` released, `[~]` merged on `main` and not yet released,
-`[ ]` planned. Version numbers are targets, not promises.
+Status marks: `[x]` released and complete for the stated scope, `[~]` merged but still
+experimental or otherwise incomplete, `[ ]` planned. A `[~]` item may appear
+in a release without completing its phase. Version numbers are targets, not
+promises.
 
 ### Verified models
 
@@ -754,7 +815,7 @@ original implementation.
 - [ ] Flat API benchmarks in the published results.
 - [ ] Benchmarks from other Apple Silicon chips (M1 to M4), on real hardware.
 
-### Phase 2: Feature-space and propagation operators (target 0.5.0)
+### Phase 2: Feature-space and propagation operators (started in 0.5.0)
 
 - [ ] kNN in arbitrary dimension (D > 3) for feature-space neighbor search.
       Use direct dimension-by-dimension distance accumulation as the numerical
@@ -763,9 +824,9 @@ original implementation.
       outside ambiguous ties and model-output errors within a documented
       tolerance, rather than requiring bitwise CPU/MPS index parity at every
       boundary.
-- [~] Experimental, source-only `three_nn` and `three_interpolate` for PointNet++
-      feature propagation (#16). The first returns Euclidean distances and
-      three indices. The second accepts externally computed weights and
+- [~] Experimental `three_nn` and `three_interpolate` for PointNet++ feature
+      propagation (introduced in 0.5.0; #16). The first returns Euclidean
+      distances and three indices. The second accepts externally computed weights and
       accumulates backward gradients into input features. See the
       [contract and differential tests](docs/pointnet2-propagation.md).
 - [ ] Validate PointNet++ segmentation end to end on MPS and compare model
@@ -794,8 +855,8 @@ original implementation.
 
 ### Phase 4: Geometry losses and large-scale search (target 0.8.0 to 0.9.0)
 
-- [~] Experimental, source-only bidirectional squared-L2 Chamfer distance
-      (#18). Metal returns nearest indices and squared distances; PyTorch's
+- [~] Experimental bidirectional squared-L2 Chamfer distance (introduced in
+      0.5.0; #18). Metal returns nearest indices and squared distances; PyTorch's
       native `scatter_add_` accumulates both backward directions. Supported
       `lengths` mask padding in forward and backward, and point/batch
       reductions scale gradients according to the [contract](docs/chamfer-contract.md).
@@ -855,7 +916,9 @@ local Safe/Fast Math tests, and the six required CI checks for `main`.
 
 ## Citation
 
-For v0.4.0, cite its archived
+For v0.5.0, cite its archived
+[version DOI (10.5281/zenodo.23080506)](https://doi.org/10.5281/zenodo.23080506).
+For results using v0.4.0, cite its archived
 [version DOI (10.5281/zenodo.23078860)](https://doi.org/10.5281/zenodo.23078860).
 For results using v0.3.0, cite its archived
 [version DOI (10.5281/zenodo.23076058)](https://doi.org/10.5281/zenodo.23076058).

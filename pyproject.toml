@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mps-pointops"
-version = "0.4.0"
-description = "Point cloud ops (FPS, kNN, ball query) for PyTorch on Apple Silicon (MPS)"
+version = "0.5.0"
+description = "Point-cloud search, feature propagation, and geometry ops for PyTorch on Apple Silicon (MPS)"
 readme = "README.md"
 license = "Apache-2.0 AND MIT"
 license-files = ["LICENSE", "LICENSES/MIT-ball-query.txt"]
