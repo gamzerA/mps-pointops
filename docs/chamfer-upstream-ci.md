@@ -18,6 +18,20 @@ Output shapes, normal-slot shape, and gradient connectivity must agree exactly;
 numeric tensors use `abs(actual-reference) <= 2e-5 + 2e-4*abs(reference)`.
 The job uploads case-by-case JSON for both modes as run artifacts.
 
+The corrected workflow passed on [GitHub Actions run 36899829775](https://github.com/gamzerA/mps-pointops/actions/runs/36899829775)
+for PR #52. The archived [Safe](results/2026-10-02-hosted-chamfer-upstream-safe.json)
+and [Fast](results/2026-10-02-hosted-chamfer-upstream-fast.json) JSON each report
+160 cases, 1,080 checked output or gradient tensors, zero failed elements,
+zero failed tensors, and maximum absolute error `9.5367431640625e-7`.
+Both used macOS 26.6.2, Python 3.12.10, PyTorch 2.14.1, an available MPS
+device, and fallback disabled. The JSON's `port.commit` value
+`a88a26fec7883d9e77e65d2f0958d7e8f9ca800e` is GitHub's temporary PR
+merge commit for that run, while the source PR head was `a4091e8`; the files
+also record hashes of the checked package kernel, wrapper, and verifier.
+The artifact is `chamfer-upstream-parity-36899829775` (ID 11182240265).
+SHA-256: Safe `b37c098ef7224ec2a5bd5e24bd5b376cd733ce56fe1e59dbf679ca8a461466a3`,
+Fast `9ad69bd9aebad05fd13a24a5c8a25ef2af78474460cf0d70aa3959f2a4e3564b`.
+
 This gate covers the package's squared-L2 subset. It does not test L1,
 normal-vector loss, `Pointclouds` inputs, second derivatives, CUDA parity,
 near-ties, or nonfinite valid coordinates. Those are separate contracts or
