@@ -45,6 +45,13 @@ def _git(checkout: Path, *args: str) -> str:
     ).strip()
 
 
+def _git_blob_sha256(checkout: Path, path: str) -> str:
+    blob = subprocess.check_output(
+        ["git", "-C", str(checkout), "show", f"HEAD:{path}"], stderr=subprocess.PIPE
+    )
+    return hashlib.sha256(blob).hexdigest()
+
+
 def _provenance(backend: str, upstream_checkout: Path | None) -> dict:
     if backend == "project":
         from mps_pointops import pointnet2
@@ -72,7 +79,8 @@ def _provenance(backend: str, upstream_checkout: Path | None) -> dict:
     prefix = checkout / "pointnet2_ops_lib"
     wrapper = prefix / "pointnet2_ops/pointnet2_utils.py"
     kernel = prefix / "pointnet2_ops/_ext-src/src/interpolate_gpu.cu"
-    if _sha256(kernel) != UPSTREAM_KERNEL_SHA256:
+    kernel_rel = "pointnet2_ops_lib/pointnet2_ops/_ext-src/src/interpolate_gpu.cu"
+    if _git_blob_sha256(checkout, kernel_rel) != UPSTREAM_KERNEL_SHA256:
         raise RuntimeError("upstream CUDA kernel differs from pinned official source")
     if _git(checkout, "diff", "--", "pointnet2_ops_lib/pointnet2_ops"):
         raise RuntimeError("upstream PointNet++ Python/CUDA implementation was modified")
@@ -93,7 +101,8 @@ def _provenance(backend: str, upstream_checkout: Path | None) -> dict:
         "upstream_commit": head,
         "upstream_checkout_wrapper_sha256": _sha256(wrapper),
         "upstream_imported_wrapper_sha256": _sha256(installed_wrapper),
-        "upstream_cuda_kernel_sha256": _sha256(kernel),
+        "upstream_cuda_kernel_blob_sha256": _git_blob_sha256(checkout, kernel_rel),
+        "upstream_cuda_kernel_worktree_sha256": _sha256(kernel),
         "upstream_extension_sha256": _sha256(installed_extension),
         "upstream_extension_filename": installed_extension.name,
         "upstream_setup_diff": _git(checkout, "diff", "--", "pointnet2_ops_lib/setup.py"),
