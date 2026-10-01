@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Documentation
+
+- Re-measured 20,000/100,000-point FPS, kNN, and dense Ball Query on the
+  current M5 Pro source, including a separate sorted Ball Query run. Refreshed
+  the README chart and table from those JSON files, recorded hashes for every
+  timed kernel, and placed the current 201-pass Safe/Fast results first.
+
 ### Added
 
 - A production B=1 multi-threadgroup FPS path for large clouds. On the measured
