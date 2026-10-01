@@ -840,6 +840,11 @@ original implementation.
 
 ### Phase 3: Graph and grid infrastructure (target 0.6.0 to 0.7.0)
 
+Release claims follow the [pinned compatibility matrix](docs/phase3-compatibility-matrix.md):
+PyG 2.8's `pyg-lib` operator path, native graph aggregation, and the legacy
+`torch_cluster` shim are checked separately. “No failures” refers only to the
+listed versions, devices, models, and inputs that have passing logs.
+
 - [~] Initial PyG operator survey (#17): GCN, GraphSAGE, and GAT forward and
       backward passed on a fixed synthetic 12-node graph with PyG 2.8.0,
       PyTorch 2.14.1, and an M5 Pro, with `PYTORCH_ENABLE_MPS_FALLBACK=0` and
