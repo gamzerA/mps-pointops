@@ -49,3 +49,28 @@ If a real `torch_cluster==1.6.3` CPU extension is importable, the final test
 also compares the outputs directly. If it is unavailable, that test skips
 while the fixed-value CPU/MPS tests still run. The optional comparison must
 not import the local `torch_cluster` shim in place of the real extension.
+
+## Local verification, 2026-10-01
+
+M5 Pro (48 GB), macOS 26.5.2, Python 3.12.13, PyTorch 2.14.1. Each MPS mode
+ran in a separate process with `PYTORCH_ENABLE_MPS_FALLBACK=0`.
+
+| Run | Result | Raw log |
+| --- | ---: | --- |
+| Full suite, Safe | 267 passed, 14 skipped | [log](pytest-grid-safe-2026-10-01.log) |
+| Full suite, Fast | 267 passed, 14 skipped | [log](pytest-grid-fast-2026-10-01.log) |
+| Grid and shim tests with real upstream 1.6.3 CPU extension, Safe | 12 passed | [log](pytest-grid-upstream-safe-2026-10-01.log) |
+| Grid and shim tests with real upstream 1.6.3 CPU extension, Fast | 12 passed | [log](pytest-grid-upstream-fast-2026-10-01.log) |
+
+The optional upstream test includes 100 deterministic CPU seeds (5,050 points)
+and six MPS/CPU differential cases in each mode. The tested upstream
+`_grid_cpu.so` SHA-256 was
+`538e6ae26598cebad30abd8edadf040fa0bad959871a16db4ec7ee59dc477322`.
+The full suite's 14 skips were seven preexisting `k > n` test cases, five
+PyG 2.8 tests requiring an unavailable `pyg-lib` wheel, and two optional grid
+upstream comparisons without the real extension on the default import path.
+The four raw pytest logs replace only the local absolute `rootdir` with
+`<repository-root>`; all result lines remain unchanged.
+
+This verification does not cover CUDA `grid_cluster`, arbitrary coordinate
+dimension, nonfinite data, or complete PyG voxelization.

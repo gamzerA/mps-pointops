@@ -1,0 +1,31 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: <repository-root>
+configfile: pyproject.toml
+plugins: platformdirs-4.12.2, dash-4.4.1, anyio-4.15.1
+collected 281 items
+
+tests/test_ball_query_api.py ......................                      [  7%]
+tests/test_ball_query_mps.py ........................................... [ 23%]
+..                                                                       [ 23%]
+tests/test_chamfer.py ......................................             [ 37%]
+tests/test_compat.py ...........                                         [ 41%]
+tests/test_flat.py .................................                     [ 53%]
+tests/test_flat_graph.py ...                                             [ 54%]
+tests/test_flat_ragged_mps.py ....                                       [ 55%]
+tests/test_fps.py ................................                       [ 66%]
+tests/test_grid_cluster.py .......ss                                     [ 70%]
+tests/test_knn.py ......s.....ss....ssss................                 [ 83%]
+tests/test_pointnet2.py .....................                            [ 91%]
+tests/test_pyg28.py sssss                                                [ 92%]
+tests/test_pytorch3d_adapter.py ....................                     [100%]
+
+=========================== short test summary info ============================
+SKIPPED [2] tests/test_grid_cluster.py:84: real torch_cluster is not installed
+SKIPPED [7] tests/test_knn.py:40: k > n
+SKIPPED [1] tests/test_pyg28.py:27: requires MPS, torch-geometric 2.8 and pyg-lib>=0.6
+SKIPPED [1] tests/test_pyg28.py:51: requires MPS, torch-geometric 2.8 and pyg-lib>=0.6
+SKIPPED [1] tests/test_pyg28.py:59: requires MPS, torch-geometric 2.8 and pyg-lib>=0.6
+SKIPPED [1] tests/test_pyg28.py:68: requires MPS, torch-geometric 2.8 and pyg-lib>=0.6
+SKIPPED [1] tests/test_pyg28.py:76: requires MPS, torch-geometric 2.8 and pyg-lib>=0.6
+======================= 267 passed, 14 skipped in 3.15s ========================
