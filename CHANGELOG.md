@@ -14,7 +14,9 @@
 - Add a dedicated [PyTorch3D Chamfer MPS parity workflow](docs/chamfer-upstream-ci.md)
   for the supported squared-L2 subset. It pins the official CPU extension,
   requires MPS with CPU fallback disabled, and runs Safe/Fast separately.
-  Hosted CI success is required before this becomes a release claim.
+  [Hosted run 36899829775](https://github.com/gamzerA/mps-pointops/actions/runs/36899829775)
+  passed 160 cases and 1,080 output/gradient checks per mode with zero failed
+  elements; the case-by-case JSON is retained in `docs/results/`.
 - Extend the [M5 Pro bidirectional Chamfer contention study](docs/chamfer-large-contention-2026-10-02.md)
   to 32,768 and 65,536 points with exact nearest-index and analytic-gradient
   checks. The measured synthetic full-call times support retaining native

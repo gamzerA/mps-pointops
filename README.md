@@ -1151,10 +1151,12 @@ correctness and timing evidence without extending claims to M2–M4.
       PyTorch scatter for those synthetic M5 cases, while phase timings and
       native scatter controls show fan-in sensitivity. No new M1 measurement
       was made in that probe.
-- [ ] Compare supported Chamfer values and first-order gradients directly
-      against PyTorch3D in CI, including `lengths`, weights, and each supported
-      reduction mode. Current checks use analytic cases and an independent CPU
-      reference.
+- [x] Compare the supported squared-L2 Chamfer values and first-order gradients
+      directly with the pinned PyTorch3D 0.7.9 CPU oracle in
+      [dedicated MPS CI](docs/chamfer-upstream-ci.md). Separate Safe/Fast runs
+      passed 160 cases and 1,080 output/gradient checks each, including
+      `lengths`, weights, and supported point/batch reductions. This does not
+      cover L1, normals, or `Pointclouds` inputs.
 - [~] Extend the Chamfer contention study: the [physical M5 Pro Safe/Fast
       large bidirectional cases](docs/chamfer-large-contention-2026-10-02.md)
       now cover up to 65,536 points with synchronized full-loss and native
