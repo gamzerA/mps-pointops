@@ -1,0 +1,1267 @@
+{
+  "schema": "mps-pointops.chamfer-contention.v1",
+  "date_utc": "2026-10-01T09:48:51.578319+00:00",
+  "command": "PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=1 python bench/bench_chamfer_contention.py --batch 4 --sizes 256 1024 2048 4096 8192 16384 --warmup 4 --repeat 20 --output bench/results/2026-10-01-apple-m5-pro-chamfer-contention-fast.json",
+  "environment": {
+    "chip": "Apple M5 Pro",
+    "macos": "26.5.2",
+    "python": "3.12.13",
+    "torch": "2.14.1",
+    "pytorch_mps_fast_math": "1",
+    "pytorch_enable_mps_fallback": "0",
+    "source_commit": "21073b67e1b3d6c83537c2b64f9599bdc25c19e8",
+    "script_sha256": "9249a41c578876c451c241e01e7c7fefef6a73b2aea50f76495f8ec5d4404de3",
+    "chamfer_sha256": "c6497e7b0b983df5d71c593e050135bbd217ba3a5a379be2a7fe13c07ef107ff",
+    "metal_sha256": "2dceaed2fff10d7bef1b2d715a7c386ca0c9f0b4f172398a9d008b1b111ea649"
+  },
+  "method": {
+    "batch": 4,
+    "sizes": [
+      256,
+      1024,
+      2048,
+      4096,
+      8192,
+      16384
+    ],
+    "warmup": 4,
+    "repeat": 20,
+    "input": "deterministic x/y coordinates on x axis; same shapes, float32 and full lengths; uniform selects each reference once; concentrated selects reference 0 for every query",
+    "chamfer": "single_directional=True, point_reduction=mean, batch_reduction=mean",
+    "timing": "wall-clock perf_counter_ns around each call, torch.mps.synchronize immediately before and after; forward and backward separately; Python launch overhead included",
+    "direct_scatter": "preallocated output zeroed outside timed region; time only scatter_add_ and completion",
+    "measurement_order": "uniform/concentrated and concentrated/uniform alternate"
+  },
+  "results": [
+    {
+      "B": 4,
+      "N": 256,
+      "uniform": {
+        "forward": {
+          "samples_ms": [
+            1.090541,
+            0.965,
+            1.010125,
+            1.200541,
+            1.003208,
+            1.0925,
+            1.093208,
+            1.06225,
+            1.083875,
+            0.970166,
+            1.018,
+            1.055917,
+            0.981458,
+            1.157042,
+            1.090709,
+            1.212667,
+            0.995083,
+            0.970208,
+            0.971584,
+            1.069541
+          ],
+          "median_ms": 1.0590834999999998
+        },
+        "backward": {
+          "samples_ms": [
+            0.496583,
+            0.477084,
+            0.446125,
+            0.463875,
+            0.4415,
+            0.458,
+            0.45575,
+            0.445084,
+            0.465084,
+            0.409791,
+            0.4385,
+            0.43125,
+            0.418542,
+            0.45575,
+            0.443083,
+            0.4385,
+            0.431,
+            0.45725,
+            0.561458,
+            0.460125
+          ],
+          "median_ms": 0.4509375
+        },
+        "direct_scatter": {
+          "samples_ms": [
+            0.220625,
+            0.190292,
+            0.217459,
+            0.166875,
+            0.162916,
+            0.161125,
+            0.159542,
+            0.19225,
+            0.253125,
+            0.194083,
+            0.1955,
+            0.2095,
+            0.20075,
+            0.214542,
+            0.200083,
+            0.201708,
+            0.192875,
+            0.19925,
+            0.2095,
+            0.194459
+          ],
+          "median_ms": 0.19737500000000002
+        },
+        "backward_over_forward": 0.42578087563445194,
+        "correctness": {
+          "query_shape": [
+            4,
+            256,
+            3
+          ],
+          "reference_shape": [
+            4,
+            256,
+            3
+          ],
+          "dtype": "torch.float32",
+          "valid_points_per_cloud": 256,
+          "index_mismatches": 0,
+          "occupied_references_per_batch": 256,
+          "max_queries_per_reference_per_batch": 1,
+          "loss": 0.25,
+          "max_abs_x_gradient_error": 0.0,
+          "max_abs_y_gradient_error": 0.0
+        }
+      },
+      "concentrated": {
+        "forward": {
+          "samples_ms": [
+            1.148709,
+            1.094708,
+            1.102791,
+            1.236458,
+            1.126125,
+            1.131417,
+            0.984334,
+            1.173125,
+            1.091959,
+            1.017333,
+            1.047333,
+            1.082625,
+            0.956208,
+            1.06125,
+            1.084083,
+            0.965584,
+            1.103542,
+            1.08825,
+            1.01075,
+            1.139042
+          ],
+          "median_ms": 1.0901044999999998
+        },
+        "backward": {
+          "samples_ms": [
+            0.555792,
+            0.476125,
+            0.503375,
+            0.535542,
+            0.467334,
+            0.610917,
+            0.449709,
+            0.475834,
+            0.465167,
+            0.440584,
+            0.473875,
+            0.452083,
+            0.434291,
+            0.442959,
+            0.444875,
+            0.437583,
+            0.437209,
+            0.450375,
+            0.460541,
+            0.488125
+          ],
+          "median_ms": 0.462854
+        },
+        "direct_scatter": {
+          "samples_ms": [
+            0.213167,
+            0.234875,
+            0.218917,
+            0.163166,
+            0.222875,
+            0.159666,
+            0.164875,
+            0.211041,
+            0.196625,
+            0.213333,
+            0.192,
+            0.202625,
+            0.273084,
+            0.219708,
+            0.224208,
+            0.208166,
+            0.183833,
+            0.185625,
+            0.182042,
+            0.207541
+          ],
+          "median_ms": 0.2078535
+        },
+        "backward_over_forward": 0.42459599056787684,
+        "correctness": {
+          "query_shape": [
+            4,
+            256,
+            3
+          ],
+          "reference_shape": [
+            4,
+            256,
+            3
+          ],
+          "dtype": "torch.float32",
+          "valid_points_per_cloud": 256,
+          "index_mismatches": 0,
+          "occupied_references_per_batch": 1,
+          "max_queries_per_reference_per_batch": 256,
+          "loss": 0.28105074167251587,
+          "max_abs_x_gradient_error": 0.0,
+          "max_abs_y_gradient_error": 0.0
+        }
+      },
+      "ratios": {
+        "aggregation": "median of paired per-iteration ratios",
+        "backward_concentrated_over_uniform": 1.0429683243009427,
+        "scatter_concentrated_over_uniform": 1.015391956713955
+      }
+    },
+    {
+      "B": 4,
+      "N": 1024,
+      "uniform": {
+        "forward": {
+          "samples_ms": [
+            1.471542,
+            1.204833,
+            1.493417,
+            1.21875,
+            1.284708,
+            1.32875,
+            1.207833,
+            1.380084,
+            1.334709,
+            1.325042,
+            1.313041,
+            1.208958,
+            1.326667,
+            1.4155,
+            1.262834,
+            1.248,
+            1.406833,
+            1.287917,
+            1.327917,
+            1.318125
+          ],
+          "median_ms": 1.3215835
+        },
+        "backward": {
+          "samples_ms": [
+            0.507917,
+            0.439542,
+            0.462166,
+            0.475875,
+            0.473209,
+            0.457917,
+            0.441875,
+            0.474709,
+            0.440458,
+            0.458625,
+            0.490375,
+            0.479458,
+            0.467583,
+            0.449958,
+            0.4625,
+            0.45775,
+            0.471791,
+            0.45925,
+            0.469292,
+            0.456083
+          ],
+          "median_ms": 0.462333
+        },
+        "direct_scatter": {
+          "samples_ms": [
+            0.2505,
+            0.213625,
+            0.179875,
+            0.193417,
+            0.236667,
+            0.251417,
+            0.270667,
+            0.215291,
+            0.220334,
+            0.20775,
+            0.152833,
+            0.216667,
+            0.243125,
+            0.215208,
+            0.232542,
+            0.199334,
+            0.22525,
+            0.196084,
+            0.197541,
+            0.185917
+          ],
+          "median_ms": 0.2152495
+        },
+        "backward_over_forward": 0.3498326061122888,
+        "correctness": {
+          "query_shape": [
+            4,
+            1024,
+            3
+          ],
+          "reference_shape": [
+            4,
+            1024,
+            3
+          ],
+          "dtype": "torch.float32",
+          "valid_points_per_cloud": 1024,
+          "index_mismatches": 0,
+          "occupied_references_per_batch": 1024,
+          "max_queries_per_reference_per_batch": 1,
+          "loss": 0.25,
+          "max_abs_x_gradient_error": 0.0,
+          "max_abs_y_gradient_error": 0.0
+        }
+      },
+      "concentrated": {
+        "forward": {
+          "samples_ms": [
+            1.317625,
+            1.339375,
+            1.257167,
+            1.285583,
+            1.275083,
+            1.223709,
+            1.4655,
+            1.2915,
+            1.204916,
+            1.239791,
+            1.178041,
+            1.295417,
+            1.345291,
+            1.164917,
+            1.269792,
+            1.418708,
+            1.283458,
+            1.365125,
+            1.327625,
+            1.346542
+          ],
+          "median_ms": 1.2885415
+        },
+        "backward": {
+          "samples_ms": [
+            0.439459,
+            0.454458,
+            0.492,
+            0.492125,
+            0.499833,
+            0.471959,
+            0.446,
+            0.513041,
+            0.564084,
+            0.430917,
+            0.425167,
+            0.450916,
+            0.4595,
+            0.438125,
+            0.488375,
+            0.440875,
+            0.485875,
+            0.508875,
+            0.452625,
+            0.487291
+          ],
+          "median_ms": 0.4657295
+        },
+        "direct_scatter": {
+          "samples_ms": [
+            0.204833,
+            0.1915,
+            0.237459,
+            0.193292,
+            0.188334,
+            0.173167,
+            0.193541,
+            0.219667,
+            0.196167,
+            0.24325,
+            0.199542,
+            0.20925,
+            0.208958,
+            0.232,
+            0.213542,
+            0.234333,
+            0.214333,
+            0.247375,
+            0.209625,
+            0.215
+          ],
+          "median_ms": 0.2094375
+        },
+        "backward_over_forward": 0.36143927067929127,
+        "correctness": {
+          "query_shape": [
+            4,
+            1024,
+            3
+          ],
+          "reference_shape": [
+            4,
+            1024,
+            3
+          ],
+          "dtype": "torch.float32",
+          "valid_points_per_cloud": 1024,
+          "index_mismatches": 0,
+          "occupied_references_per_batch": 1,
+          "max_queries_per_reference_per_batch": 1024,
+          "loss": 0.2812487483024597,
+          "max_abs_x_gradient_error": 0.0,
+          "max_abs_y_gradient_error": 5.960464477539063e-08
+        }
+      },
+      "ratios": {
+        "aggregation": "median of paired per-iteration ratios",
+        "backward_concentrated_over_uniform": 1.0302585736676373,
+        "scatter_concentrated_over_uniform": 0.9825607364641802
+      }
+    },
+    {
+      "B": 4,
+      "N": 2048,
+      "uniform": {
+        "forward": {
+          "samples_ms": [
+            1.950416,
+            1.854083,
+            1.932542,
+            1.938875,
+            2.068958,
+            1.979667,
+            1.950541,
+            2.222084,
+            1.936625,
+            1.899583,
+            2.0575,
+            1.929959,
+            1.943625,
+            1.878834,
+            1.862875,
+            1.999083,
+            1.946542,
+            1.99075,
+            2.007333,
+            1.951792
+          ],
+          "median_ms": 1.9484789999999998
+        },
+        "backward": {
+          "samples_ms": [
+            0.683583,
+            0.541875,
+            0.573292,
+            0.555709,
+            0.579042,
+            0.605958,
+            0.559333,
+            0.611333,
+            0.552292,
+            0.584542,
+            0.555916,
+            0.580416,
+            0.555416,
+            0.559792,
+            0.552167,
+            0.563417,
+            0.524667,
+            0.540125,
+            0.520375,
+            0.548958
+          ],
+          "median_ms": 0.5576245
+        },
+        "direct_scatter": {
+          "samples_ms": [
+            0.282708,
+            0.215916,
+            0.229833,
+            0.268333,
+            0.263041,
+            0.236875,
+            0.256458,
+            0.235166,
+            0.22425,
+            0.257208,
+            0.269666,
+            0.278875,
+            0.273791,
+            0.222834,
+            0.235,
+            0.243541,
+            0.239417,
+            0.251,
+            0.234333,
+            0.203708
+          ],
+          "median_ms": 0.241479
+        },
+        "backward_over_forward": 0.2861845059659355,
+        "correctness": {
+          "query_shape": [
+            4,
+            2048,
+            3
+          ],
+          "reference_shape": [
+            4,
+            2048,
+            3
+          ],
+          "dtype": "torch.float32",
+          "valid_points_per_cloud": 2048,
+          "index_mismatches": 0,
+          "occupied_references_per_batch": 2048,
+          "max_queries_per_reference_per_batch": 1,
+          "loss": 0.25,
+          "max_abs_x_gradient_error": 0.0,
+          "max_abs_y_gradient_error": 0.0
+        }
+      },
+      "concentrated": {
+        "forward": {
+          "samples_ms": [
+            1.976083,
+            1.901625,
+            1.893083,
+            1.88275,
+            1.989458,
+            1.908917,
+            1.895959,
+            2.155416,
+            2.036333,
+            1.909917,
+            2.0175,
+            1.88825,
+            1.90525,
+            1.886125,
+            1.861125,
+            2.022833,
+            2.008625,
+            1.946458,
+            1.93425,
+            1.855167
+          ],
+          "median_ms": 1.909417
+        },
+        "backward": {
+          "samples_ms": [
+            0.580625,
+            0.553959,
+            0.579458,
+            0.554542,
+            0.603208,
+            0.743792,
+            0.547666,
+            0.686958,
+            0.59025,
+            0.606875,
+            0.563959,
+            0.54325,
+            0.537958,
+            0.641416,
+            0.53175,
+            0.570333,
+            0.551625,
+            0.590833,
+            0.571917,
+            0.615
+          ],
+          "median_ms": 0.5756875
+        },
+        "direct_scatter": {
+          "samples_ms": [
+            0.260958,
+            0.25425,
+            0.260125,
+            0.222333,
+            0.222875,
+            0.225292,
+            0.1885,
+            0.212208,
+            0.288667,
+            0.270209,
+            0.246666,
+            0.231,
+            0.24925,
+            0.222083,
+            0.261458,
+            0.237459,
+            0.311125,
+            0.279875,
+            0.238334,
+            0.305542
+          ],
+          "median_ms": 0.247958
+        },
+        "backward_over_forward": 0.3014990963210237,
+        "correctness": {
+          "query_shape": [
+            4,
+            2048,
+            3
+          ],
+          "reference_shape": [
+            4,
+            2048,
+            3
+          ],
+          "dtype": "torch.float32",
+          "valid_points_per_cloud": 2048,
+          "index_mismatches": 0,
+          "occupied_references_per_batch": 1,
+          "max_queries_per_reference_per_batch": 2048,
+          "loss": 0.2812688648700714,
+          "max_abs_x_gradient_error": 0.0,
+          "max_abs_y_gradient_error": 0.0
+        }
+      },
+      "ratios": {
+        "aggregation": "median of paired per-iteration ratios",
+        "backward_concentrated_over_uniform": 1.0302531630436031,
+        "scatter_concentrated_over_uniform": 0.9858282852119624
+      }
+    },
+    {
+      "B": 4,
+      "N": 4096,
+      "uniform": {
+        "forward": {
+          "samples_ms": [
+            1.853584,
+            1.823209,
+            1.754958,
+            1.845417,
+            1.84025,
+            1.77475,
+            1.775167,
+            1.874792,
+            1.815875,
+            1.808125,
+            1.774917,
+            1.849583,
+            1.756916,
+            1.839416,
+            1.826125,
+            1.951041,
+            1.81225,
+            1.746666,
+            1.837083,
+            1.774458
+          ],
+          "median_ms": 1.819542
+        },
+        "backward": {
+          "samples_ms": [
+            0.387542,
+            0.423625,
+            0.4095,
+            0.385167,
+            0.36725,
+            0.388958,
+            0.368209,
+            0.389291,
+            0.382625,
+            0.3655,
+            0.402333,
+            0.366792,
+            0.405,
+            0.393708,
+            0.374541,
+            0.37175,
+            0.379,
+            0.371125,
+            0.42125,
+            0.400833
+          ],
+          "median_ms": 0.3863545
+        },
+        "direct_scatter": {
+          "samples_ms": [
+            0.180917,
+            0.177458,
+            0.17875,
+            0.219667,
+            0.211083,
+            0.192042,
+            0.182875,
+            0.21075,
+            0.128709,
+            0.183416,
+            0.188375,
+            0.265667,
+            0.178875,
+            0.180125,
+            0.198417,
+            0.18925,
+            0.174167,
+            0.209375,
+            0.197167,
+            0.187125
+          ],
+          "median_ms": 0.18775
+        },
+        "backward_over_forward": 0.21233612634388213,
+        "correctness": {
+          "query_shape": [
+            4,
+            4096,
+            3
+          ],
+          "reference_shape": [
+            4,
+            4096,
+            3
+          ],
+          "dtype": "torch.float32",
+          "valid_points_per_cloud": 4096,
+          "index_mismatches": 0,
+          "occupied_references_per_batch": 4096,
+          "max_queries_per_reference_per_batch": 1,
+          "loss": 0.25,
+          "max_abs_x_gradient_error": 0.0,
+          "max_abs_y_gradient_error": 0.0
+        }
+      },
+      "concentrated": {
+        "forward": {
+          "samples_ms": [
+            1.776792,
+            1.773666,
+            1.806625,
+            1.807125,
+            1.839125,
+            1.818834,
+            1.79975,
+            1.817958,
+            1.759167,
+            1.800625,
+            1.897667,
+            1.784542,
+            1.805,
+            1.769209,
+            1.810833,
+            1.834459,
+            1.863167,
+            1.803625,
+            1.873208,
+            1.75
+          ],
+          "median_ms": 1.8058125
+        },
+        "backward": {
+          "samples_ms": [
+            0.402625,
+            0.38925,
+            0.382291,
+            0.381,
+            0.372584,
+            0.432583,
+            0.372125,
+            0.441708,
+            0.472541,
+            0.396625,
+            0.396542,
+            0.376583,
+            0.392375,
+            0.373417,
+            0.394125,
+            0.373041,
+            0.391708,
+            0.380375,
+            0.382917,
+            0.401875
+          ],
+          "median_ms": 0.390479
+        },
+        "direct_scatter": {
+          "samples_ms": [
+            0.177667,
+            0.192,
+            0.176292,
+            0.196917,
+            0.198458,
+            0.189584,
+            0.177583,
+            0.177875,
+            0.179834,
+            0.182042,
+            0.181375,
+            0.18975,
+            0.17425,
+            0.188667,
+            0.218541,
+            0.175542,
+            0.161542,
+            0.182667,
+            0.177833,
+            0.206834
+          ],
+          "median_ms": 0.1817085
+        },
+        "backward_over_forward": 0.21623452047208666,
+        "correctness": {
+          "query_shape": [
+            4,
+            4096,
+            3
+          ],
+          "reference_shape": [
+            4,
+            4096,
+            3
+          ],
+          "dtype": "torch.float32",
+          "valid_points_per_cloud": 4096,
+          "index_mismatches": 0,
+          "occupied_references_per_batch": 1,
+          "max_queries_per_reference_per_batch": 4096,
+          "loss": 0.2812923789024353,
+          "max_abs_x_gradient_error": 0.0,
+          "max_abs_y_gradient_error": 2.9802322387695312e-08
+        }
+      },
+      "ratios": {
+        "aggregation": "median of paired per-iteration ratios",
+        "backward_concentrated_over_uniform": 1.0125797151553728,
+        "scatter_concentrated_over_uniform": 0.9726030781164842
+      }
+    },
+    {
+      "B": 4,
+      "N": 8192,
+      "uniform": {
+        "forward": {
+          "samples_ms": [
+            3.29075,
+            3.260833,
+            3.274709,
+            3.226583,
+            3.312625,
+            3.212166,
+            3.241709,
+            3.240792,
+            3.264084,
+            3.246625,
+            3.354083,
+            3.23,
+            3.357625,
+            3.237333,
+            3.266333,
+            3.28025,
+            3.248625,
+            3.341084,
+            3.278625,
+            3.326209
+          ],
+          "median_ms": 3.2652085
+        },
+        "backward": {
+          "samples_ms": [
+            0.470625,
+            0.429875,
+            0.495833,
+            0.471291,
+            0.437292,
+            0.454875,
+            0.41075,
+            0.407375,
+            0.463,
+            0.430667,
+            0.486042,
+            0.415,
+            0.455375,
+            0.416833,
+            0.435458,
+            0.415833,
+            0.44825,
+            0.42275,
+            0.472875,
+            0.432375
+          ],
+          "median_ms": 0.436375
+        },
+        "direct_scatter": {
+          "samples_ms": [
+            0.24575,
+            0.1875,
+            0.192709,
+            0.187541,
+            0.187875,
+            0.282875,
+            0.187875,
+            0.205041,
+            0.187292,
+            0.152208,
+            0.226125,
+            0.223917,
+            0.175875,
+            0.208625,
+            0.18575,
+            0.233958,
+            0.185459,
+            0.1785,
+            0.1895,
+            0.193833
+          ],
+          "median_ms": 0.1886875
+        },
+        "backward_over_forward": 0.13364383928315757,
+        "correctness": {
+          "query_shape": [
+            4,
+            8192,
+            3
+          ],
+          "reference_shape": [
+            4,
+            8192,
+            3
+          ],
+          "dtype": "torch.float32",
+          "valid_points_per_cloud": 8192,
+          "index_mismatches": 0,
+          "occupied_references_per_batch": 8192,
+          "max_queries_per_reference_per_batch": 1,
+          "loss": 0.25,
+          "max_abs_x_gradient_error": 0.0,
+          "max_abs_y_gradient_error": 0.0
+        }
+      },
+      "concentrated": {
+        "forward": {
+          "samples_ms": [
+            3.264667,
+            3.267958,
+            3.319333,
+            3.226834,
+            3.268208,
+            3.231292,
+            3.268459,
+            3.192958,
+            3.323625,
+            3.266333,
+            3.288125,
+            3.276333,
+            3.260541,
+            3.249625,
+            3.222166,
+            3.236334,
+            3.263041,
+            3.238458,
+            3.24625,
+            3.314708
+          ],
+          "median_ms": 3.2638540000000003
+        },
+        "backward": {
+          "samples_ms": [
+            0.438209,
+            0.442375,
+            0.387375,
+            0.412417,
+            0.467417,
+            0.428584,
+            0.421875,
+            0.420667,
+            0.506833,
+            0.462584,
+            0.422625,
+            0.447,
+            0.429041,
+            0.415416,
+            0.42675,
+            0.388583,
+            0.401625,
+            0.417583,
+            0.440875,
+            0.419875
+          ],
+          "median_ms": 0.4246875
+        },
+        "direct_scatter": {
+          "samples_ms": [
+            0.182917,
+            0.217375,
+            0.19275,
+            0.200625,
+            0.178375,
+            0.208083,
+            0.188208,
+            0.162375,
+            0.228875,
+            0.1845,
+            0.181708,
+            0.194125,
+            0.186,
+            0.197208,
+            0.183291,
+            0.190166,
+            0.196375,
+            0.185875,
+            0.223458,
+            0.177333
+          ],
+          "median_ms": 0.189187
+        },
+        "backward_over_forward": 0.13011841215936742,
+        "correctness": {
+          "query_shape": [
+            4,
+            8192,
+            3
+          ],
+          "reference_shape": [
+            4,
+            8192,
+            3
+          ],
+          "dtype": "torch.float32",
+          "valid_points_per_cloud": 8192,
+          "index_mismatches": 0,
+          "occupied_references_per_batch": 1,
+          "max_queries_per_reference_per_batch": 8192,
+          "loss": 0.2812936007976532,
+          "max_abs_x_gradient_error": 0.0,
+          "max_abs_y_gradient_error": 2.9802322387695312e-08
+        }
+      },
+      "ratios": {
+        "aggregation": "median of paired per-iteration ratios",
+        "backward_concentrated_over_uniform": 0.9755462871203395,
+        "scatter_concentrated_over_uniform": 0.9934872663010813
+      }
+    },
+    {
+      "B": 4,
+      "N": 16384,
+      "uniform": {
+        "forward": {
+          "samples_ms": [
+            10.638375,
+            10.620125,
+            10.512167,
+            10.52825,
+            10.527125,
+            10.684,
+            10.594583,
+            10.564666,
+            10.616208,
+            10.948833,
+            10.734334,
+            10.651333,
+            10.810542,
+            10.609958,
+            10.660542,
+            10.623042,
+            10.682292,
+            10.736291,
+            10.894834,
+            10.577083
+          ],
+          "median_ms": 10.6307085
+        },
+        "backward": {
+          "samples_ms": [
+            0.637291,
+            0.628708,
+            0.662208,
+            0.592875,
+            0.596542,
+            0.662625,
+            0.713125,
+            0.69125,
+            0.6215,
+            0.786,
+            0.786708,
+            0.727,
+            0.751,
+            0.721458,
+            0.659541,
+            0.771458,
+            0.750625,
+            0.736292,
+            0.703333,
+            0.651
+          ],
+          "median_ms": 0.6972915
+        },
+        "direct_scatter": {
+          "samples_ms": [
+            0.2415,
+            0.228916,
+            0.24,
+            0.279583,
+            0.294792,
+            0.242834,
+            0.233958,
+            0.2935,
+            0.240458,
+            0.249333,
+            0.240417,
+            0.225917,
+            0.263625,
+            0.22275,
+            0.250458,
+            0.22675,
+            0.290083,
+            0.23375,
+            0.242625,
+            0.225333
+          ],
+          "median_ms": 0.240979
+        },
+        "backward_over_forward": 0.065592194537175,
+        "correctness": {
+          "query_shape": [
+            4,
+            16384,
+            3
+          ],
+          "reference_shape": [
+            4,
+            16384,
+            3
+          ],
+          "dtype": "torch.float32",
+          "valid_points_per_cloud": 16384,
+          "index_mismatches": 0,
+          "occupied_references_per_batch": 16384,
+          "max_queries_per_reference_per_batch": 1,
+          "loss": 0.25,
+          "max_abs_x_gradient_error": 0.0,
+          "max_abs_y_gradient_error": 0.0
+        }
+      },
+      "concentrated": {
+        "forward": {
+          "samples_ms": [
+            10.827875,
+            10.715542,
+            10.625292,
+            10.54125,
+            10.617375,
+            10.914042,
+            10.566375,
+            10.602666,
+            10.64825,
+            10.64775,
+            10.618416,
+            10.777541,
+            10.630459,
+            10.930083,
+            10.637833,
+            10.625958,
+            10.90625,
+            10.704375,
+            10.726333,
+            10.639292
+          ],
+          "median_ms": 10.643521
+        },
+        "backward": {
+          "samples_ms": [
+            0.665916,
+            0.697291,
+            0.596542,
+            0.604959,
+            0.853625,
+            0.721125,
+            0.635917,
+            0.608583,
+            0.613583,
+            0.935666,
+            0.737375,
+            0.741042,
+            0.793084,
+            0.732375,
+            0.677667,
+            0.758791,
+            0.684375,
+            0.723125,
+            0.734625,
+            0.649916
+          ],
+          "median_ms": 0.7092080000000001
+        },
+        "direct_scatter": {
+          "samples_ms": [
+            0.223833,
+            0.2315,
+            0.241625,
+            0.242791,
+            0.21725,
+            0.260041,
+            0.254916,
+            0.258125,
+            0.285666,
+            0.229875,
+            0.258542,
+            0.222583,
+            0.260916,
+            0.24375,
+            0.276083,
+            0.260666,
+            0.273,
+            0.239959,
+            0.226292,
+            0.248625
+          ],
+          "median_ms": 0.2461875
+        },
+        "backward_over_forward": 0.06663283700948211,
+        "correctness": {
+          "query_shape": [
+            4,
+            16384,
+            3
+          ],
+          "reference_shape": [
+            4,
+            16384,
+            3
+          ],
+          "dtype": "torch.float32",
+          "valid_points_per_cloud": 16384,
+          "index_mismatches": 0,
+          "occupied_references_per_batch": 1,
+          "max_queries_per_reference_per_batch": 16384,
+          "loss": 0.28129610419273376,
+          "max_abs_x_gradient_error": 0.0,
+          "max_abs_y_gradient_error": 8.940696716308594e-08
+        }
+      },
+      "ratios": {
+        "aggregation": "median of paired per-iteration ratios",
+        "backward_concentrated_over_uniform": 1.017223425554998,
+        "scatter_concentrated_over_uniform": 1.0090294083492053
+      }
+    }
+  ]
+}
