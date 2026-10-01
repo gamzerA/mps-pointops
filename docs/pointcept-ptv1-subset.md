@@ -31,7 +31,9 @@ between CPU and MPS in the focused grid fixture; the upstream CUDA heap's
 tie order is not guaranteed to match. Like the pinned CUDA heap, a candidate
 is accepted only when its squared distance is **strictly less than `1e10`**;
 the exact 100,000-unit boundary and farther points retain `-1`/`100000`
-padding on both CPU and MPS. The upstream plain `interpolation`
+padding on both CPU and MPS. Nonfinite coordinate distances also retain this
+padding; the shim validates MPS's missing-slot sentinel before applying a
+batch offset, so it cannot become a point from another cloud. The upstream plain `interpolation`
 function can index the last feature row through `-1` padding and assign it a
 small nonzero weight. This shim deliberately treats missing neighbors as
 absent and renormalizes valid weights, so CUDA interpolation values need not

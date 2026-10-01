@@ -106,8 +106,9 @@ def knn_query(
 
     Results have shape ``(M, nsample)``. A batch with fewer references uses
     ``-1`` indices and ``1e5`` distances for missing slots, including fully
-    empty reference batches or candidates with squared distance at least
-    ``1e10``. Ties use the smaller global reference index.
+    empty reference batches, nonfinite coordinate distances, or candidates
+    with squared distance at least ``1e10``. Ties use the smaller global
+    reference index.
     Neighbor assignment and distances are detached from coordinate autograd.
     """
     if isinstance(nsample, bool) or not isinstance(nsample, int) or nsample < 0:
@@ -131,17 +132,21 @@ def knn_query(
                         new_xyz[qlo:qhi].unsqueeze(0), xyz[lo:hi].unsqueeze(0), take,
                     )
                     dist, idx = distance[0], selected[0]
-                idx = (idx + lo).to(torch.int32)
+                # MPS kNN may expose UINT_MAX for an unfilled slot. Preserve
+                # validity before adding the batch offset, so a sentinel can
+                # neither wrap nor index a point in another batch.
+                selected_valid = (idx >= 0) & (idx < hi - lo)
+                safe_idx = torch.where(selected_valid, idx.long() + lo, lo)
                 # The upstream CUDA heap starts at 1e10 and replaces a slot
                 # only for a strictly smaller squared distance. Recompute
                 # squared distance from the selected coordinates: comparing
                 # sqrt distances can round a just-inside candidate to 1e5.
-                delta = new_xyz[qlo:qhi, None, :] - xyz[idx.long()]
+                delta = new_xyz[qlo:qhi, None, :] - xyz[safe_idx]
                 squared = delta[..., 0] * delta[..., 0]
                 squared = squared + delta[..., 1] * delta[..., 1]
                 squared = squared + delta[..., 2] * delta[..., 2]
-                valid = squared < _PAD_SQUARED_DISTANCE
-                idx = torch.where(valid, idx, -1)
+                valid = selected_valid & (squared < _PAD_SQUARED_DISTANCE)
+                idx = torch.where(valid, safe_idx.to(torch.int32), -1)
                 dist = torch.where(valid, dist, _PAD_DISTANCE)
             else:
                 idx = torch.empty((queries, 0), dtype=torch.int32, device=xyz.device)
