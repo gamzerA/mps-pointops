@@ -80,6 +80,39 @@ def knn(query: Tensor, ref: Tensor, k: int) -> tuple[Tensor, Tensor]:
     return dist, idx
 
 
+def three_nn(unknown: Tensor, known: Tensor) -> tuple[Tensor, Tensor]:
+    """PointNet++ three-neighbor reference with stable input-index tie order.
+
+    The public wrapper validates shapes and requires at least three known
+    points for nonempty queries. Search is chunked to bound the pair matrix.
+    Selection and distances intentionally have no coordinate gradient.
+    """
+    batch, queries, _ = unknown.shape
+    points = known.shape[1]
+    distances = torch.empty((batch, queries, 3), dtype=unknown.dtype, device=unknown.device)
+    indices = torch.empty((batch, queries, 3), dtype=torch.int32, device=unknown.device)
+    if not batch or not queries:
+        return distances, indices
+    step = max(1, _PAIRS_PER_CHUNK // max(1, batch * points))
+    with torch.no_grad():
+        for lo in range(0, queries, step):
+            d2 = _sqdist(unknown[:, lo:lo + step, None], known[:, None])
+            order = torch.argsort(d2, dim=-1, stable=True)[..., :3]
+            indices[:, lo:lo + step] = order.to(torch.int32)
+            distances[:, lo:lo + step] = d2.gather(-1, order).sqrt()
+    return distances, indices
+
+
+def three_interpolate(features: Tensor, indices: Tensor, weights: Tensor) -> Tensor:
+    """Reference weighted gather; only source features receive gradients."""
+    batch, channels, _ = features.shape
+    queries = indices.shape[1]
+    selected = features.gather(
+        2, indices.to(torch.long).reshape(batch, 1, queries * 3).expand(-1, channels, -1)
+    ).reshape(batch, channels, queries, 3)
+    return (selected * weights.detach().unsqueeze(1)).sum(dim=-1)
+
+
 def ball_query(query: Tensor, ref: Tensor, radius: float, K: int) -> tuple[Tensor, Tensor]:
     """Ball query with the PyTorch3D contract.
 
