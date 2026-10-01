@@ -1,6 +1,6 @@
 ============================= test session starts ==============================
 platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
-rootdir: /Users/iyeyeong/Documents/ChatGPT/opensouce_mps/.worktrees/phase2-highdim-knn
+rootdir: <repository-root>
 configfile: pyproject.toml
 plugins: platformdirs-4.12.2, dash-4.4.1, anyio-4.15.1
 collected 297 items

@@ -66,6 +66,11 @@ with 14 skips. Seven skips are `k > n` parametrizations, six require optional
 PyG packages, and the Fast process skips the Safe-only NaN/overflow case.
 Both modes exercise the actual `k=256` threadgroup-list boundary against the
 scalar oracle with 300 references and late candidate replacements.
+In the committed pytest logs, only pytest's local absolute `rootdir` line was
+normalized to `<repository-root>` before publication; test output and counts
+were left intact. The published Safe/Fast log SHA-256 values are
+`d0f3dfea232bfed044fb46d98ca31021cf31c655eb06543547672dc0c9b3849c`
+and `d612067c027396e745bebc2f4c335073ff6375948d38d00b084cca7ce34ccbe5`.
 Safe and Fast were separate processes.
 
 For upstream model validation, [the verifier](../tools/dgcnn_upstream_parity.py)
