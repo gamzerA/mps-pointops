@@ -9,7 +9,9 @@ specific input, device, and version.
 
 Search [existing issues](https://github.com/gamzerA/mps-pointops/issues) and
 pull requests before opening a new issue. Use an issue to describe a bug,
-missing operator, compatibility request, or performance regression. Include:
+missing operator, compatibility request, or performance regression. Choose the
+bug report or feature request form; both require the Apple chip, macOS version,
+and PyTorch version. Include:
 
 - The expected result, the actual result, and a small runnable reproducer.
 - The mps-pointops, Python, PyTorch, macOS, and (if relevant) PyG and pyg-lib
