@@ -12,8 +12,9 @@
 
 **Point-cloud operators for PyTorch on Apple Silicon.** Native Metal kernels
 run farthest point sampling, k nearest neighbors, and Ball Query on MPS.
-Version 0.7.0 also provides experimental PointNet++ feature propagation,
-squared-L2 Chamfer distance, feature-space kNN, and graph/grid interfaces.
+Version 0.8.0 also provides experimental PointNet++ feature propagation,
+squared-L2 Chamfer distance, feature-space kNN, graph/grid interfaces, and a
+bounded opt-in Pointcept PTv1 compatibility subset.
 Compatibility stand-ins cover supported `pointnet2_ops`, `knn_cuda`, and
 `torch_cluster` call sites; CPU tensors use PyTorch reference implementations.
 
@@ -39,7 +40,7 @@ kernels compile on first use.
 python -m pip install mps-pointops
 ```
 
-Version 0.7.0 includes dense SIMD Ball Query, the PyTorch3D-style Ball Query
+Version 0.8.0 includes dense SIMD Ball Query, the PyTorch3D-style Ball Query
 adapter, and the large-cloud FPS path for a single cloud. Experimental
 `three_nn`, `three_interpolate`, squared-L2 `chamfer_distance`, and
 feature-space kNN APIs are available; the graph and voxel interfaces have
@@ -48,6 +49,10 @@ Metal CSR pooling prototype. The supported propagation and loss inputs and
 their differences from upstream are specified in the
 [PointNet++ propagation](docs/pointnet2-propagation.md) and
 [Chamfer](docs/chamfer-contract.md) contracts.
+The supported squared-L2 Chamfer subset is checked against a pinned official
+PyTorch3D CPU oracle in [dedicated MPS CI](docs/chamfer-upstream-ci.md), and an
+opt-in [Pointcept PTv1 Seg26 subset](docs/pointcept-ptv1-subset.md) covers one
+documented synthetic model path.
 Direct comparisons against the
 [original PointNet++ CUDA extension](docs/parity/pointnet2-upstream.md) and
 [PyTorch3D Chamfer](docs/chamfer-upstream-parity-0.5.0.md) record the tested
@@ -706,6 +711,31 @@ points near the origin. FPS and Ball Query use dense `(B, N, 3)` tensors;
 native kNN also accepts `(B, N, D)` for any positive `D`. The flat API uses
 `(N, 3)` for FPS/radius and `(N, D)` for kNN, plus optional batch vectors.
 
+### Pointcept PTv1 subset (experimental)
+
+An opt-in [`pointops` shim](docs/pointcept-ptv1-subset.md) covers the five
+calls used by Pointcept **v1.2.1 Point Transformer V1 Seg26**. Register it
+before importing the model:
+
+```python
+from mps_pointops.compat import install
+
+install(pointcept=True)
+import pointops
+```
+
+This accepts flat float32 3D coordinates with cumulative int32/int64 batch
+offsets. Call `install` before importing Pointcept; if an existing importable
+`pointops` package must deliberately be replaced, use
+`install(force=True, pointcept=True)`. The force flag also installs stand-ins
+over existing `pointnet2_ops`, `knn_cuda`, and `torch_cluster` modules. This
+shim does not provide Pointcept's other model families or full CUDA
+`pointops` compatibility. The pinned Seg26 model still contains one hardcoded
+`torch.cuda.IntTensor` construction; the [M5 Pro forward/backward probe](docs/pointcept-ptv1-subset.md)
+uses one explicit temporary device-aware substitution and leaves the official
+checkout unchanged. The probe records source hashes, output and gradient
+tolerances, and a zero-gradient counterexample that the current gate rejects.
+
 ## The operators in equations
 
 For batch `b`, let `q[b, i]` be query `i`, where `0 ≤ i < Q`, and let
@@ -951,7 +981,10 @@ original implementation.
       FPS ties change some intermediate local indices; real labeled dataset
       accuracy is untested ([scope and raw evidence](docs/parity/pointnet2-segmentation.md)).
 - [ ] PyG example models on representative graphs and data (Phase 3)
-- [ ] Point Transformer family (Phase 4)
+- [~] Pointcept v1.2.1 PTv1 Seg26, fixed synthetic two-cloud eval fixture:
+      M5 Pro Safe/Fast forward and first-order backward compared with CPU
+      after [one documented CUDA constructor substitution](docs/pointcept-ptv1-subset.md).
+      Other Point Transformer models and training-mode convergence are open.
 - [ ] A sparse-convolution model (Phase 5)
 
 ### Phase 1: Core precision and parity (0.4.0)
@@ -1119,15 +1152,32 @@ correctness and timing evidence without extending claims to M2–M4.
       the same type of concentrated selection slowed backward at B=1,N=2,048,
       while a separate random bidirectional Chamfer fixture had a faster MPS
       forward than this package's CPU reference at N=1,024 and 4,096. These
-      input families have different nearest-neighbor distributions.
-- [ ] Compare supported Chamfer values and first-order gradients directly
-      against PyTorch3D in CI, including `lengths`, weights, and each supported
-      reduction mode. Current checks use analytic cases and an independent CPU
-      reference.
-- [ ] Extend the Chamfer contention study to larger clouds, other Apple GPUs,
-      and bidirectional losses before deciding whether a dedicated Metal
-      reduction kernel helps.
-- [ ] Pointcept `pointops` compatibility for the Point Transformer family.
+      input families have different nearest-neighbor distributions. A later
+      [physical M5 Pro and M1 large bidirectional study](docs/chamfer-large-contention-2026-10-02.md)
+      tested 32,768 and 65,536 points with in-order, random one-to-one, and
+      concentrated maps using matching input hashes. At 65,536 points, the
+      paired concentrated/uniform full-call ratios were 1.00×/1.03× on M5 Pro
+      and 4.19×/4.23× on M1 in Safe/Fast Math. The M1 backward ratios were
+      189.98×/172.27×. These results prioritize a dedicated M1 reduction
+      ablation; native PyTorch scatter remains the default until a same-input
+      full-call comparison includes grouping and gradient work. Hardware and
+      PyTorch versions differ between devices.
+- [x] Compare the supported squared-L2 Chamfer values and first-order gradients
+      directly with the pinned PyTorch3D 0.7.9 CPU oracle in
+      [dedicated MPS CI](docs/chamfer-upstream-ci.md). Separate Safe/Fast runs
+      passed 160 cases and 1,080 output/gradient checks each, including
+      `lengths`, weights, and supported point/batch reductions. This does not
+      cover L1, normals, or `Pointclouds` inputs.
+- [~] Extend the Chamfer contention study: [physical M5 Pro and M1 Safe/Fast
+      large bidirectional cases](docs/chamfer-large-contention-2026-10-02.md)
+      cover up to 65,536 points with synchronized full-loss and native scatter
+      controls. M2–M4 devices, real workloads, GPU tracing, and a dedicated
+      reduction ablation remain open.
+- [~] Opt-in [Pointcept PTv1 Seg26 `pointops` subset](docs/pointcept-ptv1-subset.md):
+      FPS, kNN query, grouping, query-and-group, and interpolation on CPU/MPS.
+      Pinned synthetic model forward/backward passed on M5 Pro with one
+      temporary CUDA-constructor substitution; broader Pointcept signatures,
+      unchanged upstream imports, and CUDA binary parity remain open.
 - [ ] Spatial acceleration structures (uniform grid or BVH) for clouds of
       1M+ points. Done when: faster than a CPU KD-tree at 1M points.
 - [ ] Stretch: approximate optimal transport via entropic regularization
@@ -1155,13 +1205,15 @@ correctness and timing evidence without extending claims to M2–M4.
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for issue and pull request guidance,
-local Safe/Fast Math tests, and the six required CI checks for `main`.
+local Safe/Fast Math tests, and the seven required CI checks for `main`.
 
 ## Citation
 
-For v0.7.0, cite the reserved
-[version DOI (10.5281/zenodo.23087369)](https://doi.org/10.5281/zenodo.23087369)
-after the archive is published. For results using v0.6.0, cite its archived
+For v0.8.0, cite its
+[version DOI (10.5281/zenodo.23092167)](https://doi.org/10.5281/zenodo.23092167)
+once the archive is public. For results using v0.7.0, cite its archived
+[version DOI (10.5281/zenodo.23087369)](https://doi.org/10.5281/zenodo.23087369).
+For results using v0.6.0, cite its archived
 [version DOI (10.5281/zenodo.23086417)](https://doi.org/10.5281/zenodo.23086417).
 For results using v0.5.0, cite its archived
 [version DOI (10.5281/zenodo.23080506)](https://doi.org/10.5281/zenodo.23080506).

@@ -1,0 +1,595 @@
+{
+  "schema": "mps-pointops.chamfer-contention-large.v2",
+  "date_utc": "2026-10-01T23:14:11.732955+00:00",
+  "environment": {
+    "chip": "Apple M1",
+    "macos": "26.5.2",
+    "python": "3.10.6",
+    "torch": "2.12.0",
+    "mps_fast_math": "1",
+    "mps_fallback": "0",
+    "source_commit": "221705f545f2ce20895d4f779e5dd995ced96b2f",
+    "source_dirty": false,
+    "source_sha256": {
+      "bench/bench_chamfer_contention_large.py": "8c93cbbdca91483615ca6d25caadfd59d0d5969275c9153e1183356392a316cb",
+      "mps_pointops/chamfer.py": "94fce0894f6d9dbaf313cc7e0cac80186036dc117b77f09b4f5c89967da9f14e",
+      "mps_pointops/kernels/chamfer_nn.metal": "498325d79ddc463af9338a2e844723bd670809cf8c0b978a516ebcba64dfd176"
+    }
+  },
+  "method": {
+    "batch": 1,
+    "sizes": [
+      32768,
+      65536
+    ],
+    "seed": 8042,
+    "warmups": 3,
+    "repeats": 12,
+    "patterns": [
+      "uniform",
+      "random",
+      "concentrated"
+    ],
+    "max_estimated_mib": 256,
+    "max_driver_mib": 2048,
+    "max_pairs": 10000000000,
+    "chamfer": "bidirectional squared L2; point and batch means; no padding or weights",
+    "timing": "preloaded MPS float32; synchronized host wall; forward/backward separately and full loss+backward; no transfers",
+    "scatter_control": "two native scatter_add_ calls into preallocated buffers, reset outside timer; sources are ones",
+    "order": "uniform/random/concentrated rotated by iteration; each pattern occupies each position equally"
+  },
+  "results": [
+    {
+      "batch": 1,
+      "n": 32768,
+      "estimated_case_bytes": 50331648,
+      "bidirectional_distance_pairs": 2147483648,
+      "driver_allocated_bytes_after": 27787264,
+      "uniform": {
+        "forward": {
+          "median_ms": 87.2156455,
+          "samples_ms": [
+            86.645042,
+            87.036208,
+            87.4295,
+            86.81575,
+            87.410667,
+            87.400041,
+            86.900084,
+            87.702,
+            87.051625,
+            86.7085,
+            87.467916,
+            87.379666
+          ]
+        },
+        "backward": {
+          "median_ms": 5.048166500000001,
+          "samples_ms": [
+            4.975917,
+            5.0705,
+            5.180459,
+            5.018916,
+            5.117083,
+            4.95225,
+            5.181084,
+            5.025833,
+            5.12625,
+            4.889,
+            5.00825,
+            5.296834
+          ]
+        },
+        "e2e": {
+          "median_ms": 88.0275,
+          "samples_ms": [
+            88.177541,
+            87.989,
+            88.066,
+            87.270917,
+            88.237125,
+            87.11825,
+            87.529083,
+            87.277375,
+            87.209542,
+            88.118167,
+            88.246958,
+            88.102625
+          ]
+        },
+        "scatter_pair": {
+          "median_ms": 1.5410835,
+          "samples_ms": [
+            1.551708,
+            1.577167,
+            1.553792,
+            1.489916,
+            1.540875,
+            1.581083,
+            1.476417,
+            1.541292,
+            1.574041,
+            1.5385,
+            1.24575,
+            1.519916
+          ]
+        },
+        "correctness": {
+          "exact_xy_indices": true,
+          "exact_yx_indices": true,
+          "loss": 0.5,
+          "max_abs_loss_error": 0.0,
+          "max_abs_x_gradient_error": 0.0,
+          "max_abs_y_gradient_error": 0.0,
+          "occupied_y_for_xy": 32768,
+          "occupied_x_for_yx": 32768,
+          "max_xy_fanin": 1,
+          "max_yx_fanin": 1,
+          "input_sha256": {
+            "x_float32": "30f55ab6f38a067ab1e7b7b53bb8448db6790250dff31290b736b6db9fbeaa79",
+            "y_float32": "6dbd45b41d875940141efb190d81172bc67d9d413228600ceb59077c4d02d6b6",
+            "xy_int64": "f1f576c69a9a13fd768f8d492e5a1457ec3cf557a3cf58553bc00416b8e950c9",
+            "yx_int64": "f1f576c69a9a13fd768f8d492e5a1457ec3cf557a3cf58553bc00416b8e950c9"
+          }
+        }
+      },
+      "random": {
+        "forward": {
+          "median_ms": 86.942563,
+          "samples_ms": [
+            86.836833,
+            87.581375,
+            86.963417,
+            86.68625,
+            87.386958,
+            86.830791,
+            86.717958,
+            87.552167,
+            86.921709,
+            86.645583,
+            87.235375,
+            87.00825
+          ]
+        },
+        "backward": {
+          "median_ms": 5.0839165,
+          "samples_ms": [
+            5.080959,
+            5.069125,
+            5.0815,
+            4.922959,
+            5.150958,
+            5.25925,
+            5.137042,
+            5.044084,
+            5.086333,
+            5.318625,
+            5.141542,
+            4.910375
+          ]
+        },
+        "e2e": {
+          "median_ms": 88.004583,
+          "samples_ms": [
+            87.179,
+            87.796417,
+            87.958666,
+            87.494125,
+            88.35925,
+            87.461375,
+            88.161917,
+            88.093666,
+            87.273458,
+            88.0505,
+            88.119625,
+            88.182709
+          ]
+        },
+        "scatter_pair": {
+          "median_ms": 1.552041,
+          "samples_ms": [
+            1.555,
+            1.551292,
+            1.550542,
+            1.551791,
+            1.591708,
+            1.51275,
+            1.56675,
+            1.541125,
+            1.56225,
+            1.552291,
+            1.548958,
+            1.558375
+          ]
+        },
+        "correctness": {
+          "exact_xy_indices": true,
+          "exact_yx_indices": true,
+          "loss": 0.5,
+          "max_abs_loss_error": 0.0,
+          "max_abs_x_gradient_error": 0.0,
+          "max_abs_y_gradient_error": 0.0,
+          "occupied_y_for_xy": 32768,
+          "occupied_x_for_yx": 32768,
+          "max_xy_fanin": 1,
+          "max_yx_fanin": 1,
+          "input_sha256": {
+            "x_float32": "c32626fb49c7e67eadf5d9d46329a6bab7c88274b2c529aed7908f0a0ecead86",
+            "y_float32": "6dbd45b41d875940141efb190d81172bc67d9d413228600ceb59077c4d02d6b6",
+            "xy_int64": "c9ed6bd97817c2cd14d326c29a233929af46784a1abafd9a75e9d31f360c8ae4",
+            "yx_int64": "6d4a4961c08e8503b57fab266f87d084eec4279eba64690a95c0a413577520ed"
+          }
+        }
+      },
+      "concentrated": {
+        "forward": {
+          "median_ms": 86.7458335,
+          "samples_ms": [
+            86.774541,
+            87.093917,
+            86.7205,
+            86.693417,
+            86.674084,
+            86.822208,
+            86.704334,
+            86.771167,
+            87.145125,
+            86.701334,
+            86.79475,
+            85.238666
+          ]
+        },
+        "backward": {
+          "median_ms": 451.845792,
+          "samples_ms": [
+            451.031917,
+            453.139042,
+            452.659667,
+            369.524916,
+            376.372791,
+            462.774958,
+            458.615708,
+            454.366291,
+            454.948542,
+            363.705583,
+            385.672083,
+            371.383334
+          ]
+        },
+        "e2e": {
+          "median_ms": 536.5460625000001,
+          "samples_ms": [
+            538.106125,
+            550.894166,
+            461.352041,
+            538.918167,
+            538.681916,
+            534.986,
+            545.01225,
+            461.165667,
+            459.838417,
+            388.348708,
+            462.956208,
+            546.016083
+          ]
+        },
+        "scatter_pair": {
+          "median_ms": 811.2236045,
+          "samples_ms": [
+            809.472792,
+            812.974417,
+            778.320042,
+            887.537375,
+            796.667458,
+            704.831792,
+            798.11625,
+            832.464833,
+            817.114875,
+            936.044958,
+            802.034875,
+            816.751042
+          ]
+        },
+        "correctness": {
+          "exact_xy_indices": true,
+          "exact_yx_indices": true,
+          "loss": 0.5334827899932861,
+          "max_abs_loss_error": 0.0,
+          "max_abs_x_gradient_error": 9.5367431640625e-07,
+          "max_abs_y_gradient_error": 3.6954879760742188e-06,
+          "occupied_y_for_xy": 1,
+          "occupied_x_for_yx": 1,
+          "max_xy_fanin": 32768,
+          "max_yx_fanin": 32768,
+          "input_sha256": {
+            "x_float32": "8f7e2860fe86db39f3ff60859e572fbac16374966a81b678afa782ad4a56223c",
+            "y_float32": "8be40ad54f9e383c15c526ca0a3924b84f9281692845fb263363ba772a8e4517",
+            "xy_int64": "5155956d628c3e655b6bb2dfdbaeec8457af9a081e6711b541cbab8941359153",
+            "yx_int64": "5155956d628c3e655b6bb2dfdbaeec8457af9a081e6711b541cbab8941359153"
+          }
+        }
+      },
+      "paired_ratios": {
+        "backward_concentrated_over_uniform": 87.9478103842209,
+        "e2e_concentrated_over_uniform": 6.1037327211854295,
+        "scatter_pair_concentrated_over_uniform": 529.5157887177194
+      }
+    },
+    {
+      "batch": 1,
+      "n": 65536,
+      "estimated_case_bytes": 100663296,
+      "bidirectional_distance_pairs": 8589934592,
+      "driver_allocated_bytes_after": 55312384,
+      "uniform": {
+        "forward": {
+          "median_ms": 325.990291,
+          "samples_ms": [
+            324.450833,
+            326.117291,
+            325.956791,
+            324.444458,
+            327.243,
+            326.153625,
+            324.030333,
+            326.023791,
+            325.931708,
+            324.168083,
+            326.596333,
+            326.160417
+          ]
+        },
+        "backward": {
+          "median_ms": 5.690312499999999,
+          "samples_ms": [
+            5.378167,
+            5.810458,
+            5.885791,
+            5.558875,
+            5.971917,
+            5.712584,
+            5.319041,
+            5.668041,
+            5.253958,
+            5.31275,
+            6.25025,
+            5.916291
+          ]
+        },
+        "e2e": {
+          "median_ms": 325.9292295,
+          "samples_ms": [
+            326.079709,
+            326.264542,
+            325.853958,
+            325.927459,
+            326.1065,
+            325.228083,
+            325.931,
+            325.759166,
+            326.259541,
+            326.2065,
+            325.074167,
+            325.257041
+          ]
+        },
+        "scatter_pair": {
+          "median_ms": 1.7291875,
+          "samples_ms": [
+            1.749792,
+            1.812041,
+            1.81,
+            1.798708,
+            1.703042,
+            1.676041,
+            1.669333,
+            1.697417,
+            1.7385,
+            1.677583,
+            1.742583,
+            1.719875
+          ]
+        },
+        "correctness": {
+          "exact_xy_indices": true,
+          "exact_yx_indices": true,
+          "loss": 0.5,
+          "max_abs_loss_error": 0.0,
+          "max_abs_x_gradient_error": 0.0,
+          "max_abs_y_gradient_error": 0.0,
+          "occupied_y_for_xy": 65536,
+          "occupied_x_for_yx": 65536,
+          "max_xy_fanin": 1,
+          "max_yx_fanin": 1,
+          "input_sha256": {
+            "x_float32": "a40032befc4819048ed18cb250b5a81e346bd22d7acef2155bef850cabfa8c28",
+            "y_float32": "6354e13fe50cce4901a52f07fc73764f06b605d1675dbbe3ce23a9f1a379d96b",
+            "xy_int64": "597769c9067f7c6ef959926f89c2edd4ffbfecb6980e580e0c29184190050e53",
+            "yx_int64": "597769c9067f7c6ef959926f89c2edd4ffbfecb6980e580e0c29184190050e53"
+          }
+        }
+      },
+      "random": {
+        "forward": {
+          "median_ms": 324.331479,
+          "samples_ms": [
+            324.314792,
+            325.924416,
+            324.138042,
+            324.086,
+            326.435375,
+            324.348166,
+            324.53875,
+            325.75875,
+            324.103834,
+            323.870666,
+            329.300083,
+            324.166875
+          ]
+        },
+        "backward": {
+          "median_ms": 5.66175,
+          "samples_ms": [
+            5.803125,
+            3.448041,
+            5.590208,
+            5.614875,
+            6.049708,
+            5.403125,
+            5.389792,
+            5.810333,
+            5.722292,
+            5.719792,
+            5.708625,
+            5.501167
+          ]
+        },
+        "e2e": {
+          "median_ms": 326.06014600000003,
+          "samples_ms": [
+            326.063542,
+            322.462,
+            326.387791,
+            326.066417,
+            326.957792,
+            325.949084,
+            326.197625,
+            325.287125,
+            325.960417,
+            325.8375,
+            326.05675,
+            326.112459
+          ]
+        },
+        "scatter_pair": {
+          "median_ms": 1.825646,
+          "samples_ms": [
+            1.850833,
+            2.467333,
+            1.841209,
+            1.810083,
+            2.436625,
+            1.757334,
+            1.803792,
+            2.580542,
+            1.763667,
+            1.784834,
+            2.67075,
+            1.757
+          ]
+        },
+        "correctness": {
+          "exact_xy_indices": true,
+          "exact_yx_indices": true,
+          "loss": 0.5,
+          "max_abs_loss_error": 0.0,
+          "max_abs_x_gradient_error": 0.0,
+          "max_abs_y_gradient_error": 0.0,
+          "occupied_y_for_xy": 65536,
+          "occupied_x_for_yx": 65536,
+          "max_xy_fanin": 1,
+          "max_yx_fanin": 1,
+          "input_sha256": {
+            "x_float32": "26b51add47e36e987a8601925ead804167fa8165da35a44bda4701b442918ea5",
+            "y_float32": "6354e13fe50cce4901a52f07fc73764f06b605d1675dbbe3ce23a9f1a379d96b",
+            "xy_int64": "3961ac347079bf5c1f3e2f85aa276b1d941fd2250776967f12a3580d0debd1c5",
+            "yx_int64": "0af54f1bc50fd6b90cfd1140c8e421038596d1e27d6d5012f78181a716ef98a8"
+          }
+        }
+      },
+      "concentrated": {
+        "forward": {
+          "median_ms": 324.10954200000003,
+          "samples_ms": [
+            324.190958,
+            324.625,
+            324.205459,
+            324.003542,
+            324.180292,
+            324.099667,
+            324.086375,
+            324.099709,
+            324.119375,
+            323.8035,
+            324.067958,
+            324.478667
+          ]
+        },
+        "backward": {
+          "median_ms": 990.0011665,
+          "samples_ms": [
+            977.0905,
+            881.362625,
+            1030.110958,
+            898.063084,
+            1112.4015,
+            803.08425,
+            863.185958,
+            1068.412584,
+            1071.986958,
+            852.529917,
+            1113.114208,
+            1002.911833
+          ]
+        },
+        "e2e": {
+          "median_ms": 1380.840542,
+          "samples_ms": [
+            1396.252917,
+            1287.181584,
+            1094.792708,
+            1178.269125,
+            1432.393083,
+            1435.484209,
+            1189.90475,
+            1070.132917,
+            1365.428167,
+            1434.912833,
+            1399.532458,
+            1436.308333
+          ]
+        },
+        "scatter_pair": {
+          "median_ms": 1910.644312,
+          "samples_ms": [
+            1895.328708,
+            2027.860041,
+            2013.666,
+            1700.587209,
+            1977.397959,
+            1626.838875,
+            1718.545667,
+            1661.183708,
+            1985.351709,
+            1925.959916,
+            1683.326084,
+            1976.657625
+          ]
+        },
+        "correctness": {
+          "exact_xy_indices": true,
+          "exact_yx_indices": true,
+          "loss": 0.5683982372283936,
+          "max_abs_loss_error": 0.0,
+          "max_abs_x_gradient_error": 2.09808349609375e-05,
+          "max_abs_y_gradient_error": 1.4543533325195312e-05,
+          "occupied_y_for_xy": 1,
+          "occupied_x_for_yx": 1,
+          "max_xy_fanin": 65536,
+          "max_yx_fanin": 65536,
+          "input_sha256": {
+            "x_float32": "2fcfd9d4f65070f11b3d1dab33fb2578d27cc97ea0bcbf8654ab037efb20165d",
+            "y_float32": "e2a64e218bfddcd7266f58e07ce6dc382c1c882d35cade92d4240199f713da89",
+            "xy_int64": "eccc5d3b16a1dc3ebb3730510ec2762fd6b1abc56bfb0e6d27a6539fab847880",
+            "yx_int64": "eccc5d3b16a1dc3ebb3730510ec2762fd6b1abc56bfb0e6d27a6539fab847880"
+          }
+        }
+      },
+      "paired_ratios": {
+        "backward_concentrated_over_uniform": 172.266779677775,
+        "e2e_concentrated_over_uniform": 4.233517746190829,
+        "scatter_pair_concentrated_over_uniform": 1097.848185433576
+      }
+    }
+  ]
+}

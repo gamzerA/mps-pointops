@@ -2,6 +2,37 @@
 
 ## Unreleased
 
+## 0.8.0 — 2026-10-02
+
+This release adds a bounded Pointcept PTv1 compatibility path and a required
+upstream Chamfer parity gate for the supported squared-L2 contract. It does not
+claim complete Pointcept or PyTorch3D compatibility, or completion of Phase 4.
+
+- Add an opt-in `mps_pointops.compat.install(pointcept=True)` shim for the five
+  Pointcept v1.2.1 PTv1 Seg26 `pointops` calls. The pinned synthetic M5 Pro
+  Seg26 fixture passed Safe/Fast forward and first-order backward comparison
+  with CPU after one documented temporary CUDA-constructor substitution.
+  The [contract](docs/pointcept-ptv1-subset.md) records exact offsets,
+  distance cutoff, padding, gradient scope, source hashes, and the stricter
+  gradient gate that rejects an all-zero-gradient counterexample.
+- Add a dedicated [PyTorch3D Chamfer MPS parity workflow](docs/chamfer-upstream-ci.md)
+  for the supported squared-L2 subset. It pins the official CPU extension,
+  requires MPS with CPU fallback disabled, and runs Safe/Fast separately.
+  [Hosted run 36899829775](https://github.com/gamzerA/mps-pointops/actions/runs/36899829775)
+  passed 160 cases and 1,080 output/gradient checks per mode with zero failed
+  elements; the case-by-case JSON is retained in `docs/results/`.
+- Extend the [physical M5 Pro and M1 bidirectional Chamfer contention study](docs/chamfer-large-contention-2026-10-02.md)
+  to 32,768 and 65,536 points, with matching input hashes, exact nearest-index
+  checks, and independent analytic-gradient checks. At 65,536 points, paired
+  concentrated/uniform full-call ratios were 1.00×/1.03× on M5 Pro and
+  4.19×/4.23× on M1 in Safe/Fast Math. The M1 result prioritizes a dedicated
+  reduction ablation; native PyTorch scatter remains the default until a
+  same-input full-call comparison includes grouping and gradient work. Device
+  and PyTorch versions differ, so this is not an isolated GPU-generation effect.
+- Review L1, normal-vector, and `Pointclouds` PyTorch3D Chamfer behavior in a
+  [pinned API scope decision](docs/chamfer-api-scope-v0.8.md). Those extensions
+  remain outside the 0.8.0 squared-L2 subset pending their own direct gates.
+
 ## 0.7.0 — 2026-10-02
 
 This release adds a measured compact voxel path and an **opt-in experimental**
