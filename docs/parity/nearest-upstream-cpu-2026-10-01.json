@@ -1,0 +1,43 @@
+{
+  "upstream_tag": "torch-cluster 1.6.3",
+  "upstream_commit": "29cd22bf1a5b82fc06b108d6573f81302c5d6b12",
+  "upstream_source_sha256": "047209f84999997d378d6a1bb96f228f1ac58e1bbefaef1899920a5b5c59c904",
+  "reference": "unmodified upstream Python/SciPy CPU nearest, not its CUDA binary",
+  "device": "cpu",
+  "torch": "2.14.1",
+  "scipy": "1.18.1",
+  "mps_fallback": "unset",
+  "mps_fast_math": "unset",
+  "cases": [
+    {
+      "name": "upstream_fixture_with_empty_id",
+      "rows": 8,
+      "same_indices": true
+    },
+    {
+      "name": "random_D1",
+      "rows": 100,
+      "same_indices": true
+    },
+    {
+      "name": "random_D3",
+      "rows": 100,
+      "same_indices": true
+    },
+    {
+      "name": "random_D64",
+      "rows": 100,
+      "same_indices": true
+    },
+    {
+      "name": "random_D128",
+      "rows": 100,
+      "same_indices": true
+    }
+  ],
+  "known_cpu_cuda_style_tie_difference": {
+    "upstream_scipy_cpu_index": 1,
+    "project_cuda_style_index": 1024,
+    "cuda_binary_executed": false
+  }
+}
