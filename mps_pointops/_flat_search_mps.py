@@ -31,8 +31,20 @@ def _library():
     return torch.mps.compile_shader(source)
 
 
-def _check_inputs(x: Tensor, y: Tensor, ptr_x: Tensor, ptr_y: Tensor) -> tuple[int, int]:
-    if x.ndim != 2 or y.ndim != 2 or x.shape[1] != 3 or y.shape[1] != 3:
+@cache
+def _feature_library():
+    _require_compile_shader()
+    source = resources.files(__package__).joinpath("kernels", "feature_knn.metal").read_text()
+    return torch.mps.compile_shader(source)
+
+
+def _check_inputs(
+    x: Tensor, y: Tensor, ptr_x: Tensor, ptr_y: Tensor, *, feature_space: bool = False,
+) -> tuple[int, int]:
+    if (x.ndim != 2 or y.ndim != 2 or x.shape[1] < 1
+            or x.shape[1] != y.shape[1] or (not feature_space and x.shape[1] != 3)):
+        if feature_space:
+            raise ValueError("x and y must have shapes (N, D) and (M, D) with D >= 1")
         raise ValueError("x and y must have shapes (N, 3) and (M, 3)")
     if x.device.type != "mps" or y.device != x.device:
         raise ValueError("x and y must be on the same MPS device")
@@ -66,24 +78,33 @@ def _torch_cluster_radius_sq(r: float) -> float:
 
 def knn_indices(x: Tensor, y: Tensor, ptr_x: Tensor, ptr_y: Tensor, k: int) -> Tensor:
     """Return global x indices, sorted by (squared distance, x index)."""
-    batch_count, query_count = _check_inputs(x, y, ptr_x, ptr_y)
+    batch_count, query_count = _check_inputs(x, y, ptr_x, ptr_y, feature_space=True)
     if x.dtype != torch.float32 or y.dtype != torch.float32:
         raise TypeError("flat Metal kNN requires float32 x and y")
     if not isinstance(k, int) or isinstance(k, bool) or not 0 <= k <= _MAX_K:
         raise ValueError(f"k must be an integer in [0, {_MAX_K}] for the flat Metal kernel")
     if query_count * k > (1 << 63) - 1:
         raise ValueError("kNN output size exceeds int64 indexing")
+    if x.shape[1] >= 2**32:
+        raise ValueError("feature dimension must be below 2**32 for the Metal kNN kernel")
     out = torch.empty((query_count, k), dtype=torch.int64, device=x.device)
     if query_count == 0 or k == 0:
         return out
     _check_simd_width()
     group = 32 * _QUERIES_PER_GROUP
     groups = (query_count + _QUERIES_PER_GROUP - 1) // _QUERIES_PER_GROUP
-    _library().flat_knn_indices(
-        y.contiguous(), x.contiguous(), ptr_y.contiguous(), ptr_x.contiguous(), out,
-        query_count, batch_count, k,
-        threads=[groups * group, 1, 1], group_size=[group, 1, 1],
-    )
+    if x.shape[1] == 3:
+        _library().flat_knn_indices(
+            y.contiguous(), x.contiguous(), ptr_y.contiguous(), ptr_x.contiguous(), out,
+            query_count, batch_count, k,
+            threads=[groups * group, 1, 1], group_size=[group, 1, 1],
+        )
+    else:
+        _feature_library().feature_knn_flat(
+            y.contiguous(), x.contiguous(), ptr_y.contiguous(), ptr_x.contiguous(), out,
+            query_count, batch_count, k, x.shape[1],
+            threads=[groups * group, 1, 1], group_size=[group, 1, 1],
+        )
     return out
 
 

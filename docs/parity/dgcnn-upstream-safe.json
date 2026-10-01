@@ -1,0 +1,82 @@
+{
+  "upstream": {
+    "url": "https://github.com/WangYueFt/dgcnn",
+    "commit": "f765b469a67730658ba554e97dc11723a7bab628",
+    "model_sha256": "9be404728fa66eb5f9fc9a47d8553a9a75423f6e7d7b235496be354cfeb9b6e5",
+    "license": "MIT",
+    "in_memory_adaptation": "device = torch.device('cuda') -> device = x.device",
+    "search_change": "CPU original GEMM/topk; MPS only knn replaced with mps_pointops.knn"
+  },
+  "environment": {
+    "os": "macOS-26.5.2-arm64-arm-64bit",
+    "torch": "2.14.1",
+    "mps_device": "Apple M5 Pro",
+    "mps_fast_math": "0",
+    "mps_fallback": "0"
+  },
+  "fixture": {
+    "seed": 4903,
+    "batch": 2,
+    "points": 64,
+    "k": 8,
+    "embedding_dimension": 128,
+    "dropout": 0.0,
+    "model_mode": "eval, with gradients from mean(square(logits))"
+  },
+  "neighbor_indices": [
+    {
+      "stage": 1,
+      "feature_dimension": 3,
+      "compared_indices": 1024,
+      "index_mismatch_count": 0
+    },
+    {
+      "stage": 2,
+      "feature_dimension": 64,
+      "compared_indices": 1024,
+      "index_mismatch_count": 0
+    },
+    {
+      "stage": 3,
+      "feature_dimension": 64,
+      "compared_indices": 1024,
+      "index_mismatch_count": 0
+    },
+    {
+      "stage": 4,
+      "feature_dimension": 128,
+      "compared_indices": 1024,
+      "index_mismatch_count": 0
+    }
+  ],
+  "max_abs_logit_error": 3.3527612686157227e-08,
+  "max_abs_input_gradient_error": 2.7284841053187847e-11,
+  "max_abs_parameter_gradient_error": 3.259629011154175e-09,
+  "parameter_gradient_errors": {
+    "bn1.weight": 6.45741238258779e-11,
+    "bn1.bias": 4.3655745685100555e-11,
+    "bn2.weight": 1.6370904631912708e-11,
+    "bn2.bias": 4.3655745685100555e-11,
+    "bn3.weight": 1.6370904631912708e-11,
+    "bn3.bias": 7.275957614183426e-11,
+    "bn4.weight": 4.718003765447065e-12,
+    "bn4.bias": 5.093170329928398e-11,
+    "bn5.weight": 6.912159733474255e-11,
+    "bn5.bias": 1.7462298274040222e-10,
+    "conv1.0.weight": 7.639755494892597e-11,
+    "conv2.0.weight": 8.731149137020111e-11,
+    "conv3.0.weight": 4.3655745685100555e-11,
+    "conv4.0.weight": 1.6370904631912708e-11,
+    "conv5.0.weight": 4.0745362639427185e-10,
+    "linear1.weight": 1.4551915228366852e-10,
+    "bn6.weight": 5.093170329928398e-11,
+    "bn6.bias": 2.473825588822365e-10,
+    "linear2.weight": 2.6193447411060333e-10,
+    "linear2.bias": 4.984030965715647e-10,
+    "bn7.weight": 5.093170329928398e-11,
+    "bn7.bias": 5.020410753786564e-10,
+    "linear3.weight": 9.313225746154785e-10,
+    "linear3.bias": 3.259629011154175e-09
+  },
+  "passed": true
+}

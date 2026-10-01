@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- Add an experimental native Metal feature-space kNN path for matching
+  dimensions other than three (including D=64 and 128), with dense, flat,
+  and PyG operator entry points. The original 3D kernels remain in use.
+  [The contract](docs/feature-knn.md) specifies deterministic ties,
+  non-finite distances, and the explicit `k <= 256` feature-path limit.
+- Validate the pinned original DGCNN classification model on a fixed
+  synthetic 64-point fixture, including four rounds of dynamic-neighbor
+  selection and full forward/backward comparison with its CPU implementation.
+  Dataset accuracy, full training, and original CUDA parity remain untested.
+
 ## 0.5.0 — 2026-10-01
 
 This release makes the new PointNet++ and Chamfer APIs available as
