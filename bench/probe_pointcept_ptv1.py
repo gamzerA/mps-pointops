@@ -55,6 +55,15 @@ def _commit(root: Path) -> str:
     ).stdout.strip()
 
 
+def _require_clean_checkout(root: Path) -> None:
+    status = subprocess.run(
+        ["git", "status", "--porcelain=v1", "--untracked-files=all"],
+        cwd=root, capture_output=True, text=True, check=True,
+    ).stdout
+    if status:
+        raise RuntimeError("pinned Pointcept checkout has modified or untracked files")
+
+
 @contextmanager
 def _seg26_class(pointcept_root: Path):
     source_file = pointcept_root / "pointcept/models/point_transformer/point_transformer_seg.py"
@@ -78,6 +87,10 @@ def _seg26_class(pointcept_root: Path):
             "utils/registry.py": "pointcept/utils/registry.py",
             "utils/misc.py": "pointcept/utils/misc.py",
         }
+        official_dependency_sha256 = {
+            official: _sha256(pointcept_root / official)
+            for official in links.values()
+        }
         for target, official in links.items():
             (package / target).symlink_to(pointcept_root / official)
         (package / "models/point_transformer/point_transformer_seg.py").write_text(patched)
@@ -88,6 +101,7 @@ def _seg26_class(pointcept_root: Path):
             )
             yield module.PointTransformerSeg26, {
                 "official_seg_sha256": _sha256(source_file),
+                "official_dependency_sha256": official_dependency_sha256,
                 "temporary_seg_sha256": _sha256_bytes(patched.encode()),
                 "replacement_count": 1,
                 "replacement_original": ORIGINAL,
@@ -147,16 +161,45 @@ def _run(model: torch.nn.Module, device: str, coord: torch.Tensor, feat: torch.T
     return {**tensors, "elapsed_ms": elapsed, "loss": float(loss.detach().cpu())}
 
 
-def _comparison(cpu: torch.Tensor, mps: torch.Tensor, atol: float, rtol: float) -> dict[str, object]:
+def _comparison(
+    cpu: torch.Tensor, mps: torch.Tensor, atol: float, rtol: float,
+    relative_l2_limit: float | None = None,
+) -> dict[str, object]:
+    if cpu.shape != mps.shape:
+        raise AssertionError("CPU/MPS tensor shapes differ")
     error = (cpu - mps).abs()
     permitted = atol + rtol * cpu.abs()
-    return {
+    pointwise_close = bool(torch.all(error <= permitted))
+    cpu_l2 = float(torch.linalg.vector_norm(cpu.double()))
+    mps_l2 = float(torch.linalg.vector_norm(mps.double()))
+    relative_l2_error = (
+        float(torch.linalg.vector_norm(error.double())) / cpu_l2
+        if cpu_l2 > 0 else None
+    )
+    result = {
         "shape": list(cpu.shape),
         "max_abs": float(error.max()) if error.numel() else 0.0,
         "mean_abs": float(error.mean()) if error.numel() else 0.0,
         "max_excess_over_atol_rtol": float((error - permitted).clamp_min(0).max()) if error.numel() else 0.0,
-        "allclose": bool(torch.all(error <= permitted)),
+        "cpu_max_abs": float(cpu.abs().max()) if cpu.numel() else 0.0,
+        "mps_max_abs": float(mps.abs().max()) if mps.numel() else 0.0,
+        "cpu_l2_norm": cpu_l2,
+        "mps_l2_norm": mps_l2,
+        "relative_l2_error": relative_l2_error,
+        "pointwise_close": pointwise_close,
     }
+    if relative_l2_limit is None:
+        result["passed"] = pointwise_close
+    else:
+        nonzero_gradient = cpu_l2 > 0 and mps_l2 > 0
+        result["nonzero_gradient"] = nonzero_gradient
+        result["relative_l2_limit"] = relative_l2_limit
+        result["passed"] = (
+            pointwise_close and nonzero_gradient
+            and relative_l2_error is not None
+            and relative_l2_error <= relative_l2_limit
+        )
+    return result
 
 
 def main() -> None:
@@ -164,8 +207,11 @@ def main() -> None:
     parser.add_argument("--pointcept-root", type=Path, required=True)
     parser.add_argument("--points-per-batch", type=int, default=256)
     parser.add_argument("--fixture", choices=["random3d", "line"], default="random3d")
-    parser.add_argument("--atol", type=float, default=2e-3)
-    parser.add_argument("--rtol", type=float, default=5e-3)
+    parser.add_argument("--logit-atol", type=float, default=2e-3)
+    parser.add_argument("--logit-rtol", type=float, default=5e-3)
+    parser.add_argument("--gradient-atol", type=float, default=1e-7)
+    parser.add_argument("--gradient-rtol", type=float, default=5e-3)
+    parser.add_argument("--gradient-relative-l2-limit", type=float, default=1e-2)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if os.getenv("PYTORCH_ENABLE_MPS_FALLBACK") != "0":
@@ -177,6 +223,7 @@ def main() -> None:
     pointcept_root = args.pointcept_root.resolve()
     if _commit(pointcept_root) != POINTCEPT_COMMIT:
         parser.error(f"Pointcept checkout must be at {POINTCEPT_COMMIT}")
+    _require_clean_checkout(pointcept_root)
     import einops
 
     installed = compat.install(pointcept=True)
@@ -190,12 +237,19 @@ def main() -> None:
         cpu = _run(cpu_model, "cpu", coord, feat, offset)
         mps = _run(mps_model, "mps", coord, feat, offset)
     comparisons = {
-        name: _comparison(cpu[name], mps[name], args.atol, args.rtol)
-        for name in ("output", "coordinate_gradient", "feature_gradient", "first_weight_gradient")
+        "output": _comparison(
+            cpu["output"], mps["output"], args.logit_atol, args.logit_rtol,
+        ),
     }
+    for name in ("coordinate_gradient", "feature_gradient", "first_weight_gradient"):
+        comparisons[name] = _comparison(
+            cpu[name], mps[name], args.gradient_atol, args.gradient_rtol,
+            args.gradient_relative_l2_limit,
+        )
     result = {
         "date_utc": datetime.now(timezone.utc).isoformat(),
         "pointcept_commit": POINTCEPT_COMMIT,
+        "pointcept_checkout_clean": True,
         "pointcept_source": source,
         "mps_pointops_commit": _commit(ROOT),
         "pointcept_shim_sha256": _sha256(ROOT / "mps_pointops/pointcept.py"),
@@ -213,8 +267,13 @@ def main() -> None:
         "classes": 13,
         "model_mode": "eval with autograd enabled",
         "loss": "mean(square(logits))",
-        "atol": args.atol,
-        "rtol": args.rtol,
+        "tolerances": {
+            "logit_atol": args.logit_atol,
+            "logit_rtol": args.logit_rtol,
+            "gradient_atol": args.gradient_atol,
+            "gradient_rtol": args.gradient_rtol,
+            "gradient_relative_l2_limit": args.gradient_relative_l2_limit,
+        },
         "cpu_elapsed_ms": cpu["elapsed_ms"],
         "mps_elapsed_ms": mps["elapsed_ms"],
         "cpu_loss": cpu["loss"],
@@ -224,8 +283,8 @@ def main() -> None:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2))
-    if not all(item["allclose"] for item in comparisons.values()):
-        raise SystemExit("CPU/MPS output or gradient exceeded tolerance")
+    if not all(item["passed"] for item in comparisons.values()):
+        raise SystemExit("CPU/MPS output or gradient exceeded its acceptance rule")
 
 
 if __name__ == "__main__":

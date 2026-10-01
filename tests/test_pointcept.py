@@ -61,6 +61,21 @@ def test_knn_equal_distances_use_smaller_reference_index(device):
 
 
 @pytest.mark.parametrize("device", DEVICES)
+def test_knn_strict_upstream_distance_ceiling(device):
+    xyz = torch.tensor(
+        [[99_999., 0, 0], [100_000., 0, 0], [100_001., 0, 0]], device=device,
+    )
+    query = torch.zeros((1, 3), device=device)
+    offset = torch.tensor([3], dtype=torch.int32, device=device)
+    new_offset = torch.tensor([1], dtype=torch.int32, device=device)
+    idx, dist = pointcept.knn_query(3, xyz, offset, query, new_offset)
+    assert idx.cpu().tolist() == [[0, -1, -1]]
+    torch.testing.assert_close(
+        dist.cpu(), torch.tensor([[99_999., 100_000., 100_000.]]), rtol=0, atol=0,
+    )
+
+
+@pytest.mark.parametrize("device", DEVICES)
 def test_grouping_zero_padding_relative_xyz_and_gradients(device):
     xyz = torch.tensor([[0., 0, 0], [1., 0, 0], [2., 0, 0]], device=device, requires_grad=True)
     feat = torch.tensor([[1., 2.], [3., 4.], [5., 6.]], device=device, requires_grad=True)
