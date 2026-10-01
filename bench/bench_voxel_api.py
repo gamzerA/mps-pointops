@@ -307,7 +307,8 @@ def _metadata(args: argparse.Namespace) -> dict[str, object]:
         "source_commit": _git_commit(),
         "benchmark_script_sha256": _sha256(Path(__file__)),
         "voxel_source_sha256": _sha256(ROOT / "mps_pointops" / "voxel.py"),
-        "python_executable": sys.executable,
+        "python_executable": Path(sys.executable).name,
+        "python_executable_path_policy": "basename_only",
         "python_version": platform.python_version(),
         "torch_version": torch.__version__,
         "installed_distributions_sha256": hashlib.sha256(

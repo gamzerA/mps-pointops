@@ -17,7 +17,9 @@ voxelization and feature-downsampling workload, not PyG `voxel_grid`, graph
 - Physical Apple M5 Pro, macOS 26.5.2, Python 3.12.13, PyTorch 2.14.1.
   Installed-distribution name/version SHA-256:
   `7663844160b75808375ef103c2dd5e8d87471f3bac47f28deab6c90e2ec0f8ae`.
-  The JSON also records executable path, OS, source hashes, and mode.
+  The JSON records the executable basename, OS, source hashes, and mode. The
+  historical M5 Pro JSON has its local executable path redacted to its basename
+  after capture; only this environment metadata changed, not measurements.
 - Two separate Safe/Fast processes with `PYTORCH_ENABLE_MPS_FALLBACK=0` and
   `PYTORCH_MPS_FAST_MATH=0` or `1`. Each process completed all 24 combinations:
   `N=20,000/100,000/500,000`, uniform/ragged four-batch sizes, dense/sparse
