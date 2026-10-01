@@ -14,7 +14,7 @@ from importlib.metadata import PackageNotFoundError, version
 import torch
 from torch import Tensor
 
-from . import flat
+from . import flat, pyg_grid
 
 
 _MPS_LIBRARY: torch.library.Library | None = None
@@ -135,8 +135,18 @@ def _fps_mps(src: Tensor, ptr: Tensor, ratio: float = 0.5, random_start: bool = 
     return flat.fps(src, ratio=ratio, random_start=random_start, ptr=ptr)
 
 
+def _grid_cluster_mps(
+    pos: Tensor,
+    size: Tensor,
+    start: Tensor | None = None,
+    end: Tensor | None = None,
+) -> Tensor:
+    """Return pyg-lib's mixed-radix voxel IDs on MPS."""
+    return pyg_grid.grid_cluster_ids(pos, size, start, end)
+
+
 def register_mps() -> list[str]:
-    """Register MPS kernels for pyg-lib's ``fps``, ``knn`` and ``radius``.
+    """Register MPS kernels for pyg-lib's point search and grid operators.
 
     Requires pyg-lib 0.6 or newer so PyG 2.8's feature checks and operator
     schemas are genuine. Existing MPS kernels, if any, are left unchanged.
@@ -158,6 +168,7 @@ def register_mps() -> list[str]:
         "fps": _fps_mps,
         "knn": _knn_mps,
         "radius": _radius_mps,
+        "grid_cluster": _grid_cluster_mps,
     }
     for name in implementations:
         if not hasattr(pyg_lib.ops, name) or not hasattr(torch.ops.pyg, name):
