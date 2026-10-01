@@ -782,10 +782,20 @@ original implementation.
 
 ### Phase 4: Geometry losses and large-scale search (target 0.8.0 to 0.9.0)
 
-- [ ] Bidirectional Chamfer distance with a backward path. For each point,
-      accumulate both its own nearest-neighbor contribution and every reverse
-      contribution from points that select it. Specify supported `lengths`,
-      `batch_reduction`, and `point_reduction` modes before implementation.
+- [ ] Bidirectional Chamfer distance with a backward path. For the un-reduced
+      squared-L2 sum, let `a(i)` be the nearest point in `x` to `q[i]`, and
+      `b(j)` the nearest point in `q` to `x[j]`. Then the gradient must include
+      both directions:
+
+      $$L = \sum_i \lVert q_i-x_{a(i)}\rVert_2^2
+      + \sum_j \lVert x_j-q_{b(j)}\rVert_2^2,$$
+
+      $$\frac{\partial L}{\partial q_i}
+      = 2(q_i-x_{a(i)})
+      + 2\sum_{j:b(j)=i}(q_i-x_j).$$
+
+      Define tie rules and how supported `lengths`, `batch_reduction`, and
+      `point_reduction` modes weight or select these terms before implementation.
       Done when supported values and gradients match PyTorch3D.
 - [ ] Pointcept `pointops` compatibility for the Point Transformer family.
 - [ ] Spatial acceleration structures (uniform grid or BVH) for clouds of
@@ -819,10 +829,9 @@ local Safe/Fast Math tests, and the six required CI checks for `main`.
 
 ## Citation
 
-For v0.4.0, cite its reserved
+For v0.4.0, cite its archived
 [version DOI (10.5281/zenodo.23078860)](https://doi.org/10.5281/zenodo.23078860).
-The DOI resolves after the v0.4.0 archive is published. For results using
-v0.3.0, cite its archived
+For results using v0.3.0, cite its archived
 [version DOI (10.5281/zenodo.23076058)](https://doi.org/10.5281/zenodo.23076058).
 The badge above points to the [concept DOI](https://doi.org/10.5281/zenodo.23076057)
 for the version series. [CITATION.cff](CITATION.cff) supplies the current
