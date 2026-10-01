@@ -26,7 +26,7 @@ Requires an Apple Silicon Mac, Python 3.10 or later, and PyTorch 2.7 or later
 with MPS. The Metal kernels compile on first use.
 
 ```bash
-python -m pip install "git+https://github.com/gamzerA/mps-pointops.git@v0.2.0"
+python -m pip install mps-pointops
 ```
 
 ```python
@@ -319,8 +319,44 @@ calls these `torch_cluster` functions directly. Its `fps`, `knn`, `radius`,
 `knn_graph`, and `radius_graph` entry points were exercised with MPS tensors
 on an M5 Pro. In contrast,
 [PyG 2.8.0](https://github.com/pyg-team/pytorch_geometric/blob/2.8.0/torch_geometric/nn/pool/__init__.py)
-calls separate `torch.ops.pyg` operators. The shim does not replace the latter
-path or provide the rest of `torch_cluster`.
+calls separate `torch.ops.pyg` operators. For that version, use the MPS
+registration below. The `torch_cluster` shim does not provide the rest of
+`torch_cluster`.
+
+### PyG 2.8 MPS operator registration
+
+PyG 2.8 checks for `pyg-lib>=0.6` before calling its `fps`, `knn`, and
+`radius` operators. Install a `pyg-lib` wheel matching your PyTorch version
+from [PyG's wheel index](https://data.pyg.org/whl/). For example, this is the
+tested Apple Silicon combination (PyTorch 2.12.0, PyG 2.8.0, pyg-lib 0.7.0):
+
+```bash
+python -m pip install "torch==2.12.0" "torch-geometric==2.8.0" mps-pointops
+python -m pip install --no-index \
+  --find-links 'https://data.pyg.org/whl/torch-2.12.0+cpu.html' \
+  'pyg-lib==0.7.0+pt212'
+```
+
+Register the MPS implementations before using PyG's pool functions:
+
+```python
+from mps_pointops.pyg import register_mps
+register_mps()
+
+from torch_geometric.nn import fps, knn, radius, knn_graph, radius_graph
+```
+
+This adds MPS dispatch for pyg-lib's existing `pyg::fps`, `pyg::knn`, and
+`pyg::radius` schemas; it does not replace pyg-lib's CPU or CUDA kernels.
+PyG's graph wrappers use those same operators. The MPS path supports flat
+three-dimensional coordinates, float32 FPS/kNN, float32 or float16 radius,
+and global `[query, reference]` edges. `radius_graph(loop=False)` excludes
+equal global index numbers *before* applying `max_num_neighbors`, matching
+pyg-lib. Cosine kNN is not supported. Near ties and radius boundaries may
+differ across Metal and CUDA arithmetic. Registration also bridges PyG 2.8's
+batch-to-pointer conversion on MPS with `torch.searchsorted`, because the
+`index2ptr` path reaches a PyTorch CSR conversion without an MPS kernel.
+CPU conversion continues to use PyG's original function.
 
 Near ties can resolve differently from the CUDA packages. FPS and kNN round
 their squared distances without FMA; Ball Query uses explicit FMA. The CUDA
@@ -514,8 +550,8 @@ Ball Query is specified separately in the numerical contract.
 5. ~~MulSen-AD Point-MAE 3D detector on MPS, matching the CUDA runs~~ — the
    full TripleAD pipeline (RGB + IR + 3D) is next
 6. `torch_cluster`-style flat/ragged `radius`, `knn` and `fps` — the 3D
-   subset and PyG 2.7.0 direct-import path are implemented; operator
-   registration for PyG 2.8.0 and wider coordinate dimensions remain
+   subset, PyG 2.7.0 direct-import path, and PyG 2.8.0 MPS operator
+   registration are implemented; wider coordinate dimensions remain
 
 ## License
 

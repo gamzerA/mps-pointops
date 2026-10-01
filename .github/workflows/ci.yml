@@ -90,3 +90,38 @@ jobs:
           assert not missing, f"missing from wheel: {missing}"
           assert len(licenses) >= 2, "LICENSE files missing from wheel"
           EOF
+
+  pyg-2-8:
+    name: PyG 2.8 MPS operators
+    runs-on: macos-latest
+    env:
+      PYTORCH_ENABLE_MPS_FALLBACK: "0"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install PyG 2.8 and its matching pyg-lib wheel
+        run: |
+          python -m pip install "torch==2.12.0"
+          python -m pip install . pytest "torch-geometric==2.8.0"
+          python -m pip install --no-index \
+            --find-links 'https://data.pyg.org/whl/torch-2.12.0+cpu.html' \
+            'pyg-lib==0.7.0+pt212'
+      - name: Require MPS and print integration versions
+        run: |
+          python - <<'PY'
+          from importlib.metadata import version
+          import torch
+
+          print("torch", torch.__version__)
+          print("torch-geometric", version("torch-geometric"))
+          print("pyg-lib", version("pyg-lib"))
+          assert torch.backends.mps.is_available(), "MPS is required for this job"
+          PY
+      - name: PyG integration (Metal safe math)
+        run: pytest -ra tests/test_pyg28.py
+      - name: PyG integration (Metal fast math)
+        env:
+          PYTORCH_MPS_FAST_MATH: "1"
+        run: pytest -ra tests/test_pyg28.py

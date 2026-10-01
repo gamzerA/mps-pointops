@@ -88,9 +88,14 @@ def knn_indices(x: Tensor, y: Tensor, ptr_x: Tensor, ptr_y: Tensor, k: int) -> T
 
 
 def radius_indices(
-    x: Tensor, y: Tensor, ptr_x: Tensor, ptr_y: Tensor, r: float, max_num_neighbors: int
+    x: Tensor, y: Tensor, ptr_x: Tensor, ptr_y: Tensor, r: float,
+    max_num_neighbors: int, ignore_same_index: bool = False,
 ) -> Tensor:
-    """Return first valid global x indices per query, with ``-1`` padding."""
+    """Return first valid global x indices per query, with ``-1`` padding.
+
+    When requested, equal global x/y index numbers are excluded before the
+    neighbor cap is applied, matching pyg-lib's radius operator.
+    """
     batch_count, query_count = _check_inputs(x, y, ptr_x, ptr_y)
     if x.dtype not in (torch.float32, torch.float16) or y.dtype != x.dtype:
         raise TypeError("flat Metal radius requires matching float32 or float16 x and y")
@@ -115,6 +120,7 @@ def radius_indices(
     kernel(
         y.contiguous(), x.contiguous(), ptr_y.contiguous(), ptr_x.contiguous(), out,
         query_count, batch_count, max_num_neighbors, radius_sq, radius_f32,
+        int(ignore_same_index),
         threads=[groups * group, 1, 1], group_size=[group, 1, 1],
     )
     return out
