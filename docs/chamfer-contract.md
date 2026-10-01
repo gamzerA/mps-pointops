@@ -90,7 +90,7 @@ M5 Pro measurements use four clouds of 256 to 16,384 points, 20 timed repeats
 per case, and synchronized forward/backward timings. Uniform selection sends
 each query to a different reference; concentrated selection sends all queries
 to reference zero. The paired median concentrated/uniform backward ratios
-were 0.97–1.11 in Safe Math and 0.98–1.04 in Fast Math. A direct
+were 0.79–1.08 in Safe Math and 0.94–1.08 in Fast Math. A direct
 `scatter_add_` control also showed no consistent concentrated slowdown in
 this range. These results support retaining PyTorch's native accumulation for
 the current implementation. They do not establish its behavior on larger
