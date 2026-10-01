@@ -1,0 +1,165 @@
+{
+  "captured_utc": "2026-10-01T09:28:08.104424+00:00",
+  "cases": {
+    "gat/cpu": {
+      "backward": {
+        "feature_gradient_shape": [
+          12,
+          3
+        ],
+        "status": "passed"
+      },
+      "device": "cpu",
+      "forward": {
+        "output_shape": [
+          12,
+          4
+        ],
+        "status": "passed"
+      },
+      "model": "gat",
+      "overall_status": "passed",
+      "process_exit_code": 0
+    },
+    "gat/mps": {
+      "backward": {
+        "feature_gradient_shape": [
+          12,
+          3
+        ],
+        "status": "passed"
+      },
+      "device": "mps",
+      "forward": {
+        "output_shape": [
+          12,
+          4
+        ],
+        "status": "passed"
+      },
+      "model": "gat",
+      "overall_status": "passed",
+      "process_exit_code": 0
+    },
+    "gcn/cpu": {
+      "backward": {
+        "feature_gradient_shape": [
+          12,
+          3
+        ],
+        "status": "passed"
+      },
+      "device": "cpu",
+      "forward": {
+        "output_shape": [
+          12,
+          4
+        ],
+        "status": "passed"
+      },
+      "model": "gcn",
+      "overall_status": "passed",
+      "process_exit_code": 0
+    },
+    "gcn/mps": {
+      "backward": {
+        "feature_gradient_shape": [
+          12,
+          3
+        ],
+        "status": "passed"
+      },
+      "device": "mps",
+      "forward": {
+        "output_shape": [
+          12,
+          4
+        ],
+        "status": "passed"
+      },
+      "model": "gcn",
+      "overall_status": "passed",
+      "process_exit_code": 0
+    },
+    "graphsage/cpu": {
+      "backward": {
+        "feature_gradient_shape": [
+          12,
+          3
+        ],
+        "status": "passed"
+      },
+      "device": "cpu",
+      "forward": {
+        "output_shape": [
+          12,
+          4
+        ],
+        "status": "passed"
+      },
+      "model": "graphsage",
+      "overall_status": "passed",
+      "process_exit_code": 0
+    },
+    "graphsage/mps": {
+      "backward": {
+        "feature_gradient_shape": [
+          12,
+          3
+        ],
+        "status": "passed"
+      },
+      "device": "mps",
+      "forward": {
+        "output_shape": [
+          12,
+          4
+        ],
+        "status": "passed"
+      },
+      "model": "graphsage",
+      "overall_status": "passed",
+      "process_exit_code": 0
+    }
+  },
+  "environment": {
+    "fallback_env": "0",
+    "mps_is_available": true,
+    "mps_is_built": true,
+    "package_versions": {
+      "aiohttp": "3.14.3",
+      "numpy": "2.5.3",
+      "pyg-lib": null,
+      "torch": "2.14.1",
+      "torch-cluster": null,
+      "torch-geometric": "2.8.0",
+      "torch-scatter": null,
+      "torch-sparse": null,
+      "xxhash": "4.0.1"
+    },
+    "process_exit_code": 0,
+    "pyg_version_imported": "2.8.0",
+    "python": "3.12.13",
+    "status": "passed",
+    "torch_version_imported": "2.14.1"
+  },
+  "hardware": {
+    "chip": "Apple M5 Pro",
+    "machine": "arm64",
+    "macos": "26.5.2",
+    "model": "Mac17,9",
+    "platform": "macOS-26.5.2-arm64-arm-64bit"
+  },
+  "repository_base_commit": "0d61ea28384364ca30ab3efdaf9eeb13d5352600",
+  "schema_version": 1,
+  "script_sha256": "507904d7637d757c6bbeb85b89e9ab39ada2bd357f06612737ef5148e9d761f3",
+  "survey_input": {
+    "directed_edge_count": 36,
+    "edge_index_dtype": "int64",
+    "feature_dimension": 3,
+    "feature_dtype": "float32",
+    "loss": "output.square().mean()",
+    "model_layers": 2,
+    "node_count": 12
+  }
+}

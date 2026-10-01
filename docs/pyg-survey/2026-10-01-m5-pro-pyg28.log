@@ -1,0 +1,36 @@
+# PyG MPS survey raw child output
+
+## metadata
+@@PYG_MPS_SURVEY_RESULT@@{"fallback_env": "0", "mps_is_available": true, "mps_is_built": true, "package_versions": {"aiohttp": "3.14.3", "numpy": "2.5.3", "pyg-lib": null, "torch": "2.14.1", "torch-cluster": null, "torch-geometric": "2.8.0", "torch-scatter": null, "torch-sparse": null, "xxhash": "4.0.1"}, "pyg_version_imported": "2.8.0", "python": "3.12.13", "status": "passed", "torch_version_imported": "2.14.1"}
+<HOME>/Documents/project/mps-pointops/.venv/lib/python3.12/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+
+## gcn/cpu
+@@PYG_MPS_SURVEY_RESULT@@{"backward": {"feature_gradient_shape": [12, 3], "status": "passed"}, "device": "cpu", "forward": {"output_shape": [12, 4], "status": "passed"}, "model": "gcn", "overall_status": "passed"}
+<HOME>/Documents/project/mps-pointops/.venv/lib/python3.12/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+
+## gcn/mps
+@@PYG_MPS_SURVEY_RESULT@@{"backward": {"feature_gradient_shape": [12, 3], "status": "passed"}, "device": "mps", "forward": {"output_shape": [12, 4], "status": "passed"}, "model": "gcn", "overall_status": "passed"}
+<HOME>/Documents/project/mps-pointops/.venv/lib/python3.12/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+
+## graphsage/cpu
+@@PYG_MPS_SURVEY_RESULT@@{"backward": {"feature_gradient_shape": [12, 3], "status": "passed"}, "device": "cpu", "forward": {"output_shape": [12, 4], "status": "passed"}, "model": "graphsage", "overall_status": "passed"}
+<HOME>/Documents/project/mps-pointops/.venv/lib/python3.12/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+
+## graphsage/mps
+@@PYG_MPS_SURVEY_RESULT@@{"backward": {"feature_gradient_shape": [12, 3], "status": "passed"}, "device": "mps", "forward": {"output_shape": [12, 4], "status": "passed"}, "model": "graphsage", "overall_status": "passed"}
+<HOME>/Documents/project/mps-pointops/.venv/lib/python3.12/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+
+## gat/cpu
+@@PYG_MPS_SURVEY_RESULT@@{"backward": {"feature_gradient_shape": [12, 3], "status": "passed"}, "device": "cpu", "forward": {"output_shape": [12, 4], "status": "passed"}, "model": "gat", "overall_status": "passed"}
+<HOME>/Documents/project/mps-pointops/.venv/lib/python3.12/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+
+## gat/mps
+@@PYG_MPS_SURVEY_RESULT@@{"backward": {"feature_gradient_shape": [12, 3], "status": "passed"}, "device": "mps", "forward": {"output_shape": [12, 4], "status": "passed"}, "model": "gat", "overall_status": "passed"}
+<HOME>/Documents/project/mps-pointops/.venv/lib/python3.12/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
