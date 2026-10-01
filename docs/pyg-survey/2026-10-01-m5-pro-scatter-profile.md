@@ -98,12 +98,19 @@ rejected until a separate numerical contract is defined.
 | --- | --- | --- | --- |
 | sum | `0` | Fixed-order sum | `g[index[e]]` |
 | mean | `0` | Fixed-order sum divided by count | `g[index[e]] / count[index[e]]` |
-| max, min | `0` | Extreme value | Split `g` equally among all exact tied extrema, matching the observed native `scatter_reduce_` CPU rule |
+| max, min | `0` | Extreme value | Mathematical design rule: split `g` equally among exact tied **source** extrema; native PyTorch parity requires a separately verified rule at a zero extremum |
 | argmax, argmin | `-1` internally | Original row of the lowest-index exact tied extremum | Index has no gradient; value follows the max/min rule |
 
 The tie and empty-index rules are **proposed internal rules**, not a claim of
-`torch_scatter`/PyG API parity. An adapter must map their sentinel and tie
-behavior after direct upstream tests. Fixed-order reduction can be a
+native PyTorch, `torch_scatter`, or PyG API parity. A pinned PyTorch 2.14.1
+CPU probe found a nonempty segment with `amax`/`amin` extremum exactly zero,
+`include_self=False`, and initial output zero whose source gradient differed
+from the mathematical split among source extrema. This is an observed
+counterexample, not an explanation of the implementation's cause. The
+[dedicated backward probe](2026-10-01-m5-pro-scatter-backward.md) records the
+CPU/MPS outputs and gradients. A native-parity adapter must specify this
+case separately; the `torch_scatter` sentinel and tie behavior likewise
+requires direct upstream tests. Fixed-order reduction can be a
 reproducible safe baseline, while float32 CPU/MPS bit parity is not assumed.
 Do not select an atomic path from an MSL version string alone: first query
 the actual device capability and verify shader compilation and execution on

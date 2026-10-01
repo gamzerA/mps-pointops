@@ -1,0 +1,797 @@
+{
+  "schema": "mps-pointops.scatter-backward-probe.v1",
+  "captured_utc": "2026-10-01T13:16:42.970288+00:00",
+  "command": "PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=0 python3 bench/probe_scatter_backward_mps.py --output bench/results/2026-10-01-apple-m5-pro-scatter-backward-safe.json",
+  "environment": {
+    "chip": "Apple M5 Pro",
+    "macos": "26.5.2",
+    "python": "3.12.13",
+    "torch": "2.14.1",
+    "pyg": null,
+    "pytorch_enable_mps_fallback": "0",
+    "pytorch_mps_fast_math": "0",
+    "base_commit": "94398da77fb305039c9648380182d55747609ad1",
+    "script_sha256": "5bbea5d67a246ac25217ca0ff3105311dd249358efa780d615ad09e6ff31c37f"
+  },
+  "method": {
+    "source": [
+      [
+        1.0,
+        -4.0
+      ],
+      [
+        1.0,
+        3.0
+      ],
+      [
+        -2.0,
+        3.0
+      ],
+      [
+        4.0,
+        -1.0
+      ],
+      [
+        4.0,
+        -1.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "destinations": [
+      0,
+      0,
+      0,
+      2,
+      2,
+      2
+    ],
+    "upstream_gradient": [
+      [
+        2.0,
+        6.0
+      ],
+      [
+        7.0,
+        8.0
+      ],
+      [
+        3.0,
+        4.0
+      ],
+      [
+        9.0,
+        10.0
+      ]
+    ],
+    "dtype": "float32 source/output; int64 index",
+    "include_self": false,
+    "repeats": 20,
+    "timing": "none",
+    "numerical_tolerance": "forward rtol=atol=1e-6 for MPS vs oracle; CPU forward atol=1e-7; gradient CPU/MPS and mathematical agreement recorded separately at rtol=atol=1e-6"
+  },
+  "cases": {
+    "scatter_add": {
+      "status": "passed",
+      "expected_output": [
+        [
+          0.0,
+          2.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          8.0,
+          -2.0
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "expected_source_gradient": [
+        [
+          2.0,
+          6.0
+        ],
+        [
+          2.0,
+          6.0
+        ],
+        [
+          2.0,
+          6.0
+        ],
+        [
+          3.0,
+          4.0
+        ],
+        [
+          3.0,
+          4.0
+        ],
+        [
+          3.0,
+          4.0
+        ]
+      ],
+      "cpu_output": [
+        [
+          0.0,
+          2.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          8.0,
+          -2.0
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "cpu_source_gradient": [
+        [
+          2.0,
+          6.0
+        ],
+        [
+          2.0,
+          6.0
+        ],
+        [
+          2.0,
+          6.0
+        ],
+        [
+          3.0,
+          4.0
+        ],
+        [
+          3.0,
+          4.0
+        ],
+        [
+          3.0,
+          4.0
+        ]
+      ],
+      "mps_output_first_repeat": [
+        [
+          0.0,
+          2.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          8.0,
+          -2.0
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "mps_source_gradient_first_repeat": [
+        [
+          2.0,
+          6.0
+        ],
+        [
+          2.0,
+          6.0
+        ],
+        [
+          2.0,
+          6.0
+        ],
+        [
+          3.0,
+          4.0
+        ],
+        [
+          3.0,
+          4.0
+        ],
+        [
+          3.0,
+          4.0
+        ]
+      ],
+      "max_abs_mps_output_error": 0.0,
+      "max_abs_cpu_source_gradient_error_vs_math": 0.0,
+      "max_abs_mps_source_gradient_error_vs_cpu": 0.0,
+      "max_abs_mps_source_gradient_error_vs_math": 0.0,
+      "cpu_gradient_matches_math": true,
+      "mps_gradient_matches_cpu": true,
+      "mps_gradient_matches_math": true,
+      "output_bitwise_equal_across_repeats": true,
+      "gradient_bitwise_equal_across_repeats": true
+    },
+    "sum": {
+      "status": "passed",
+      "expected_output": [
+        [
+          0.0,
+          2.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          8.0,
+          -2.0
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "expected_source_gradient": [
+        [
+          2.0,
+          6.0
+        ],
+        [
+          2.0,
+          6.0
+        ],
+        [
+          2.0,
+          6.0
+        ],
+        [
+          3.0,
+          4.0
+        ],
+        [
+          3.0,
+          4.0
+        ],
+        [
+          3.0,
+          4.0
+        ]
+      ],
+      "cpu_output": [
+        [
+          0.0,
+          2.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          8.0,
+          -2.0
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "cpu_source_gradient": [
+        [
+          2.0,
+          6.0
+        ],
+        [
+          2.0,
+          6.0
+        ],
+        [
+          2.0,
+          6.0
+        ],
+        [
+          3.0,
+          4.0
+        ],
+        [
+          3.0,
+          4.0
+        ],
+        [
+          3.0,
+          4.0
+        ]
+      ],
+      "mps_output_first_repeat": [
+        [
+          0.0,
+          2.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          8.0,
+          -2.0
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "mps_source_gradient_first_repeat": [
+        [
+          2.0,
+          6.0
+        ],
+        [
+          2.0,
+          6.0
+        ],
+        [
+          2.0,
+          6.0
+        ],
+        [
+          3.0,
+          4.0
+        ],
+        [
+          3.0,
+          4.0
+        ],
+        [
+          3.0,
+          4.0
+        ]
+      ],
+      "max_abs_mps_output_error": 0.0,
+      "max_abs_cpu_source_gradient_error_vs_math": 0.0,
+      "max_abs_mps_source_gradient_error_vs_cpu": 0.0,
+      "max_abs_mps_source_gradient_error_vs_math": 0.0,
+      "cpu_gradient_matches_math": true,
+      "mps_gradient_matches_cpu": true,
+      "mps_gradient_matches_math": true,
+      "output_bitwise_equal_across_repeats": true,
+      "gradient_bitwise_equal_across_repeats": true
+    },
+    "mean": {
+      "status": "passed",
+      "expected_output": [
+        [
+          0.0,
+          0.6666666865348816
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          2.6666667461395264,
+          -0.6666666865348816
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "expected_source_gradient": [
+        [
+          0.6666666865348816,
+          2.0
+        ],
+        [
+          0.6666666865348816,
+          2.0
+        ],
+        [
+          0.6666666865348816,
+          2.0
+        ],
+        [
+          1.0,
+          1.3333333730697632
+        ],
+        [
+          1.0,
+          1.3333333730697632
+        ],
+        [
+          1.0,
+          1.3333333730697632
+        ]
+      ],
+      "cpu_output": [
+        [
+          0.0,
+          0.6666666865348816
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          2.6666667461395264,
+          -0.6666666865348816
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "cpu_source_gradient": [
+        [
+          0.6666666865348816,
+          2.0
+        ],
+        [
+          0.6666666865348816,
+          2.0
+        ],
+        [
+          0.6666666865348816,
+          2.0
+        ],
+        [
+          1.0,
+          1.3333333730697632
+        ],
+        [
+          1.0,
+          1.3333333730697632
+        ],
+        [
+          1.0,
+          1.3333333730697632
+        ]
+      ],
+      "mps_output_first_repeat": [
+        [
+          0.0,
+          0.6666666865348816
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          2.6666667461395264,
+          -0.6666666865348816
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "mps_source_gradient_first_repeat": [
+        [
+          0.6666666865348816,
+          2.0
+        ],
+        [
+          0.6666666865348816,
+          2.0
+        ],
+        [
+          0.6666666865348816,
+          2.0
+        ],
+        [
+          1.0,
+          1.3333333730697632
+        ],
+        [
+          1.0,
+          1.3333333730697632
+        ],
+        [
+          1.0,
+          1.3333333730697632
+        ]
+      ],
+      "max_abs_mps_output_error": 0.0,
+      "max_abs_cpu_source_gradient_error_vs_math": 0.0,
+      "max_abs_mps_source_gradient_error_vs_cpu": 0.0,
+      "max_abs_mps_source_gradient_error_vs_math": 0.0,
+      "cpu_gradient_matches_math": true,
+      "mps_gradient_matches_cpu": true,
+      "mps_gradient_matches_math": true,
+      "output_bitwise_equal_across_repeats": true,
+      "gradient_bitwise_equal_across_repeats": true
+    },
+    "amax": {
+      "status": "passed",
+      "expected_output": [
+        [
+          1.0,
+          3.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          4.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "expected_source_gradient": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          1.0,
+          3.0
+        ],
+        [
+          0.0,
+          3.0
+        ],
+        [
+          1.5,
+          0.0
+        ],
+        [
+          1.5,
+          0.0
+        ],
+        [
+          0.0,
+          4.0
+        ]
+      ],
+      "cpu_output": [
+        [
+          1.0,
+          3.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          4.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "cpu_source_gradient": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          1.0,
+          3.0
+        ],
+        [
+          0.0,
+          3.0
+        ],
+        [
+          1.5,
+          0.0
+        ],
+        [
+          1.5,
+          0.0
+        ],
+        [
+          0.0,
+          2.0
+        ]
+      ],
+      "mps_output_first_repeat": [
+        [
+          1.0,
+          3.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          4.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "mps_source_gradient_first_repeat": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          1.0,
+          3.0
+        ],
+        [
+          0.0,
+          3.0
+        ],
+        [
+          1.5,
+          0.0
+        ],
+        [
+          1.5,
+          0.0
+        ],
+        [
+          0.0,
+          2.0
+        ]
+      ],
+      "max_abs_mps_output_error": 0.0,
+      "max_abs_cpu_source_gradient_error_vs_math": 2.0,
+      "max_abs_mps_source_gradient_error_vs_cpu": 0.0,
+      "max_abs_mps_source_gradient_error_vs_math": 2.0,
+      "cpu_gradient_matches_math": false,
+      "mps_gradient_matches_cpu": true,
+      "mps_gradient_matches_math": false,
+      "output_bitwise_equal_across_repeats": true,
+      "gradient_bitwise_equal_across_repeats": true
+    },
+    "amin": {
+      "status": "passed",
+      "expected_output": [
+        [
+          -2.0,
+          -4.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          -1.0
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "expected_source_gradient": [
+        [
+          0.0,
+          6.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          2.0,
+          0.0
+        ],
+        [
+          0.0,
+          2.0
+        ],
+        [
+          0.0,
+          2.0
+        ],
+        [
+          3.0,
+          0.0
+        ]
+      ],
+      "cpu_output": [
+        [
+          -2.0,
+          -4.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          -1.0
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "cpu_source_gradient": [
+        [
+          0.0,
+          6.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          2.0,
+          0.0
+        ],
+        [
+          0.0,
+          2.0
+        ],
+        [
+          0.0,
+          2.0
+        ],
+        [
+          1.5,
+          0.0
+        ]
+      ],
+      "mps_output_first_repeat": [
+        [
+          -2.0,
+          -4.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          -1.0
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "mps_source_gradient_first_repeat": [
+        [
+          0.0,
+          6.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          2.0,
+          0.0
+        ],
+        [
+          0.0,
+          2.0
+        ],
+        [
+          0.0,
+          2.0
+        ],
+        [
+          1.5,
+          0.0
+        ]
+      ],
+      "max_abs_mps_output_error": 0.0,
+      "max_abs_cpu_source_gradient_error_vs_math": 1.5,
+      "max_abs_mps_source_gradient_error_vs_cpu": 0.0,
+      "max_abs_mps_source_gradient_error_vs_math": 1.5,
+      "cpu_gradient_matches_math": false,
+      "mps_gradient_matches_cpu": true,
+      "mps_gradient_matches_math": false,
+      "output_bitwise_equal_across_repeats": true,
+      "gradient_bitwise_equal_across_repeats": true
+    }
+  }
+}
