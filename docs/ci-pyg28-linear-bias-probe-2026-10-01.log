@@ -1,0 +1,96 @@
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0814100Z standalone
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0814450Z x CPU: tensor([[0.0000, 0.1429, 0.2857, 0.4286],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0814750Z         [0.5714, 0.7143, 0.8571, 1.0000],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0815060Z         [1.1429, 1.2857, 1.4286, 1.5714],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0815380Z         [1.7143, 1.8571, 2.0000, 2.1429]])
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0815700Z x MPS: tensor([[0.0000, 0.1429, 0.2857, 0.4286],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0815980Z         [0.5714, 0.7143, 0.8571, 1.0000],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0816260Z         [1.1429, 1.2857, 1.4286, 1.5714],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0816440Z         [1.7143, 1.8571, 2.0000, 2.1429]])
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0816680Z CPU xW^T tensor([[0.1053, 0.2857, 0.4662],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0816870Z         [0.2857, 0.9474, 1.6090],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0817050Z         [0.4662, 1.6090, 2.7519],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0817260Z         [0.6466, 2.2707, 3.8947]]) norm= 5.916103839874268
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0817550Z CPU b tensor([-0.2500,  0.5000,  0.7500]) norm= 0.9354143738746643
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0817850Z CPU xW^T+b tensor([[-0.1447,  0.7857,  1.2162],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0818050Z         [ 0.0357,  1.4474,  2.3590],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0818230Z         [ 0.2162,  2.1090,  3.5019],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0818510Z         [ 0.3966,  2.7707,  4.6447]]) norm= 7.479564666748047
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0825110Z CPU addmm tensor([[-0.1447,  0.7857,  1.2162],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0825320Z         [ 0.0357,  1.4474,  2.3590],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0825510Z         [ 0.2162,  2.1090,  3.5019],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0825710Z         [ 0.3966,  2.7707,  4.6447]]) norm= 7.479564666748047
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0825950Z CPU Linear tensor([[-0.1447,  0.7857,  1.2162],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0826170Z         [ 0.0357,  1.4474,  2.3590],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0826340Z         [ 0.2162,  2.1090,  3.5019],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0826550Z         [ 0.3966,  2.7707,  4.6447]]) norm= 7.479564666748047
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0826770Z CPU max|Linear-(mm+b)|= 0.0
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0826960Z CPU max|Linear-mm|= 0.75
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0827130Z MPS xW^T tensor([[0.1053, 0.2857, 0.4662],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0827320Z         [0.2857, 0.9474, 1.6090],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0827490Z         [0.4662, 1.6090, 2.7519],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0827700Z         [0.6466, 2.2707, 3.8947]]) norm= 5.916103363037109
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0827970Z MPS b tensor([-0.2500,  0.5000,  0.7500]) norm= 0.9354142546653748
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0828240Z MPS xW^T+b tensor([[-0.1447,  0.7857,  1.2162],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0828450Z         [ 0.0357,  1.4474,  2.3590],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0828630Z         [ 0.2162,  2.1090,  3.5019],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0828840Z         [ 0.3966,  2.7707,  4.6447]]) norm= 7.479564666748047
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0829080Z MPS addmm tensor([[-0.1447,  0.7857,  1.2162],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0829290Z         [ 0.0357,  1.4474,  2.3590],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0829460Z         [ 0.2162,  2.1090,  3.5019],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0829680Z         [ 0.3966,  2.7707,  4.6447]]) norm= 7.479564666748047
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0829900Z MPS Linear tensor([[0.1053, 0.2857, 0.4662],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0830090Z         [0.2857, 0.9474, 1.6090],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0830240Z         [0.4662, 1.6090, 2.7519],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0830420Z         [0.6466, 2.2707, 3.8947]]) norm= 5.916103363037109
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0830920Z MPS max|Linear-(mm+b)|= 0.75
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0831080Z MPS max|Linear-mm|= 0.0
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0831220Z grid IDs equal: True
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0831390Z pooled max difference: 0.0
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0831570Z voxel pooled
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0831720Z x CPU: tensor([[0.5714, 0.7143, 0.8571, 1.0000],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0831940Z         [1.7143, 1.8571, 2.0000, 2.1429],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0832120Z         [2.2857, 2.4286, 2.5714, 2.7143],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0832280Z         [2.8571, 3.0000, 3.1429, 3.2857]])
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0832470Z x MPS: tensor([[0.5714, 0.7143, 0.8571, 1.0000],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0832650Z         [1.7143, 1.8571, 2.0000, 2.1429],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0832820Z         [2.2857, 2.4286, 2.5714, 2.7143],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0833180Z         [2.8571, 3.0000, 3.1429, 3.2857]])
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0833350Z CPU xW^T tensor([[0.2857, 0.9474, 1.6090],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0833530Z         [0.6466, 2.2707, 3.8947],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0833680Z         [0.8271, 2.9323, 5.0376],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0833870Z         [1.0075, 3.5940, 6.1805]]) norm= 10.540441513061523
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0834160Z CPU b tensor([-0.2500,  0.5000,  0.7500]) norm= 0.9354143738746643
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0834470Z CPU xW^T+b tensor([[0.0357, 1.4474, 2.3590],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0834650Z         [0.3966, 2.7707, 4.6447],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0834900Z         [0.5771, 3.4323, 5.7876],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0835110Z         [0.7575, 4.0940, 6.9305]]) norm= 12.167354583740234
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0835310Z CPU addmm tensor([[0.0357, 1.4474, 2.3590],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0835490Z         [0.3966, 2.7707, 4.6447],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0835650Z         [0.5771, 3.4323, 5.7876],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0835820Z         [0.7575, 4.0940, 6.9305]]) norm= 12.167354583740234
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0836040Z CPU Linear tensor([[0.0357, 1.4474, 2.3590],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0836220Z         [0.3966, 2.7707, 4.6447],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0836370Z         [0.5771, 3.4323, 5.7876],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0836550Z         [0.7575, 4.0940, 6.9305]]) norm= 12.167354583740234
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0836750Z CPU max|Linear-(mm+b)|= 0.0
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0836910Z CPU max|Linear-mm|= 0.75
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0837070Z MPS xW^T tensor([[0.2857, 0.9474, 1.6090],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0837240Z         [0.6466, 2.2707, 3.8947],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0837390Z         [0.8271, 2.9323, 5.0376],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0837570Z         [1.0075, 3.5940, 6.1805]]) norm= 10.540441513061523
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0837820Z MPS b tensor([-0.2500,  0.5000,  0.7500]) norm= 0.9354142546653748
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0838050Z MPS xW^T+b tensor([[0.0357, 1.4474, 2.3590],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0838260Z         [0.3966, 2.7707, 4.6447],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0838400Z         [0.5771, 3.4323, 5.7876],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0838580Z         [0.7575, 4.0940, 6.9305]]) norm= 12.167354583740234
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0838780Z MPS addmm tensor([[0.0357, 1.4474, 2.3590],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0838950Z         [0.3966, 2.7707, 4.6447],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0839090Z         [0.5771, 3.4323, 5.7876],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0839270Z         [0.7575, 4.0940, 6.9305]]) norm= 12.167354583740234
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0839470Z MPS Linear tensor([[0.2857, 0.9474, 1.6090],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0839640Z         [0.6466, 2.2707, 3.8947],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0839790Z         [0.8271, 2.9323, 5.0376],
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0839960Z         [1.0075, 3.5940, 6.1805]]) norm= 10.540441513061523
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0840150Z MPS max|Linear-(mm+b)|= 0.75
+PyG 2.8 MPS operators	Diagnose hosted MPS Linear bias behavior	2026-10-01T13:10:29.0840300Z MPS max|Linear-mm|= 0.0

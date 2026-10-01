@@ -87,15 +87,30 @@ corresponding bias; the largest output difference was `0.75`. For the
 four-row compact case the CPU loss was `12.3370438`, while MPS returned
 `9.2584095`, matching the CPU computation with bias set to zero. This is a
 large projection difference, not a reduction-order or tolerance effect.
-This is an observed failure downstream of pooling, not a proven root cause
-in PyTorch or pyg-lib. The portable integration fixture therefore uses a
-bias-free projection. Bias-bearing model parity across MPS environments
-remains unverified.
 
-This independent probe can separate the Linear behavior from the PyG path on
-the same runner. It has not yet been run there; the linked CI run establishes
-only the integrated observation above. Run it in the pinned environment with
-MPS fallback disabled and compare the printed CPU/MPS outputs:
+A [second hosted job](https://github.com/gamzerA/mps-pointops/actions/runs/36866677241/job/110383773339)
+at PR head `d6c608b4bb010843b83b01235fb85b9899f758e0`
+split the projection into `xWᵀ`, `b`, explicit `xWᵀ+b`, `torch.addmm`, and
+`nn.Linear`, first for a fixed matrix without PyG and then for PyG's pooled
+features. Both inputs showed the same behavior; the grid IDs were equal and
+the pooled tensors had maximum absolute difference `0.0`. On the independent
+input, CPU and MPS `xWᵀ` norms were `5.9161038` and `5.9161034`, the bias
+norm was about `0.9354143`, and explicit addition and `addmm` both printed
+norm `7.4795647`. MPS `nn.Linear` instead printed the bias-free norm
+`5.9161034`; `max|Linear-(xWᵀ+b)|=0.75` and `max|Linear-xWᵀ|=0.0`.
+For the pooled input, explicit addition and `addmm` printed norm
+`12.1673546`, while MPS `nn.Linear` printed the bias-free norm `10.5404415`
+with the same maximum differences. The `addmm` tensor values matched explicit
+addition at the log's printed precision; this probe did not calculate their
+elementwise maximum difference. The [raw probe excerpt](ci-pyg28-linear-bias-probe-2026-10-01.log)
+preserves all printed tensors and norms. This isolates the symptom from PyG
+pooling, but does not identify the internal cause of the MPS Linear behavior.
+The portable integration fixture therefore uses a bias-free projection.
+Bias-bearing model parity across MPS environments remains unverified.
+
+The following independent snippet reproduces the projection comparison.
+It passed on the M5 Pro with pinned Torch 2.12.0; the hosted job's full probe
+used this same model and weights alongside a pooled-input case:
 
 ```bash
 PYTORCH_ENABLE_MPS_FALLBACK=0 python - <<'PY'
