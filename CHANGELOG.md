@@ -2,16 +2,6 @@
 
 ## Unreleased
 
-### Added
-
-- `three_nn` and `three_interpolate` PointNet++ feature-propagation primitives
-  with original channel-first API shapes, float32 Metal kernels, CPU reference
-  paths, and first-order gradients into source features. The caller supplies
-  interpolation weights. The native backward accumulates repeated indices
-  through integer CAS; gradient low bits may vary with accumulation order.
-- [Feature-propagation contract](docs/pointnet2-propagation.md) and CPU/MPS
-  differential tests for ties, shape errors, empty dimensions, and gradients.
-
 ## 0.4.0 — 2026-10-01
 
 ### Documentation

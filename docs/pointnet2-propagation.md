@@ -1,7 +1,8 @@
 # PointNet++ feature propagation contract
 
-`mps_pointops.three_nn` and `mps_pointops.three_interpolate` are independent
-implementations of the call shapes documented by
+`mps_pointops.pointnet2.three_nn` and
+`mps_pointops.pointnet2.three_interpolate` independently implement the call
+shapes documented by
 [`pointnet2_ops.pointnet2_utils`](https://github.com/erikwijmans/Pointnet2_PyTorch/blob/master/pointnet2_ops_lib/pointnet2_ops/pointnet2_utils.py).
 The upstream CUDA implementation is a compatibility reference, not source for
 the Metal kernels. No upstream code is copied into this project. This feature

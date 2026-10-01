@@ -6,7 +6,8 @@ import numpy as np
 import pytest
 import torch
 
-from mps_pointops import reference, three_interpolate, three_nn
+from mps_pointops import reference
+from mps_pointops.pointnet2 import three_interpolate, three_nn
 
 
 DEVICES = ["cpu"] + (["mps"] if torch.backends.mps.is_available() else [])

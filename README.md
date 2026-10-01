@@ -505,13 +505,6 @@ The native API (`mps_pointops.furthest_point_sample`, `mps_pointops.knn`,
 points near the origin. It uses dense, batched `(B, N, 3)` tensors, while the
 flat API above uses `(N, 3)` tensors and optional batch vectors.
 
-The unreleased source tree also exposes `mps_pointops.three_nn` and
-`mps_pointops.three_interpolate` for PointNet++ feature propagation. They use
-the original channel-first feature layout `(B,C,M)` and return int32 neighbor
-indices. PyPI v0.4.0 does not include these functions. The
-[feature-propagation contract](docs/pointnet2-propagation.md) gives shapes,
-numerical behavior, and the first-order gradient formula.
-
 ## The operators in equations
 
 For batch `b`, let `q[b, i]` be query `i`, where `0 ≤ i < Q`, and let
@@ -612,24 +605,6 @@ policy, derivation, tests, and limitations.
 The formulas state established geometric operations; the
 [provenance note](docs/ball-query-provenance.md) separates paper concepts,
 external implementation contracts, and this project's code.
-
-### PointNet++ feature propagation (unreleased)
-
-For query `q[b,n]` and known point `x[b,m]`, `three_nn` returns the three
-smallest Euclidean distances `sqrt(s[b,n,m])` and their int32 indices, with
-smaller input indices winning exact ties. Given source features `F[b,c,m]`,
-those indices `I[b,n,t]`, and **externally supplied** weights `W[b,n,t]`,
-`three_interpolate` computes
-
-$$
-Y_{bcn}=\sum_{t=0}^{2}W_{bnt}F_{bc,I_{bnt}},\qquad
-\frac{\partial L}{\partial F_{bcm}}
-=\sum_{n,t:I_{bnt}=m}W_{bnt}\frac{\partial L}{\partial Y_{bcn}}.
-$$
-
-The Metal backward accumulates repeated source indices through a float32
-compare-and-swap loop. Coordinates, indices, and weights do not receive
-gradients. See the [full contract](docs/pointnet2-propagation.md).
 
 ## How the kernels work
 
@@ -783,11 +758,10 @@ original implementation.
       outside ambiguous ties and model-output errors within a documented
       tolerance, rather than requiring bitwise CPU/MPS index parity at every
       boundary.
-- [x] `three_nn` and `three_interpolate` for PointNet++ feature propagation
-      are implemented in the unreleased source tree. The first returns
-      Euclidean distances and three indices; the second accepts external
-      weights and accumulates backward gradients into input features.
-- [ ] Validate PointNet++ segmentation end to end on MPS against a CUDA run.
+- [ ] `three_nn` and `three_interpolate` for PointNet++ feature propagation.
+      The first returns Euclidean distances and three indices. The second
+      accepts externally computed weights and accumulates backward gradients
+      into input features. Validate PointNet++ segmentation end to end.
 - [ ] Open issues upstream (`pyg-lib`, `torch_cluster`, `PyTorch3D`) to ask
       whether MPS support would be accepted and in what form.
 
