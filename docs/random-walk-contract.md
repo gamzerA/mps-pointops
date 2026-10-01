@@ -1,5 +1,11 @@
 # Experimental legacy random walks
 
+The legacy `torch_cluster.random_walk` shim is implemented for the bounded
+CPU/MPS int64 COO contract below; supported calls use a real tensor path and
+do not raise `NotImplementedError`. This status does not include PyG 2.8
+`Node2Vec`, which calls the separate
+[`torch.ops.pyg.random_walk`](https://github.com/pyg-team/pytorch_geometric/blob/2.8.0/torch_geometric/nn/models/node2vec.py#L57-L60).
+
 The source comparison uses `torch-cluster` 1.6.3 at commit
 `29cd22bf1a5b82fc06b108d6573f81302c5d6b12`.
 The inspected SHA-256 digests are `rw.py`
