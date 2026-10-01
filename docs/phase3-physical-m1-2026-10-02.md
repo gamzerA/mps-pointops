@@ -162,8 +162,9 @@ candidate reduction-kernel ablation are required for a causal claim.
 ## Decision and remaining experiments
 
 - Keep PyG `avg_pool` as topology/gradient functionality, with no speedup
-  claim. The current voxel downsampling paths compose PyTorch operations;
-  there is **no fused Metal voxel-pooling kernel** to benchmark yet.
+  claim. At this report's v0.6 source revision, voxel downsampling composed
+  PyTorch operations and there was **no fused Metal voxel-pooling kernel**
+  to benchmark. The later opt-in v0.7 prototype is documented separately.
 - The random large-Chamfer forward result motivates model-level tests, but
   the concentrated case makes backward reduction a design and profiling
   target. Compare candidate segmented reduction against native PyTorch on

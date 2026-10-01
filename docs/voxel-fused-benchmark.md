@@ -10,8 +10,11 @@ contain every sample and synchronized memory checkpoint.
 ## Reproduction and provenance
 
 - Physical Apple M5 Pro, macOS 26.5.2, PyTorch 2.14.1, 48 GiB unified memory.
-  The benchmark source commit was `dae1bd3c95f0d068ae6ade6d4aaacaa34e8f27af`;
-  the benchmark script SHA-256 is
+  The JSON `source_commit` value `dae1bd3c95f0d068ae6ade6d4aaacaa34e8f27af`
+  identifies the **committed operator implementation** measured. The runner
+  was untracked during measurement and first entered Git in `5aad75d`; its
+  recorded bytes are reconstructable from that commit. The benchmark script
+  SHA-256 is
   `174828768cbbbaf7cd811b9d73e97a1f99fc2ed21d93f9a835e12b38f35ac558`.
   Each JSON records the `mps_pointops/voxel.py` SHA-256, software version,
   exact input digest, and all per-case samples. Both backends in a row have
