@@ -535,8 +535,8 @@ registration below. The `torch_cluster` shim does not provide the rest of
 
 ### PyG 2.8 MPS operator registration
 
-PyG 2.8 checks for `pyg-lib>=0.6` before calling its `fps`, `knn`, and
-`radius` operators. Install a `pyg-lib` wheel matching your PyTorch version
+PyG 2.8 checks for `pyg-lib>=0.6` before calling its `fps`, `knn`, `radius`,
+and `grid_cluster` operators. Install a `pyg-lib` wheel matching your PyTorch version
 from [PyG's wheel index](https://data.pyg.org/whl/). For example, this is the
 tested Apple Silicon combination (PyTorch 2.12.0, PyG 2.8.0, pyg-lib 0.7.0):
 
@@ -553,11 +553,15 @@ Register the MPS implementations before using PyG's pool functions:
 from mps_pointops.pyg import register_mps
 register_mps()
 
-from torch_geometric.nn import fps, knn, radius, knn_graph, radius_graph
+from torch_geometric.nn import fps, knn, radius, knn_graph, radius_graph, voxel_grid
 ```
 
-This adds MPS dispatch for pyg-lib's existing `pyg::fps`, `pyg::knn`, and
-`pyg::radius` schemas; it does not replace pyg-lib's CPU or CUDA kernels.
+This adds MPS dispatch for pyg-lib's existing `pyg::fps`, `pyg::knn`,
+`pyg::radius`, and `pyg::grid_cluster` schemas; it does not replace pyg-lib's
+CPU or CUDA kernels. [`voxel_grid` support](docs/pyg28-grid-cluster-contract.md)
+currently covers finite float32 1D–3D spatial coordinates and returns
+mixed-radix voxel IDs. Voxel downsampling and feature pooling remain separate
+work.
 PyG's graph wrappers use those same operators. The MPS path supports flat
 three-dimensional coordinates for FPS/radius and arbitrary positive feature
 dimension for float32 kNN; radius accepts float32 or float16. It returns
@@ -903,10 +907,12 @@ listed versions, devices, models, and inputs that have passing logs.
       instead of inferring it from the MSL version. Use a reproducible segmented
       reduction as the safe baseline; add device-specific atomic paths only
       where supported and measured. A `torch_scatter` stand-in follows demand.
-- [~] Experimental float32 3D `grid_cluster` CPU/MPS shim (#30). Its
-      [contract and parity tests](docs/grid-cluster-contract.md) cover finite
-      points; it is not a full PyG voxelization path.
-- [ ] Voxelization and voxel downsampling.
+- [~] Experimental grid IDs: the float32 3D legacy `grid_cluster` CPU/MPS
+      shim (#30) has its own [contract](docs/grid-cluster-contract.md); the
+      separate PyG 2.8 `voxel_grid` MPS registration has a pinned
+      [operator contract](docs/pyg28-grid-cluster-contract.md). Both cover
+      finite inputs and produce IDs, without feature pooling.
+- [ ] Voxel feature/graph downsampling and pooling.
 - [~] Legacy `torch_cluster.nearest` CPU/MPS float32 shim. The
       [contract and source-pinned comparison](docs/nearest-contract.md) cover
       finite well-separated examples, ragged batches, and the CUDA source's

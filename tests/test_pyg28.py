@@ -25,7 +25,9 @@ pytestmark = pytest.mark.skipif(
 
 
 def test_register_real_pyg_schemas_and_pool_functions():
-    assert set(pyg.register_mps()) == {"fps", "knn", "radius"}
+    names = {"fps", "knn", "radius", "grid_cluster"}
+    assert set(pyg.register_mps()) <= names
+    assert all(torch._C._dispatch_has_kernel_for_dispatch_key(f"pyg::{name}", "MPS") for name in names)
     assert pyg.register_mps() == []
 
     from torch_geometric.nn.pool import fps, knn, knn_graph, radius, radius_graph
