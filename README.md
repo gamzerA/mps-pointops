@@ -1109,7 +1109,9 @@ local Safe/Fast Math tests, and the six required CI checks for `main`.
 
 ## Citation
 
-For v0.5.0, cite its archived
+For v0.6.0, cite its archived
+[version DOI (10.5281/zenodo.23086417)](https://doi.org/10.5281/zenodo.23086417).
+For results using v0.5.0, cite its archived
 [version DOI (10.5281/zenodo.23080506)](https://doi.org/10.5281/zenodo.23080506).
 For results using v0.4.0, cite its archived
 [version DOI (10.5281/zenodo.23078860)](https://doi.org/10.5281/zenodo.23078860).

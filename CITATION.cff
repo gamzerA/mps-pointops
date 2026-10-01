@@ -7,7 +7,7 @@ authors:
     given-names: YeYoung
     orcid: "https://orcid.org/0009-0001-8245-1803"
 repository-code: "https://github.com/gamzerA/mps-pointops"
-url: "https://github.com/gamzerA/mps-pointops/releases/tag/v0.5.0"
-version: "0.5.0"
-date-released: "2026-10-01"
-doi: "10.5281/zenodo.23080506"
+url: "https://github.com/gamzerA/mps-pointops/releases/tag/v0.6.0"
+version: "0.6.0"
+date-released: "2026-10-02"
+doi: "10.5281/zenodo.23086417"
