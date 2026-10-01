@@ -33,11 +33,11 @@ is accepted only when its squared distance is **strictly less than `1e10`**;
 the exact 100,000-unit boundary and farther points retain `-1`/`100000`
 padding on both CPU and MPS. Nonfinite coordinate distances also retain this
 padding; the shim validates MPS's missing-slot sentinel before applying a
-batch offset, so it cannot become a point from another cloud. The upstream plain `interpolation`
-function can index the last feature row through `-1` padding and assign it a
-small nonzero weight. This shim deliberately treats missing neighbors as
-absent and renormalizes valid weights, so CUDA interpolation values need not
-match when a batch has fewer than `k` references.
+batch offset, so it cannot become a point from another cloud. The upstream
+plain `interpolation` function can index the last feature row through `-1`
+padding and assign it a small nonzero weight. This shim deliberately treats
+missing neighbors as absent and renormalizes valid weights, so CUDA
+interpolation values need not match when a batch has fewer than `k` references.
 
 ## Pinned Seg26 integration probe
 
@@ -61,9 +61,9 @@ the temporary one-substitution source SHA-256 is
 `3b79a8e79f9991ccd039fea4157b56a7fd18977c64e0e801a2e6dbe1e5666111`.
 The harness rejects a dirty pinned checkout, including untracked files, and
 records SHA-256 values for all four unchanged official files that it loads.
-The shim/probe source commit is `9199d1743536bb5bc30e4f2a1db30200f3082de7`;
+The shim/probe source commit is `4aa2dcd71cafd8b64f6031ab9e12c46547929545`;
 their SHA-256 values are
-`7118a712592f289551d08e0714605eda7fe6dfb3b5cf13f0534582e8b8d51aa1`
+`a1baf068b92bba4d6d576e8ed3acc78a4391c18b01eef3fa60d6eb67be972039`
 and `31a19be52ebf58cd8e41473ad8a780d346bc247d88039471244d6bbef76f61a3`.
 
 The fixed probe has two 256-point batches, six input channels, 13 classes,
@@ -91,21 +91,21 @@ probes both passed. Maximum absolute CPU/MPS differences were:
 | Tensor | Safe | Fast |
 | --- | ---: | ---: |
 | Logits `(512,13)` | `1.04e-7` | `8.94e-8` |
-| Coordinate gradient `(512,3)` | `4.55e-12` | `3.64e-12` |
-| Feature gradient `(512,6)` | `3.64e-12` | `2.96e-12` |
-| First encoder weight gradient `(32,6)` | `1.16e-10` | `1.16e-10` |
+| Coordinate gradient `(512,3)` | `5.46e-12` | `3.64e-12` |
+| Feature gradient `(512,6)` | `3.64e-12` | `2.90e-12` |
+| First encoder weight gradient `(32,6)` | `1.75e-10` | `1.16e-10` |
 
 A second, tie-heavy line-grid fixture also passed in
 [Safe](pointcept-ptv1-seg26-m5pro-line-safe-2026-10-02.json) and
 [Fast](pointcept-ptv1-seg26-m5pro-line-fast-2026-10-02.json) Math, with
 maximum logit difference `1.19e-7` in both. Across all four probes, the
-largest gradient relative L2 error was `3.70e-7`, well below `0.01`.
+largest gradient relative L2 error was `2.92e-7`, well below `0.01`.
 This fixture exposed an earlier CPU top-k tie
 ordering mismatch; the final shim uses stable CPU sorting to make its stated
 smaller-index rule explicit. The focused CPU/MPS shim and probe tests in
 [`tests/test_pointcept.py`](../tests/test_pointcept.py) and
 [`tests/test_pointcept_probe.py`](../tests/test_pointcept_probe.py) passed
-**19/19** in each Safe and Fast process.
+**23/23** in each Safe and Fast process.
 These tests used the `pytest` CLI against a regular installation of this
 checkout in a temporary package target, matching CI's installed-package
 import path; the probe test loads the benchmark script by file path.
