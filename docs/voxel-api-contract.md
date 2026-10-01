@@ -145,9 +145,15 @@ input, and feature/position backward. `uv build --offline --no-build-isolation`
 produced a wheel and source distribution; the wheel contains
 `mps_pointops/voxel.py`. Those dated focused API runs were on M5 Pro. A later
 [physical M1 run](phase3-physical-m1-2026-10-02.md) passed the 20 voxel tests
-in each mode before the opt-in fused backend was added. It does not validate
-`fused_csr` or measure compact API speed. M2–M4 and
-larger inputs remain outside the cited correctness matrix.
+in each mode before the opt-in fused backend was added. Later physical M1
+focused `fused_csr` runs at source commit
+`dae1bd3c95f0d068ae6ade6d4aaacaa34e8f27af` passed
+[12 tests with one expected failure in Safe Math](pytest-v070-m1-fused-safe-2026-10-02.log)
+and [12 tests with one expected failure in Fast Math](pytest-v070-m1-fused-fast-2026-10-02.log).
+The release candidate changes only the expected-failure explanation in this
+test file; the tested computation is unchanged. The [M1 and M5 compact API
+benchmark](voxel-api-benchmark.md) measures the default `index_add_` path.
+M2–M4 and wider dtype coverage remain outside the cited correctness matrix.
 
 ### Opt-in fused CSR prototype
 

@@ -1,0 +1,4 @@
+............x                                                            [100%]
+=========================== short test summary info ============================
+XFAIL tests/test_voxel_fused.py::test_severe_cancellation_exceeds_index_add_float_tolerance - MPS index_add_ atomic order differs under severe cancellation
+12 passed, 1 xfailed in 1.98s

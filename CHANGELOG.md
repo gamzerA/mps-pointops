@@ -62,6 +62,12 @@ validation remain open.
   CPU/MPS **78.42/21.73 ms** in Safe Math and **83.79/23.09 ms** in Fast Math.
   Small 20k fixtures favored CPU. The benchmark measures the default
   `index_add` path, not the fused prototype.
+- The same 24-case default-path matrix completed on a physical M1 with
+  PyTorch 2.12.0 in separate Safe/Fast processes. At 500k uniform dense,
+  full-step CPU/MPS medians were **134.30/69.22 ms** in Safe Math and
+  **133.66/65.96 ms** in Fast Math. CPU led all 20k cases; the 100k crossover
+  depended on occupancy and batch shape. Input hashes matched across modes
+  and the corresponding M5 Pro fixtures; see the [source-pinned report](docs/voxel-api-benchmark.md).
 - The focused fused CSR suite passed **32 tests with one expected failure** in
   each M5 Pro math mode. The expected failure records the severe-cancellation
   difference from PyTorch's MPS scatter accumulation; raw samples and a
@@ -69,6 +75,9 @@ validation remain open.
   [full-call benchmark](docs/voxel-fused-benchmark.md) found mixed wins and
   losses across 20k–500k fixtures, with synchronized allocator checkpoints;
   no overall speedup or lower peak-memory claim is made for the prototype.
+- Physical M1 focused fused CSR runs at the earlier source snapshot with
+  identical computation passed [12 tests / 1 expected failure in Safe Math](docs/pytest-v070-m1-fused-safe-2026-10-02.log)
+  and [12 tests / 1 expected failure in Fast Math](docs/pytest-v070-m1-fused-fast-2026-10-02.log).
 - The integrated M5 Pro suite with fallback disabled passed
   [383 tests / 38 skips / 1 expected failure](docs/pytest-v070-m5pro-torch214-safe-2026-10-02.log)
   in Safe Math and
