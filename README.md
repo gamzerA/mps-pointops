@@ -1082,8 +1082,9 @@ correctness and timing evidence without extending claims to M2–M4.
 - [~] Experimental compact [voxelization and downsampling API](docs/voxel-api-contract.md):
       batched floor-based cells, exact inverse/CSR maps and counts, mean
       positions, and mean/sum features with first-order gradients on CPU/MPS.
-      The physical M1 Safe/Fast full suites also passed all 20 voxel tests;
-      compact API speed on M1, M2–M4, and wider dtype coverage remain unverified.
+      The physical M1 Safe/Fast full suites passed the 20 voxel tests before
+      the opt-in fused backend was added; they do not validate `fused_csr`.
+      Compact API speed on M1, M2–M4, and wider dtype coverage remain unverified.
 - [~] PyG 2.8 graph `avg_pool` on finite float32 synthetic graphs: the
       [coarsening contract and synchronized measurement](docs/pyg28-graph-avg-pool.md)
       cover topology, duplicate edges, self-loops, batch labels, pooled values,
