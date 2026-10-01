@@ -32,7 +32,10 @@ from pathlib import Path
 import torch
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+if __name__ == "__main__":
+    # A standalone invocation measures this checkout. Importing the probe
+    # from pytest leaves CI's regularly installed package on the import path.
+    sys.path.insert(0, str(ROOT))
 from mps_pointops import compat  # noqa: E402
 
 POINTCEPT_COMMIT = "21fb5c51d8c622550b8e22c8ead984511e11d54a"

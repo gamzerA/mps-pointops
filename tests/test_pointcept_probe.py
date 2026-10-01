@@ -1,9 +1,17 @@
 """Acceptance rules for the pinned Pointcept model probe."""
 
+import importlib.util
+from pathlib import Path
+
 import pytest
 import torch
 
-from bench.probe_pointcept_ptv1 import _comparison
+PROBE_FILE = Path(__file__).resolve().parents[1] / "bench/probe_pointcept_ptv1.py"
+SPEC = importlib.util.spec_from_file_location("pointcept_probe", PROBE_FILE)
+assert SPEC is not None and SPEC.loader is not None
+PROBE = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(PROBE)
+_comparison = PROBE._comparison
 
 
 @pytest.mark.parametrize("scale", [2e-5, 6e-4])
