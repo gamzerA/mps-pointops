@@ -124,3 +124,22 @@ they do not conflict. The M1 report links the raw Safe/Fast samples and a
 native scatter stress test. None of these timings identifies Metal atomics
 as the cause, compares an optimized CPU nearest-neighbor library, or proves
 an end-to-end model speedup.
+
+## Larger bidirectional M5 Pro probe
+
+The [2026-10-02 large-cloud record](chamfer-large-contention-2026-10-02.md)
+extends the controlled M5 Pro study to **bidirectional** mean loss at
+`B=1,N=32,768` and `65,536`. It compares in-order one-to-one, randomly
+permuted one-to-one, and both-directions all-to-one nearest maps. Both index
+maps, the loss, and analytic first-order gradients passed before timing. Safe
+and Fast used separate processes, CPU fallback was disabled, and raw
+synchronized forward, backward, full loss plus backward, and paired native
+scatter samples are retained.
+
+At 65,536 points, concentrated native two-scatter median was 0.489 ms Safe
+or 0.499 ms Fast, versus 0.297 and 0.292 ms for in-order one-to-one. The
+paired full-loss concentrated/uniform ratios were 1.00× and 1.03×. Backward
+alone varied much more, including a Safe paired ratio of 2.87×, so the full
+loss and raw sample spread are needed for the adoption decision. The current
+M5 Pro default remains native PyTorch scatter for these synthetic cases;
+this does not establish a result for physical M1 or a general GPU mechanism.

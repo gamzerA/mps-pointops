@@ -1116,14 +1116,22 @@ correctness and timing evidence without extending claims to M2–M4.
       the same type of concentrated selection slowed backward at B=1,N=2,048,
       while a separate random bidirectional Chamfer fixture had a faster MPS
       forward than this package's CPU reference at N=1,024 and 4,096. These
-      input families have different nearest-neighbor distributions.
+      input families have different nearest-neighbor distributions. A later
+      [M5 Pro large bidirectional probe](docs/chamfer-large-contention-2026-10-02.md)
+      tested 32,768 and 65,536 points with in-order, random one-to-one, and
+      concentrated maps. Its full-loss timings support retaining native
+      PyTorch scatter for those synthetic M5 cases, while phase timings and
+      native scatter controls show fan-in sensitivity. No new M1 measurement
+      was made in that probe.
 - [ ] Compare supported Chamfer values and first-order gradients directly
       against PyTorch3D in CI, including `lengths`, weights, and each supported
       reduction mode. Current checks use analytic cases and an independent CPU
       reference.
-- [ ] Extend the Chamfer contention study to larger clouds, other Apple GPUs,
-      and bidirectional losses before deciding whether a dedicated Metal
-      reduction kernel helps.
+- [~] Extend the Chamfer contention study: the [physical M5 Pro Safe/Fast
+      large bidirectional cases](docs/chamfer-large-contention-2026-10-02.md)
+      now cover up to 65,536 points with synchronized full-loss and native
+      scatter controls. Other Apple GPUs, real workloads, GPU tracing, and a
+      dedicated Metal reduction ablation remain open.
 - [ ] Pointcept `pointops` compatibility for the Point Transformer family.
 - [ ] Spatial acceleration structures (uniform grid or BVH) for clouds of
       1M+ points. Done when: faster than a CPU KD-tree at 1M points.
