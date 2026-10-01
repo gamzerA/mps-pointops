@@ -41,7 +41,7 @@ import types
 import torch
 from torch import Tensor
 
-from . import flat, grid, nearest as nearest_ops, ops
+from . import flat, graclus, grid, nearest as nearest_ops, ops
 
 
 # ---------------------------------------------------------------- pointnet2_ops
@@ -153,7 +153,7 @@ def install(force: bool = False) -> list[str]:
                 knn_graph=flat.knn_graph,
                 radius_graph=flat.radius_graph,
                 grid_cluster=grid.grid_cluster,
-                graclus_cluster=_unsupported_torch_cluster("graclus_cluster"),
+                graclus_cluster=graclus.graclus_cluster,
                 random_walk=_unsupported_torch_cluster("random_walk"),
                 nearest=nearest_ops.nearest,
             )

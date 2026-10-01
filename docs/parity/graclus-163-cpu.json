@@ -1,0 +1,786 @@
+{
+  "exact": 40,
+  "extension_filename": "graclus_163_cpu.so",
+  "extension_sha256": "c0c548694c29fcc1f7d793f224098675b293395198050f0ec77edac76f0da407",
+  "observations": [
+    {
+      "case": "disjoint_unweighted",
+      "exact": true,
+      "official": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "project": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "seed": 0
+    },
+    {
+      "case": "disjoint_unweighted",
+      "exact": true,
+      "official": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "project": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "seed": 1
+    },
+    {
+      "case": "disjoint_unweighted",
+      "exact": true,
+      "official": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "project": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "seed": 7
+    },
+    {
+      "case": "disjoint_unweighted",
+      "exact": true,
+      "official": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "project": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "seed": 19
+    },
+    {
+      "case": "disjoint_unweighted",
+      "exact": true,
+      "official": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "project": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "seed": 42
+    },
+    {
+      "case": "disjoint_weighted",
+      "exact": true,
+      "official": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "project": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "seed": 0
+    },
+    {
+      "case": "disjoint_weighted",
+      "exact": true,
+      "official": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "project": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "seed": 1
+    },
+    {
+      "case": "disjoint_weighted",
+      "exact": true,
+      "official": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "project": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "seed": 7
+    },
+    {
+      "case": "disjoint_weighted",
+      "exact": true,
+      "official": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "project": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "seed": 19
+    },
+    {
+      "case": "disjoint_weighted",
+      "exact": true,
+      "official": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "project": [
+        0,
+        0,
+        2,
+        2,
+        4,
+        5
+      ],
+      "seed": 42
+    },
+    {
+      "case": "general_unweighted",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        0,
+        1,
+        4,
+        4,
+        6,
+        7
+      ],
+      "project": [
+        0,
+        1,
+        0,
+        1,
+        4,
+        4,
+        6,
+        7
+      ],
+      "seed": 0
+    },
+    {
+      "case": "general_unweighted",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        0,
+        1,
+        4,
+        5,
+        4,
+        7
+      ],
+      "project": [
+        0,
+        1,
+        0,
+        1,
+        4,
+        5,
+        4,
+        7
+      ],
+      "seed": 1
+    },
+    {
+      "case": "general_unweighted",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        0,
+        1,
+        4,
+        4,
+        6,
+        7
+      ],
+      "project": [
+        0,
+        1,
+        0,
+        1,
+        4,
+        4,
+        6,
+        7
+      ],
+      "seed": 7
+    },
+    {
+      "case": "general_unweighted",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        1,
+        3,
+        4,
+        5,
+        4,
+        7
+      ],
+      "project": [
+        0,
+        1,
+        1,
+        3,
+        4,
+        5,
+        4,
+        7
+      ],
+      "seed": 19
+    },
+    {
+      "case": "general_unweighted",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        1,
+        3,
+        4,
+        5,
+        4,
+        7
+      ],
+      "project": [
+        0,
+        1,
+        1,
+        3,
+        4,
+        5,
+        4,
+        7
+      ],
+      "seed": 42
+    },
+    {
+      "case": "general_weighted",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        0,
+        1,
+        4,
+        4,
+        6,
+        7
+      ],
+      "project": [
+        0,
+        1,
+        0,
+        1,
+        4,
+        4,
+        6,
+        7
+      ],
+      "seed": 0
+    },
+    {
+      "case": "general_weighted",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        0,
+        1,
+        4,
+        4,
+        6,
+        7
+      ],
+      "project": [
+        0,
+        1,
+        0,
+        1,
+        4,
+        4,
+        6,
+        7
+      ],
+      "seed": 1
+    },
+    {
+      "case": "general_weighted",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        0,
+        1,
+        4,
+        4,
+        6,
+        7
+      ],
+      "project": [
+        0,
+        1,
+        0,
+        1,
+        4,
+        4,
+        6,
+        7
+      ],
+      "seed": 7
+    },
+    {
+      "case": "general_weighted",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        1,
+        3,
+        4,
+        4,
+        6,
+        7
+      ],
+      "project": [
+        0,
+        1,
+        1,
+        3,
+        4,
+        4,
+        6,
+        7
+      ],
+      "seed": 19
+    },
+    {
+      "case": "general_weighted",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        0,
+        1,
+        4,
+        5,
+        4,
+        7
+      ],
+      "project": [
+        0,
+        1,
+        0,
+        1,
+        4,
+        5,
+        4,
+        7
+      ],
+      "seed": 42
+    },
+    {
+      "case": "zero_and_negative",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        0
+      ],
+      "project": [
+        0,
+        1,
+        0
+      ],
+      "seed": 0
+    },
+    {
+      "case": "zero_and_negative",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        0
+      ],
+      "project": [
+        0,
+        1,
+        0
+      ],
+      "seed": 1
+    },
+    {
+      "case": "zero_and_negative",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        0
+      ],
+      "project": [
+        0,
+        1,
+        0
+      ],
+      "seed": 7
+    },
+    {
+      "case": "zero_and_negative",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        0
+      ],
+      "project": [
+        0,
+        1,
+        0
+      ],
+      "seed": 19
+    },
+    {
+      "case": "zero_and_negative",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        0
+      ],
+      "project": [
+        0,
+        1,
+        0
+      ],
+      "seed": 42
+    },
+    {
+      "case": "all_negative",
+      "exact": true,
+      "official": [
+        0,
+        1
+      ],
+      "project": [
+        0,
+        1
+      ],
+      "seed": 0
+    },
+    {
+      "case": "all_negative",
+      "exact": true,
+      "official": [
+        0,
+        1
+      ],
+      "project": [
+        0,
+        1
+      ],
+      "seed": 1
+    },
+    {
+      "case": "all_negative",
+      "exact": true,
+      "official": [
+        0,
+        1
+      ],
+      "project": [
+        0,
+        1
+      ],
+      "seed": 7
+    },
+    {
+      "case": "all_negative",
+      "exact": true,
+      "official": [
+        0,
+        1
+      ],
+      "project": [
+        0,
+        1
+      ],
+      "seed": 19
+    },
+    {
+      "case": "all_negative",
+      "exact": true,
+      "official": [
+        0,
+        1
+      ],
+      "project": [
+        0,
+        1
+      ],
+      "seed": 42
+    },
+    {
+      "case": "weighted_equal_ties",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        0
+      ],
+      "project": [
+        0,
+        1,
+        0
+      ],
+      "seed": 0
+    },
+    {
+      "case": "weighted_equal_ties",
+      "exact": true,
+      "official": [
+        0,
+        0,
+        2
+      ],
+      "project": [
+        0,
+        0,
+        2
+      ],
+      "seed": 1
+    },
+    {
+      "case": "weighted_equal_ties",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        0
+      ],
+      "project": [
+        0,
+        1,
+        0
+      ],
+      "seed": 7
+    },
+    {
+      "case": "weighted_equal_ties",
+      "exact": true,
+      "official": [
+        0,
+        0,
+        2
+      ],
+      "project": [
+        0,
+        0,
+        2
+      ],
+      "seed": 19
+    },
+    {
+      "case": "weighted_equal_ties",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        0
+      ],
+      "project": [
+        0,
+        1,
+        0
+      ],
+      "seed": 42
+    },
+    {
+      "case": "empty_with_num_nodes",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "project": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "seed": 0
+    },
+    {
+      "case": "empty_with_num_nodes",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "project": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "seed": 1
+    },
+    {
+      "case": "empty_with_num_nodes",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "project": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "seed": 7
+    },
+    {
+      "case": "empty_with_num_nodes",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "project": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "seed": 19
+    },
+    {
+      "case": "empty_with_num_nodes",
+      "exact": true,
+      "official": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "project": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "seed": 42
+    }
+  ],
+  "platform": "macOS-26.5.2-arm64-arm-64bit",
+  "project_source_sha256": "8857648594b3efe55f51c78507c2b552a51e0f73c12a0f43a50220efe35eda18",
+  "torch": "2.14.1",
+  "total": 40,
+  "upstream": {
+    "commit": "29cd22bf1a5b82fc06b108d6573f81302c5d6b12",
+    "git_blob_sha1": {
+      "csrc/cpu/graclus_cpu.cpp": "e6669d42fde991ff038e03746abb68b6b50462d7",
+      "csrc/cuda/graclus_cuda.cu": "61e7d70b38e257518f963a502df69c37496d38cc",
+      "csrc/graclus.cpp": "b986513700ff958f22b4b44bfc9d2af0fffc71d9",
+      "torch_cluster/graclus.py": "7fa834d686e87455fbe98f9eba8e2917c796e8b9"
+    },
+    "source_sha256": {
+      "csrc/cpu/graclus_cpu.cpp": "256a6c219265c259d9d338166afbf52fe9392272cc8f76d125f520d5e2195c82",
+      "csrc/cuda/graclus_cuda.cu": "301e8db850e683c2bded7673f9f5d700eae6e2ba2d09405a8dc1783f5ac1614c",
+      "csrc/graclus.cpp": "c88998b392937c13c461ddaf21eaf8b4aa4f36b7fdf121e695a284db4c6221a5",
+      "torch_cluster/graclus.py": "df783cd5913be03ee724107d2ba6bc1bc1410d96184958031cb8fd062432c341"
+    }
+  }
+}
