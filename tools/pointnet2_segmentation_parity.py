@@ -355,6 +355,7 @@ def main() -> None:
     parser.add_argument("--device", choices=("mps", "cuda", "cpu"))
     parser.add_argument("--output", type=Path)
     parser.add_argument("--compare", type=Path, nargs=2, metavar=("MPS", "CUDA"))
+    parser.add_argument("--compare-output", type=Path)
     parser.add_argument("--atol", type=float, default=1e-4)
     parser.add_argument("--rtol", type=float, default=1e-4)
     args = parser.parse_args()
@@ -368,7 +369,17 @@ def main() -> None:
         args.upstream_checkout = matches[0]
     if args.compare:
         result = compare(*args.compare, atol=args.atol, rtol=args.rtol)
-        print(json.dumps(result, indent=2))
+        if args.compare_output:
+            args.compare_output.parent.mkdir(parents=True, exist_ok=True)
+            args.compare_output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+            print(json.dumps({
+                "passed": result["passed"],
+                "checks": len(result["checks"]),
+                "failed": [key for key, value in result["checks"].items() if not value["passed"]],
+                "report": str(args.compare_output),
+            }, indent=2))
+        else:
+            print(json.dumps(result, indent=2))
         if not result["passed"]:
             raise SystemExit(1)
     elif args.make_fixture:
