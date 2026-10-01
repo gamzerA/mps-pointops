@@ -1,5 +1,7 @@
 """Direct feature-space kNN oracle and an EdgeConv forward/backward check."""
 
+import os
+
 import numpy as np
 import pytest
 import torch
@@ -99,6 +101,24 @@ def test_feature_knn_limits_are_explicit() -> None:
         flat.knn(x[0], torch.zeros((3, 128), device="mps"), 2)
     with pytest.raises(ValueError, match="D >= 1"):
         knn(x[:, :, :0], x[:, :, :0], 0)
+
+
+@MPS
+@pytest.mark.skipif(os.getenv("PYTORCH_MPS_FAST_MATH", "0") != "0", reason="non-finite Safe Math policy only")
+def test_safe_math_nonfinite_and_overflow_candidates_leave_padded_slots() -> None:
+    x = torch.zeros((1, 3, 64), device="mps")
+    x[0, 0, 0] = 1.0
+    x[0, 1, 0] = 1e30  # finite coordinate, squared distance overflows float32
+    x[0, 2, 0] = 2.0
+    y = torch.zeros((1, 2, 64), device="mps")
+    y[0, 1, 0] = float("nan")
+    dist, idx = knn(y, x, 3)
+    torch.mps.synchronize()
+    assert idx.cpu().tolist() == [[[0, 2, -1], [-1, -1, -1]]]
+    assert dist[0, 0, :2].cpu().tolist() == [1.0, 2.0]
+    assert torch.isinf(dist[:, :, 2]).all().item()
+    edges = flat.knn(x[0], y[0], 3)
+    assert edges.cpu().tolist() == [[0, 0], [0, 2]]
 
 
 @MPS

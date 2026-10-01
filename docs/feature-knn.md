@@ -60,9 +60,10 @@ native-path enforcement, PyG wrapper/graph calls, and EdgeConv forward and
 gradient checks. A four-stage self-contained dynamic-graph classifier checks
 neighbor indices, logits, and gradients through a complete graph-rebuilding
 path. On M5 Pro/macOS 26.5.2/PyTorch 2.14.1 with fallback disabled, the full
-project suite passed [282 tests in Safe Math](pytest-feature-knn-safe-torch214-2026-10-01.log)
-and [282 in Fast Math](pytest-feature-knn-fast-torch214-2026-10-01.log), with
-12 skips in each (seven `k > n` parametrizations and five optional PyG tests).
+project suite passed [283 tests in Safe Math](pytest-feature-knn-safe-torch214-2026-10-01.log)
+with 13 skips, and [282 in Fast Math](pytest-feature-knn-fast-torch214-2026-10-01.log)
+with 14 skips. Seven skips are `k > n` parametrizations, six require optional
+PyG packages, and the Fast process skips the Safe-only NaN/overflow case.
 Safe and Fast were separate processes.
 
 For upstream model validation, [the verifier](../tools/dgcnn_upstream_parity.py)
@@ -70,7 +71,9 @@ loads the author's [DGCNN PyTorch model](https://github.com/WangYueFt/dgcnn/blob
 from a *separate, clean* checkout at commit
 `f765b469a67730658ba554e97dc11723a7bab628`. The upstream `model.py`
 SHA-256 is `9be404728fa66eb5f9fc9a47d8553a9a75423f6e7d7b235496be354cfeb9b6e5`;
-its repository declares MIT. No upstream source is bundled into this project.
+its repository declares MIT, and the `LICENSE` SHA-256 is
+`288c5357e9620f022174625a153eb2423d5c14a8d9838bb4a9ef3deadf10549d`.
+No upstream source is bundled into this project.
 For this experiment, the verifier changes only the hard-coded
 `device = torch.device('cuda')` line to `device = x.device` **in memory**. The
 CPU baseline retains the author's GEMM/topk neighbor selection. The MPS run
@@ -107,14 +110,40 @@ PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=1 \
 ## Performance and packaging
 
 The [synchronized benchmark script](../bench/bench_feature_knn.py) records
-public API timing on the M5 Pro in separate Safe/Fast processes, with CPU
-PyTorch and MPS `cdist+topk` baselines. The direct accumulation path keeps
-only `k <= 256` candidates per query and does not allocate a full `(M,N)`
-distance matrix. The PyTorch `cdist+topk` control materializes a logical
-`M*N*4` byte float32 matrix per batch; this figure is a shape-derived lower
-bound, not a measured allocator peak. At `D=64,128`, the direct kernel is a
-correctness baseline, not a documented speedup over the optimized matrix
-path. Flat API timings also include batch-pointer construction and validation.
+public API timing on the M5 Pro in separate Safe/Fast processes, with four
+warmups and 20 timed calls per case. Each MPS timing includes dispatch,
+allocation, and `torch.mps.synchronize()`. Raw samples, source commit
+`8819a233800a3f8e99a5bd237a07623bed33d9ca`, six source SHA-256 values,
+and CPU/MPS index mismatch counts are in the
+[Safe 1,024-point](../bench/results/2026-10-01-apple-m5-pro-feature-knn-safe.json),
+[Fast 1,024-point](../bench/results/2026-10-01-apple-m5-pro-feature-knn-fast.json),
+[Safe DGCNN 64-point](../bench/results/2026-10-01-apple-m5-pro-feature-knn-dgcnn64-safe.json),
+and [Fast DGCNN 64-point](../bench/results/2026-10-01-apple-m5-pro-feature-knn-dgcnn64-fast.json)
+JSON files. Each case had zero CPU/MPS index mismatches on its seeded fixture.
+
+| Public dense kNN shape | Safe Metal | Safe MPS `cdist+topk` | Fast Metal | Fast MPS `cdist+topk` |
+|:--|--:|--:|--:|--:|
+| Q=N=64, D=64, k=8 | 0.180 ms | 0.611 ms | 0.144 ms | 0.634 ms |
+| Q=N=64, D=128, k=8 | 0.173 ms | 0.646 ms | 0.180 ms | 0.430 ms |
+| Q=N=1,024, D=64, k=20 | 0.704 ms | 0.775 ms | 0.629 ms | 0.858 ms |
+| Q=N=1,024, D=128, k=20 | 1.283 ms | 0.749 ms | 1.324 ms | 0.765 ms |
+
+For the flat public API at Q=256, N=1,024, k=20, Safe/Fast Metal medians
+were `2.325/1.898 ms` at D=64 and `2.731/2.504 ms` at D=128. Flat API
+timings include batch-pointer construction and validation; the small
+Q=N=64 flat cases still took `2.217–2.725 ms` on MPS. These timings are
+not directly comparable with the dense kernel alone. CPU PyTorch reference
+medians and all 20 samples are in the raw JSON.
+
+The direct accumulation path keeps only `k <= 256` candidates per query and
+does not allocate a full `(M,N)` distance matrix. At Q=N=1,024, a float32
+`cdist` result is logically `1,024*1,024*4 = 4,194,304` bytes per batch;
+the dense native outputs are `1,024*20*(4+8) = 245,760` bytes. These are
+shape-derived quantities, **not measured allocator peaks**. The new kernel
+is faster than MPS `cdist+topk` in the shown D=64 dense cases, but slower at
+D=128 with 1,024 points. The direct path is therefore a numerical baseline;
+a tiled/vectorized D=128 path is a performance follow-up. No general GPU or
+CPU speedup is claimed from these fixtures.
 
 An isolated sdist and wheel build was checked against the source byte hash:
 `mps_pointops/kernels/feature_knn.metal` SHA-256

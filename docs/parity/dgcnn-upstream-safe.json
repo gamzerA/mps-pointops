@@ -4,6 +4,7 @@
     "commit": "f765b469a67730658ba554e97dc11723a7bab628",
     "model_sha256": "9be404728fa66eb5f9fc9a47d8553a9a75423f6e7d7b235496be354cfeb9b6e5",
     "license": "MIT",
+    "license_sha256": "288c5357e9620f022174625a153eb2423d5c14a8d9838bb4a9ef3deadf10549d",
     "in_memory_adaptation": "device = torch.device('cuda') -> device = x.device",
     "search_change": "CPU original GEMM/topk; MPS only knn replaced with mps_pointops.knn"
   },
@@ -50,12 +51,12 @@
     }
   ],
   "max_abs_logit_error": 3.3527612686157227e-08,
-  "max_abs_input_gradient_error": 2.7284841053187847e-11,
+  "max_abs_input_gradient_error": 3.183231456205249e-11,
   "max_abs_parameter_gradient_error": 3.259629011154175e-09,
   "parameter_gradient_errors": {
-    "bn1.weight": 6.45741238258779e-11,
-    "bn1.bias": 4.3655745685100555e-11,
-    "bn2.weight": 1.6370904631912708e-11,
+    "bn1.weight": 6.548361852765083e-11,
+    "bn1.bias": 4.729372449219227e-11,
+    "bn2.weight": 1.8189894035458565e-11,
     "bn2.bias": 4.3655745685100555e-11,
     "bn3.weight": 1.6370904631912708e-11,
     "bn3.bias": 7.275957614183426e-11,
@@ -63,7 +64,7 @@
     "bn4.bias": 5.093170329928398e-11,
     "bn5.weight": 6.912159733474255e-11,
     "bn5.bias": 1.7462298274040222e-10,
-    "conv1.0.weight": 7.639755494892597e-11,
+    "conv1.0.weight": 8.36735125631094e-11,
     "conv2.0.weight": 8.731149137020111e-11,
     "conv3.0.weight": 4.3655745685100555e-11,
     "conv4.0.weight": 1.6370904631912708e-11,

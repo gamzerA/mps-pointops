@@ -29,6 +29,7 @@ from mps_pointops import knn as mps_knn  # noqa: E402
 
 UPSTREAM_COMMIT = "f765b469a67730658ba554e97dc11723a7bab628"
 UPSTREAM_MODEL_SHA256 = "9be404728fa66eb5f9fc9a47d8553a9a75423f6e7d7b235496be354cfeb9b6e5"
+UPSTREAM_LICENSE_SHA256 = "288c5357e9620f022174625a153eb2423d5c14a8d9838bb4a9ef3deadf10549d"
 CUDA_DEVICE_LINE = "device = torch.device('cuda')"
 
 
@@ -45,6 +46,9 @@ def _upstream(checkout: Path):
     digest = hashlib.sha256(source.encode()).hexdigest()
     if digest != UPSTREAM_MODEL_SHA256:
         raise ValueError(f"upstream model.py SHA-256 mismatch: {digest}")
+    license_digest = hashlib.sha256((checkout / "LICENSE").read_bytes()).hexdigest()
+    if license_digest != UPSTREAM_LICENSE_SHA256:
+        raise ValueError(f"upstream LICENSE SHA-256 mismatch: {license_digest}")
     if source.count(CUDA_DEVICE_LINE) != 1:
         raise ValueError("upstream CUDA device line changed unexpectedly")
     adapted = source.replace(CUDA_DEVICE_LINE, "device = x.device")
@@ -120,6 +124,7 @@ def main() -> None:
             "commit": UPSTREAM_COMMIT,
             "model_sha256": UPSTREAM_MODEL_SHA256,
             "license": "MIT",
+            "license_sha256": UPSTREAM_LICENSE_SHA256,
             "in_memory_adaptation": "device = torch.device('cuda') -> device = x.device",
             "search_change": "CPU original GEMM/topk; MPS only knn replaced with mps_pointops.knn",
         },
