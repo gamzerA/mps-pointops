@@ -80,6 +80,13 @@ def test_empty_input_and_empty_feature_output(device: str) -> None:
     assert result.pos.requires_grad and result.features.requires_grad
 
 
+def test_anisotropic_size_and_vector_bounds(device: str) -> None:
+    pos = torch.tensor([[-2.0, 0.0], [0.0, 1.0], [1.5, 2.75]], device=device)
+    result = voxelize(pos, [0.5, 1.0], start=[-2.0, 0.0], end=[2.0, 3.0])
+    assert _cpu(result.voxel_coords).tolist() == [[0, 0], [4, 1], [7, 2]]
+    assert _cpu(result.inverse).tolist() == [0, 1, 2]
+
+
 @pytest.mark.parametrize("feature_reduce", ["mean", "sum"])
 def test_position_feature_aggregation_and_first_order_gradients(
     device: str, feature_reduce: str,
