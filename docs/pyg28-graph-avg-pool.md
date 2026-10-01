@@ -108,7 +108,10 @@ Features have 32 columns, positions 3, and edge attributes 4. Inputs are
 resident on each device before timing. MPS is synchronized before the
 forward, between forward and backward, and after backward. The loss is the
 sum of means of squares of pooled `x`, `pos`, and `edge_attr`. Each result
-uses three warmups and the median of ten timed repetitions.
+uses three warmups and the median of ten timed repetitions. The reported
+**backward** interval begins before constructing that loss and ends after
+autograd backward and the MPS synchronization; it is not isolated kernel-only
+gradient time.
 
 | Math | Nodes / edges | CPU forward / backward | MPS forward / backward |
 | --- | ---: | ---: | ---: |
@@ -135,7 +138,12 @@ PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=1 \
   --warmups 3 --repeats 10 --output docs/bench-pyg28-graph-avg-pool-fast-2026-10-01.json
 ```
 
-The source revision and cross-operation scope are recorded in the dated
-[Phase 3 results matrix](phase3-results-2026-10-01.md) and the associated PR.
+The benchmark script was committed unchanged after the measurement at
+`a0b904d2264cdb3cf5fad09f301fffe0171183ac`; both JSON files annotate
+that script hash without modifying any timing samples. The composed-path
+gradient test and refreshed full-suite logs are in
+`491ca7d71d91ce9c45b190935e4dd8a3dab962a2`. Their raw log paths are
+linked above. The cross-operation scope is recorded in the dated
+[Phase 3 results matrix](phase3-results-2026-10-01.md) and associated PR.
 The broader [Phase 3 release gate](https://github.com/gamzerA/mps-pointops/issues/41)
 remains open; this measured fixture is one bounded part of that gate.
