@@ -313,7 +313,9 @@ def run(backend: str, device: str, upstream: Path, fixture_path: Path, output_pa
             subprocess.check_output(["sysctl", "-n", "machdep.cpu.brand_string"], text=True).strip()
             if device == "mps" else None
         ),
-        "extension_path": str(Path(importlib.import_module("pointnet2_ops._ext").__file__).resolve()) if backend == "upstream" else None,
+        # The binary hash and basename identify the loaded extension without
+        # publishing a host-local home-directory path in the evidence JSON.
+        "extension_filename": Path(importlib.import_module("pointnet2_ops._ext").__file__).name if backend == "upstream" else None,
         "extension_sha256": digest(Path(importlib.import_module("pointnet2_ops._ext").__file__).resolve()) if backend == "upstream" else None,
     }
     meta_path = output_path.with_suffix(".json")

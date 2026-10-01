@@ -96,7 +96,7 @@
       "query_set_symmetric_difference": 0
     }
   ],
-  "cuda_result_sha256": "05de08ca103596eec35f6b0397a5b418fb39d73b3aa2c850f4a7194e04a2ed08",
+  "cuda_result_sha256": "ffd29a2b5c955eeb2aa1ef1211d43e9a02e3f9387363a0475eb075680078ffed",
   "first_fps_mismatch": {
     "cuda_candidate_min_squared_distance_float64": 0.0033321380615234375,
     "cuda_original_id": 752,
@@ -139,7 +139,7 @@
     }
   ],
   "meaning": "Original-ID normalization removes local-index changes caused by FPS ordering; it does not prove bitwise model parity.",
-  "mps_result_sha256": "e37926c82a9b0f0ab622792e76447ccec235dd97b448f230923fc0b8d00e053d",
+  "mps_result_sha256": "7fa883b3943b46a3d25e30f8bb81d636dfb68ff18625400139f8909625645ad7",
   "three_nn": [
     {
       "common_query_points": 64,

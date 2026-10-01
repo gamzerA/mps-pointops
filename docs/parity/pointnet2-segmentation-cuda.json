@@ -1,7 +1,7 @@
 {
   "backend": "upstream",
   "device": "cuda",
-  "extension_path": "C:\\Users\\yeyoung1\\anaconda3\\envs\\research\\Lib\\site-packages\\pointnet2_ops\\_ext.cp311-win_amd64.pyd",
+  "extension_filename": "_ext.cp311-win_amd64.pyd",
   "extension_sha256": "7db4927b3358c4ca5c212b582889588225cc4b6392f3a3939ca371ae237da86e",
   "fixture_id": "pointnet2-ssg-segmentation-synthetic-v1",
   "fixture_sha256": "e3998b2eb58c9b9a410ef2a081b539e65aca5d15fcdb72a203849ade0be511f1",
@@ -12,6 +12,7 @@
     13,
     1152
   ],
+  "metadata_redaction": "Host-local extension directory removed after capture; binary SHA-256 and filename preserved.",
   "model_mode": "eval, with cross-entropy backward",
   "mps_fallback": null,
   "mps_fast_math": null,

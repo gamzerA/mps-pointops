@@ -812,7 +812,12 @@ original implementation.
       model, CPU vs MPS forward/backward and 4,096 neighbor indices
       ([scope and raw evidence](docs/feature-knn.md)); dataset accuracy and
       original CUDA parity remain untested.
-- [ ] PointNet++ segmentation end to end (Phase 2)
+- [x] PointNet++ SSG semantic segmentation, fixed synthetic cloud: eval
+      forward and cross-entropy backward on M5 Pro; logits, loss, input and
+      parameter gradients match the pinned original CUDA extension within
+      `atol=rtol=1e-4`. A self-contained CPU/MPS integration test runs in CI.
+      FPS ties change some intermediate local indices; real labeled dataset
+      accuracy is untested ([scope and raw evidence](docs/parity/pointnet2-segmentation.md)).
 - [ ] PyG example models on representative graphs and data (Phase 3)
 - [ ] Point Transformer family (Phase 4)
 - [ ] A sparse-convolution model (Phase 5)
@@ -859,8 +864,11 @@ original implementation.
       distances and three indices. The second accepts externally computed weights and
       accumulates backward gradients into input features. See the
       [contract and differential tests](docs/pointnet2-propagation.md).
-- [ ] Validate PointNet++ segmentation end to end on MPS and compare model
-      outputs with the original implementation.
+- [x] Validate synthetic PointNet++ SSG segmentation eval forward and loss
+      backward on MPS against the original CUDA extension within the stated
+      numerical tolerance. The [model-level report](docs/parity/pointnet2-segmentation.md)
+      records the FPS tie and order-dependent neighbor cutoff; labeled-data
+      accuracy and training convergence remain to be tested.
 - [x] Ask upstream maintainers whether and how they would accept MPS support:
   [pyg-lib #733](https://github.com/pyg-team/pyg-lib/issues/733),
   [torch_cluster #172](https://github.com/rusty1s/pytorch_cluster/issues/172#issuecomment-5930622245),
