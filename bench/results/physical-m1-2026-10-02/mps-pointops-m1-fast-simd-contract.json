@@ -1,0 +1,1393 @@
+{
+  "environment": {
+    "chip": "Apple M1",
+    "macos": "26.5.2",
+    "python": "3.10.6",
+    "torch": "2.12.0",
+    "mps_available": true,
+    "math_mode": "fast",
+    "pytorch_mps_fast_math": "1",
+    "pytorch_enable_mps_fallback": "0"
+  },
+  "sources": {
+    "baseline_commit": "ea07179dd13bd8545753f9275e628ba4974c6639",
+    "baseline_shader_path": "mps_pointops/kernels/ball_query.metal",
+    "baseline_shader_sha256": "331d385610346131ef73f306411bf2a9bfe3f532bab6bd2e6cf41dcd48d3816f",
+    "simd_shader_path": "mps_pointops/kernels/ball_query.metal",
+    "simd_shader_sha256": "2856fa046cbbafb71ec0cd688f071c7dc5d2280e9f04d00471241e24d6f85ba3",
+    "verification_script_path": "bench/verify_ball_query_simd_contract.py",
+    "verification_script_sha256": "204a4fc07bc7327f677b0c7ac55bad2c149409c40e4c23a6297bd131505953ef",
+    "checkout_head": "f4a886a08938a8a3c9785ecaec962300efd298e0"
+  },
+  "method": {
+    "shader_invocation": "preallocated buffers poisoned with int64 -777 and float32 NaN; explicit torch.mps.synchronize after each launch",
+    "index_oracle": "independent scalar CPU first-K scan on exact binary-fraction coordinates",
+    "distance_oracle": "previous Metal shader bytes; CPU floating-point distances are not a general bitwise oracle near boundaries",
+    "test_dimensions": "float32/float16; B=2, Q=9; K=1,31,33,65; P=97 or 0; shorter lengths, no hits, nonfinite values in Safe Math, spatial sorting, normalized small-radius path including r=2^-62",
+    "fast_math_nonfinite_policy": "The nonfinite-coordinate case is skipped in Fast Math because that mode does not guarantee NaN/Inf exclusion.",
+    "limits": "No performance, gradients, arbitrary near-boundary floating-point parity, or public-API allocation test"
+  },
+  "cases": [
+    {
+      "scenario": "sorted",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 1,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "0870fc18283f73722ee4ff1a217171db6445f7a5f7af0c06fc6f10745f76561c",
+        "points": "e74ece05cf2af3bed3fb26de07ee39b82f96878d24a831db0ddba0ff8b77cd3b"
+      },
+      "output_shape": [
+        2,
+        9,
+        1
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "090c2852e6783bf0122ca6af0a4d20e2154e23024f2b4b5d960ee114b5e9eaff",
+      "squared_distances_sha256": "36bda9f290482b5afe2023a86d95fbdd0c95d6a6bbf45e770b2dea645ddd4fdd"
+    },
+    {
+      "scenario": "sorted",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 31,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "0870fc18283f73722ee4ff1a217171db6445f7a5f7af0c06fc6f10745f76561c",
+        "points": "e74ece05cf2af3bed3fb26de07ee39b82f96878d24a831db0ddba0ff8b77cd3b"
+      },
+      "output_shape": [
+        2,
+        9,
+        31
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "1f7aa3efc6dacf4ddcc55dda74802cc3f3f46826462ca27f247feac29e8ba8f6",
+      "squared_distances_sha256": "9d3b8e757b6f5d7f9b8a7af5961b7f38de035221533655fa3565c3c642b2bd4b"
+    },
+    {
+      "scenario": "sorted",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 33,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "0870fc18283f73722ee4ff1a217171db6445f7a5f7af0c06fc6f10745f76561c",
+        "points": "e74ece05cf2af3bed3fb26de07ee39b82f96878d24a831db0ddba0ff8b77cd3b"
+      },
+      "output_shape": [
+        2,
+        9,
+        33
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "f5a9d456662beadd1766dc2f4c838c97a5fa4e0ed562fbf65411e65967d88286",
+      "squared_distances_sha256": "cd46184d14e634da86ceecb90bb37b51675c41211c9132a6b936430f35c17685"
+    },
+    {
+      "scenario": "sorted",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 65,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "0870fc18283f73722ee4ff1a217171db6445f7a5f7af0c06fc6f10745f76561c",
+        "points": "e74ece05cf2af3bed3fb26de07ee39b82f96878d24a831db0ddba0ff8b77cd3b"
+      },
+      "output_shape": [
+        2,
+        9,
+        65
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "814ae55d02e6c8a3bb249d9ebdf1a52e4a862a146b4ffe2b2656aafc77b12065",
+      "squared_distances_sha256": "4086e80d433a06e04838988925b77cff2a7a3ca23b7428758b101f74957e6e13"
+    },
+    {
+      "scenario": "sorted",
+      "coordinate_dtype": "torch.float16",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 1,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "e3f5ba9915fa6559cb4273a40c0b04c3ee2a5d0514910e2fa2f531ef4dd46356",
+        "points": "003bba6026d9d8c699cbcf3b425769414d46359e7c0f5df51c61ed6cb3ff30a9"
+      },
+      "output_shape": [
+        2,
+        9,
+        1
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "090c2852e6783bf0122ca6af0a4d20e2154e23024f2b4b5d960ee114b5e9eaff",
+      "squared_distances_sha256": "36bda9f290482b5afe2023a86d95fbdd0c95d6a6bbf45e770b2dea645ddd4fdd"
+    },
+    {
+      "scenario": "sorted",
+      "coordinate_dtype": "torch.float16",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 31,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "e3f5ba9915fa6559cb4273a40c0b04c3ee2a5d0514910e2fa2f531ef4dd46356",
+        "points": "003bba6026d9d8c699cbcf3b425769414d46359e7c0f5df51c61ed6cb3ff30a9"
+      },
+      "output_shape": [
+        2,
+        9,
+        31
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "1f7aa3efc6dacf4ddcc55dda74802cc3f3f46826462ca27f247feac29e8ba8f6",
+      "squared_distances_sha256": "9d3b8e757b6f5d7f9b8a7af5961b7f38de035221533655fa3565c3c642b2bd4b"
+    },
+    {
+      "scenario": "sorted",
+      "coordinate_dtype": "torch.float16",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 33,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "e3f5ba9915fa6559cb4273a40c0b04c3ee2a5d0514910e2fa2f531ef4dd46356",
+        "points": "003bba6026d9d8c699cbcf3b425769414d46359e7c0f5df51c61ed6cb3ff30a9"
+      },
+      "output_shape": [
+        2,
+        9,
+        33
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "f5a9d456662beadd1766dc2f4c838c97a5fa4e0ed562fbf65411e65967d88286",
+      "squared_distances_sha256": "cd46184d14e634da86ceecb90bb37b51675c41211c9132a6b936430f35c17685"
+    },
+    {
+      "scenario": "sorted",
+      "coordinate_dtype": "torch.float16",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 65,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "e3f5ba9915fa6559cb4273a40c0b04c3ee2a5d0514910e2fa2f531ef4dd46356",
+        "points": "003bba6026d9d8c699cbcf3b425769414d46359e7c0f5df51c61ed6cb3ff30a9"
+      },
+      "output_shape": [
+        2,
+        9,
+        65
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "814ae55d02e6c8a3bb249d9ebdf1a52e4a862a146b4ffe2b2656aafc77b12065",
+      "squared_distances_sha256": "4086e80d433a06e04838988925b77cff2a7a3ca23b7428758b101f74957e6e13"
+    },
+    {
+      "scenario": "permuted_finite",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 1,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "0870fc18283f73722ee4ff1a217171db6445f7a5f7af0c06fc6f10745f76561c",
+        "points": "11eccb412f235c6ab9b0e02838ff5335dbc519a7c7ef63fa5cb9c85ffc71fe0d"
+      },
+      "output_shape": [
+        2,
+        9,
+        1
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "1584f420afb5ba922ad65581ed8bf2a91db509fcc9e4bdc4b8f74cd153c89a3c",
+      "squared_distances_sha256": "eea76e5f8b098d6d8cdb6cc557b65b4b9dfa0f8f806bfeb81107cbc3ae53f86c"
+    },
+    {
+      "scenario": "permuted_finite",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 31,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "0870fc18283f73722ee4ff1a217171db6445f7a5f7af0c06fc6f10745f76561c",
+        "points": "11eccb412f235c6ab9b0e02838ff5335dbc519a7c7ef63fa5cb9c85ffc71fe0d"
+      },
+      "output_shape": [
+        2,
+        9,
+        31
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "397a6f8ef954a9686bbe55b1316af72561ddb68f8c9b25694fe4fa74b9077e26",
+      "squared_distances_sha256": "16e29668c895d2d4c4814d578dfb9c82992c8ca40f586649aa4c098d6dd4bbf2"
+    },
+    {
+      "scenario": "permuted_finite",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 33,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "0870fc18283f73722ee4ff1a217171db6445f7a5f7af0c06fc6f10745f76561c",
+        "points": "11eccb412f235c6ab9b0e02838ff5335dbc519a7c7ef63fa5cb9c85ffc71fe0d"
+      },
+      "output_shape": [
+        2,
+        9,
+        33
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "93dc5338daaf9fe85f4b03daf8fbcccf86f50f470157ecbbdaf17b884bc67fcb",
+      "squared_distances_sha256": "fbead9a9428ccb6398461651a4c6d50a68c3e482532b2c90d214a13eb4b497cc"
+    },
+    {
+      "scenario": "permuted_finite",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 65,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "0870fc18283f73722ee4ff1a217171db6445f7a5f7af0c06fc6f10745f76561c",
+        "points": "11eccb412f235c6ab9b0e02838ff5335dbc519a7c7ef63fa5cb9c85ffc71fe0d"
+      },
+      "output_shape": [
+        2,
+        9,
+        65
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "805a88e008ac0042b4b1a2987228def571ae73dc362870d8c337e8a07be360cb",
+      "squared_distances_sha256": "12f79ff2fd143ebc4457280bea06513d503b8ef9c92570624babcaece8c06ea1"
+    },
+    {
+      "scenario": "permuted_finite",
+      "coordinate_dtype": "torch.float16",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 1,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "e3f5ba9915fa6559cb4273a40c0b04c3ee2a5d0514910e2fa2f531ef4dd46356",
+        "points": "4072f88ab5337d952c4657be541b4cb938732c5b902332ff2c892cee85dd7949"
+      },
+      "output_shape": [
+        2,
+        9,
+        1
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "1584f420afb5ba922ad65581ed8bf2a91db509fcc9e4bdc4b8f74cd153c89a3c",
+      "squared_distances_sha256": "eea76e5f8b098d6d8cdb6cc557b65b4b9dfa0f8f806bfeb81107cbc3ae53f86c"
+    },
+    {
+      "scenario": "permuted_finite",
+      "coordinate_dtype": "torch.float16",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 31,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "e3f5ba9915fa6559cb4273a40c0b04c3ee2a5d0514910e2fa2f531ef4dd46356",
+        "points": "4072f88ab5337d952c4657be541b4cb938732c5b902332ff2c892cee85dd7949"
+      },
+      "output_shape": [
+        2,
+        9,
+        31
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "397a6f8ef954a9686bbe55b1316af72561ddb68f8c9b25694fe4fa74b9077e26",
+      "squared_distances_sha256": "16e29668c895d2d4c4814d578dfb9c82992c8ca40f586649aa4c098d6dd4bbf2"
+    },
+    {
+      "scenario": "permuted_finite",
+      "coordinate_dtype": "torch.float16",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 33,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "e3f5ba9915fa6559cb4273a40c0b04c3ee2a5d0514910e2fa2f531ef4dd46356",
+        "points": "4072f88ab5337d952c4657be541b4cb938732c5b902332ff2c892cee85dd7949"
+      },
+      "output_shape": [
+        2,
+        9,
+        33
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "93dc5338daaf9fe85f4b03daf8fbcccf86f50f470157ecbbdaf17b884bc67fcb",
+      "squared_distances_sha256": "fbead9a9428ccb6398461651a4c6d50a68c3e482532b2c90d214a13eb4b497cc"
+    },
+    {
+      "scenario": "permuted_finite",
+      "coordinate_dtype": "torch.float16",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 65,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "e3f5ba9915fa6559cb4273a40c0b04c3ee2a5d0514910e2fa2f531ef4dd46356",
+        "points": "4072f88ab5337d952c4657be541b4cb938732c5b902332ff2c892cee85dd7949"
+      },
+      "output_shape": [
+        2,
+        9,
+        65
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "805a88e008ac0042b4b1a2987228def571ae73dc362870d8c337e8a07be360cb",
+      "squared_distances_sha256": "12f79ff2fd143ebc4457280bea06513d503b8ef9c92570624babcaece8c06ea1"
+    },
+    {
+      "scenario": "zero_radius",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 1,
+      "radius": 0.0,
+      "input_sha256": {
+        "queries": "0870fc18283f73722ee4ff1a217171db6445f7a5f7af0c06fc6f10745f76561c",
+        "points": "e74ece05cf2af3bed3fb26de07ee39b82f96878d24a831db0ddba0ff8b77cd3b"
+      },
+      "output_shape": [
+        2,
+        9,
+        1
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "d169f6754229c200ba4838a38e4894c03c47ce8939db4b7a11c224921b982521",
+      "squared_distances_sha256": "834a709ba2534ebe3ee1397fd4f7bd288b2acc1d20a08d6c862dcd99b6f04400"
+    },
+    {
+      "scenario": "zero_radius",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 31,
+      "radius": 0.0,
+      "input_sha256": {
+        "queries": "0870fc18283f73722ee4ff1a217171db6445f7a5f7af0c06fc6f10745f76561c",
+        "points": "e74ece05cf2af3bed3fb26de07ee39b82f96878d24a831db0ddba0ff8b77cd3b"
+      },
+      "output_shape": [
+        2,
+        9,
+        31
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "710c2e4cb11f712675eae813e9cc58ea51b8128a1506029c2de24bd8da6f1737",
+      "squared_distances_sha256": "34b4d54904f0c46c318c50b1278c31ee1df47cfaa6137cf3bfbf9a548748c28a"
+    },
+    {
+      "scenario": "zero_radius",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 33,
+      "radius": 0.0,
+      "input_sha256": {
+        "queries": "0870fc18283f73722ee4ff1a217171db6445f7a5f7af0c06fc6f10745f76561c",
+        "points": "e74ece05cf2af3bed3fb26de07ee39b82f96878d24a831db0ddba0ff8b77cd3b"
+      },
+      "output_shape": [
+        2,
+        9,
+        33
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "1d2975d9bbea2cdf51a398f961be83280846377ba39e0f0c0ec80e6828896df8",
+      "squared_distances_sha256": "d438c0a8d50f8aea3c536d70b6adc13ea658c293f0ae0adcb3f09fe02455b326"
+    },
+    {
+      "scenario": "zero_radius",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 65,
+      "radius": 0.0,
+      "input_sha256": {
+        "queries": "0870fc18283f73722ee4ff1a217171db6445f7a5f7af0c06fc6f10745f76561c",
+        "points": "e74ece05cf2af3bed3fb26de07ee39b82f96878d24a831db0ddba0ff8b77cd3b"
+      },
+      "output_shape": [
+        2,
+        9,
+        65
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "8154e29ea918671ad3ab3eb3b241a0a6e307df074ae7bf0ccbde892c04fbd01a",
+      "squared_distances_sha256": "8e2bd3192e1592ceb531972422295469f12428bcd0ab3283c1806d0f2cd1a9c6"
+    },
+    {
+      "scenario": "zero_radius",
+      "coordinate_dtype": "torch.float16",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 1,
+      "radius": 0.0,
+      "input_sha256": {
+        "queries": "e3f5ba9915fa6559cb4273a40c0b04c3ee2a5d0514910e2fa2f531ef4dd46356",
+        "points": "003bba6026d9d8c699cbcf3b425769414d46359e7c0f5df51c61ed6cb3ff30a9"
+      },
+      "output_shape": [
+        2,
+        9,
+        1
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "d169f6754229c200ba4838a38e4894c03c47ce8939db4b7a11c224921b982521",
+      "squared_distances_sha256": "834a709ba2534ebe3ee1397fd4f7bd288b2acc1d20a08d6c862dcd99b6f04400"
+    },
+    {
+      "scenario": "zero_radius",
+      "coordinate_dtype": "torch.float16",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 31,
+      "radius": 0.0,
+      "input_sha256": {
+        "queries": "e3f5ba9915fa6559cb4273a40c0b04c3ee2a5d0514910e2fa2f531ef4dd46356",
+        "points": "003bba6026d9d8c699cbcf3b425769414d46359e7c0f5df51c61ed6cb3ff30a9"
+      },
+      "output_shape": [
+        2,
+        9,
+        31
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "710c2e4cb11f712675eae813e9cc58ea51b8128a1506029c2de24bd8da6f1737",
+      "squared_distances_sha256": "34b4d54904f0c46c318c50b1278c31ee1df47cfaa6137cf3bfbf9a548748c28a"
+    },
+    {
+      "scenario": "zero_radius",
+      "coordinate_dtype": "torch.float16",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 33,
+      "radius": 0.0,
+      "input_sha256": {
+        "queries": "e3f5ba9915fa6559cb4273a40c0b04c3ee2a5d0514910e2fa2f531ef4dd46356",
+        "points": "003bba6026d9d8c699cbcf3b425769414d46359e7c0f5df51c61ed6cb3ff30a9"
+      },
+      "output_shape": [
+        2,
+        9,
+        33
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "1d2975d9bbea2cdf51a398f961be83280846377ba39e0f0c0ec80e6828896df8",
+      "squared_distances_sha256": "d438c0a8d50f8aea3c536d70b6adc13ea658c293f0ae0adcb3f09fe02455b326"
+    },
+    {
+      "scenario": "zero_radius",
+      "coordinate_dtype": "torch.float16",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 65,
+      "radius": 0.0,
+      "input_sha256": {
+        "queries": "e3f5ba9915fa6559cb4273a40c0b04c3ee2a5d0514910e2fa2f531ef4dd46356",
+        "points": "003bba6026d9d8c699cbcf3b425769414d46359e7c0f5df51c61ed6cb3ff30a9"
+      },
+      "output_shape": [
+        2,
+        9,
+        65
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "8154e29ea918671ad3ab3eb3b241a0a6e307df074ae7bf0ccbde892c04fbd01a",
+      "squared_distances_sha256": "8e2bd3192e1592ceb531972422295469f12428bcd0ab3283c1806d0f2cd1a9c6"
+    },
+    {
+      "scenario": "empty_reference",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 0,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        0,
+        0
+      ],
+      "k": 1,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "0870fc18283f73722ee4ff1a217171db6445f7a5f7af0c06fc6f10745f76561c",
+        "points": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "output_shape": [
+        2,
+        9,
+        1
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "d169f6754229c200ba4838a38e4894c03c47ce8939db4b7a11c224921b982521",
+      "squared_distances_sha256": "834a709ba2534ebe3ee1397fd4f7bd288b2acc1d20a08d6c862dcd99b6f04400"
+    },
+    {
+      "scenario": "empty_reference",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 0,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        0,
+        0
+      ],
+      "k": 31,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "0870fc18283f73722ee4ff1a217171db6445f7a5f7af0c06fc6f10745f76561c",
+        "points": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "output_shape": [
+        2,
+        9,
+        31
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "710c2e4cb11f712675eae813e9cc58ea51b8128a1506029c2de24bd8da6f1737",
+      "squared_distances_sha256": "34b4d54904f0c46c318c50b1278c31ee1df47cfaa6137cf3bfbf9a548748c28a"
+    },
+    {
+      "scenario": "empty_reference",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 0,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        0,
+        0
+      ],
+      "k": 33,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "0870fc18283f73722ee4ff1a217171db6445f7a5f7af0c06fc6f10745f76561c",
+        "points": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "output_shape": [
+        2,
+        9,
+        33
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "1d2975d9bbea2cdf51a398f961be83280846377ba39e0f0c0ec80e6828896df8",
+      "squared_distances_sha256": "d438c0a8d50f8aea3c536d70b6adc13ea658c293f0ae0adcb3f09fe02455b326"
+    },
+    {
+      "scenario": "empty_reference",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 0,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        0,
+        0
+      ],
+      "k": 65,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "0870fc18283f73722ee4ff1a217171db6445f7a5f7af0c06fc6f10745f76561c",
+        "points": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "output_shape": [
+        2,
+        9,
+        65
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "8154e29ea918671ad3ab3eb3b241a0a6e307df074ae7bf0ccbde892c04fbd01a",
+      "squared_distances_sha256": "8e2bd3192e1592ceb531972422295469f12428bcd0ab3283c1806d0f2cd1a9c6"
+    },
+    {
+      "scenario": "empty_reference",
+      "coordinate_dtype": "torch.float16",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 0,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        0,
+        0
+      ],
+      "k": 1,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "e3f5ba9915fa6559cb4273a40c0b04c3ee2a5d0514910e2fa2f531ef4dd46356",
+        "points": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "output_shape": [
+        2,
+        9,
+        1
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "d169f6754229c200ba4838a38e4894c03c47ce8939db4b7a11c224921b982521",
+      "squared_distances_sha256": "834a709ba2534ebe3ee1397fd4f7bd288b2acc1d20a08d6c862dcd99b6f04400"
+    },
+    {
+      "scenario": "empty_reference",
+      "coordinate_dtype": "torch.float16",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 0,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        0,
+        0
+      ],
+      "k": 31,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "e3f5ba9915fa6559cb4273a40c0b04c3ee2a5d0514910e2fa2f531ef4dd46356",
+        "points": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "output_shape": [
+        2,
+        9,
+        31
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "710c2e4cb11f712675eae813e9cc58ea51b8128a1506029c2de24bd8da6f1737",
+      "squared_distances_sha256": "34b4d54904f0c46c318c50b1278c31ee1df47cfaa6137cf3bfbf9a548748c28a"
+    },
+    {
+      "scenario": "empty_reference",
+      "coordinate_dtype": "torch.float16",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 0,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        0,
+        0
+      ],
+      "k": 33,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "e3f5ba9915fa6559cb4273a40c0b04c3ee2a5d0514910e2fa2f531ef4dd46356",
+        "points": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "output_shape": [
+        2,
+        9,
+        33
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "1d2975d9bbea2cdf51a398f961be83280846377ba39e0f0c0ec80e6828896df8",
+      "squared_distances_sha256": "d438c0a8d50f8aea3c536d70b6adc13ea658c293f0ae0adcb3f09fe02455b326"
+    },
+    {
+      "scenario": "empty_reference",
+      "coordinate_dtype": "torch.float16",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 0,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        0,
+        0
+      ],
+      "k": 65,
+      "radius": 4.5,
+      "input_sha256": {
+        "queries": "e3f5ba9915fa6559cb4273a40c0b04c3ee2a5d0514910e2fa2f531ef4dd46356",
+        "points": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "output_shape": [
+        2,
+        9,
+        65
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "8154e29ea918671ad3ab3eb3b241a0a6e307df074ae7bf0ccbde892c04fbd01a",
+      "squared_distances_sha256": "8e2bd3192e1592ceb531972422295469f12428bcd0ab3283c1806d0f2cd1a9c6"
+    },
+    {
+      "scenario": "tiny_radius",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 1,
+      "radius": 3.903127820947816e-18,
+      "input_sha256": {
+        "queries": "4e5beead322109e9f59bc8613a4b234d1e845ea58e4f477034f353e756b67f86",
+        "points": "61df78c16196b766417aaf6ed3157dfdfea9c3cf5421d53e796c11011a16db4c"
+      },
+      "output_shape": [
+        2,
+        9,
+        1
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "090c2852e6783bf0122ca6af0a4d20e2154e23024f2b4b5d960ee114b5e9eaff",
+      "squared_distances_sha256": "2be3517f48b2b64b2db6625e50d2904e4dc89999ac41601315c2fadd52fa0f3e"
+    },
+    {
+      "scenario": "tiny_radius",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 31,
+      "radius": 3.903127820947816e-18,
+      "input_sha256": {
+        "queries": "4e5beead322109e9f59bc8613a4b234d1e845ea58e4f477034f353e756b67f86",
+        "points": "61df78c16196b766417aaf6ed3157dfdfea9c3cf5421d53e796c11011a16db4c"
+      },
+      "output_shape": [
+        2,
+        9,
+        31
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "1f7aa3efc6dacf4ddcc55dda74802cc3f3f46826462ca27f247feac29e8ba8f6",
+      "squared_distances_sha256": "b94b267c5dcdda445cf7eabfed1b0297e97f327c924663004ae4cf92ca1de05a"
+    },
+    {
+      "scenario": "tiny_radius",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 33,
+      "radius": 3.903127820947816e-18,
+      "input_sha256": {
+        "queries": "4e5beead322109e9f59bc8613a4b234d1e845ea58e4f477034f353e756b67f86",
+        "points": "61df78c16196b766417aaf6ed3157dfdfea9c3cf5421d53e796c11011a16db4c"
+      },
+      "output_shape": [
+        2,
+        9,
+        33
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "f5a9d456662beadd1766dc2f4c838c97a5fa4e0ed562fbf65411e65967d88286",
+      "squared_distances_sha256": "89ce116d7512bc2cf749400bd3e7b672dd976fa1e124313dc617dafcf59b1e50"
+    },
+    {
+      "scenario": "tiny_radius",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 65,
+      "radius": 3.903127820947816e-18,
+      "input_sha256": {
+        "queries": "4e5beead322109e9f59bc8613a4b234d1e845ea58e4f477034f353e756b67f86",
+        "points": "61df78c16196b766417aaf6ed3157dfdfea9c3cf5421d53e796c11011a16db4c"
+      },
+      "output_shape": [
+        2,
+        9,
+        65
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "814ae55d02e6c8a3bb249d9ebdf1a52e4a862a146b4ffe2b2656aafc77b12065",
+      "squared_distances_sha256": "b9ef97399723d2f975f674e145e771a401f6fdb7343c0f9662e99ccc60b30e5f"
+    },
+    {
+      "scenario": "subnormal_component_r2m62",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 1,
+      "radius": 2.168404344971009e-19,
+      "input_sha256": {
+        "queries": "cfbe3bc8c99416e23d1ea3f1ece40b3f44d5b3953f2522012fb7089bdf127a30",
+        "points": "90ad3f237b7a449c2577f58c7acc323bc3a3d7dc6c85ee0facbc44cf23c4fd82"
+      },
+      "output_shape": [
+        2,
+        9,
+        1
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "1584f420afb5ba922ad65581ed8bf2a91db509fcc9e4bdc4b8f74cd153c89a3c",
+      "squared_distances_sha256": "b6fee81a6bc990c93a50f80735d42aa80040caa2fdce0cec428704c2da8a768a"
+    },
+    {
+      "scenario": "subnormal_component_r2m62",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 31,
+      "radius": 2.168404344971009e-19,
+      "input_sha256": {
+        "queries": "cfbe3bc8c99416e23d1ea3f1ece40b3f44d5b3953f2522012fb7089bdf127a30",
+        "points": "90ad3f237b7a449c2577f58c7acc323bc3a3d7dc6c85ee0facbc44cf23c4fd82"
+      },
+      "output_shape": [
+        2,
+        9,
+        31
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "d773c32b0681347f19397e0b5e6c79efa867ec7ad90757bf13d417783ed38607",
+      "squared_distances_sha256": "8cb247eb14f6bccee6adcd8526fa40dec741528172333dbbf55160bc3b14ad76"
+    },
+    {
+      "scenario": "subnormal_component_r2m62",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 33,
+      "radius": 2.168404344971009e-19,
+      "input_sha256": {
+        "queries": "cfbe3bc8c99416e23d1ea3f1ece40b3f44d5b3953f2522012fb7089bdf127a30",
+        "points": "90ad3f237b7a449c2577f58c7acc323bc3a3d7dc6c85ee0facbc44cf23c4fd82"
+      },
+      "output_shape": [
+        2,
+        9,
+        33
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "bc87c895d313e48689ddcbb4ab5f73be300dff32e317e632e06ee7460437c271",
+      "squared_distances_sha256": "12673ca91f45859130a7ac579f1f8e325163cf0abc579a10e59ff3f7ce2e21a9"
+    },
+    {
+      "scenario": "subnormal_component_r2m62",
+      "coordinate_dtype": "torch.float32",
+      "batch": 2,
+      "queries_per_batch": 9,
+      "points_per_batch": 97,
+      "query_lengths": [
+        9,
+        7
+      ],
+      "point_lengths": [
+        97,
+        63
+      ],
+      "k": 65,
+      "radius": 2.168404344971009e-19,
+      "input_sha256": {
+        "queries": "cfbe3bc8c99416e23d1ea3f1ece40b3f44d5b3953f2522012fb7089bdf127a30",
+        "points": "90ad3f237b7a449c2577f58c7acc323bc3a3d7dc6c85ee0facbc44cf23c4fd82"
+      },
+      "output_shape": [
+        2,
+        9,
+        65
+      ],
+      "indices_dtype": "torch.int64",
+      "squared_distances_dtype": "torch.float32",
+      "all_output_slots_written": true,
+      "simd_indices_match_baseline_bytes": true,
+      "simd_indices_match_cpu_bytes": true,
+      "simd_squared_distances_match_baseline_bytes": true,
+      "indices_sha256": "d78658f002c16840b90d4b3df9d33f209753bd7761b86bd362c79247d0bc6372",
+      "squared_distances_sha256": "8ac0534668e2f63a623be7b131916f0015abc1434644ab3618f2fe90912d9dd8"
+    }
+  ],
+  "cases_passed": 40
+}

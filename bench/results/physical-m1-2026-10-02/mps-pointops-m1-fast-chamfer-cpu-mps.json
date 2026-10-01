@@ -1,0 +1,223 @@
+{
+  "created_utc": "2026-10-01T15:25:09.566460+00:00",
+  "environment": {
+    "chip": "Apple M1",
+    "hardware_model": "MacBookPro17,1",
+    "physical_memory_bytes": "8589934592",
+    "macos": "26.5.2",
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "python": "3.10.6",
+    "torch": "2.12.0",
+    "torch_cpu_threads": 4,
+    "mps_device": "Apple M1",
+    "pytorch_mps_fast_math": "1",
+    "pytorch_enable_mps_fallback": "0",
+    "git_head": "f4a886a08938a8a3c9785ecaec962300efd298e0",
+    "source_sha256": {
+      "bench/bench_chamfer_cpu_mps.py": "5738a5721f730c13983c6593483891144780ce74f6d07637b3b5a677b446cd61",
+      "mps_pointops/__init__.py": "6673fe390488d699146d26db55b014a1ffa5778dc805fadc721411337aabb658",
+      "mps_pointops/chamfer.py": "94fce0894f6d9dbaf313cc7e0cac80186036dc117b77f09b4f5c89967da9f14e",
+      "mps_pointops/_ball_query_mps.py": "d2fb88bc22ed80bcea9a17906427192777fe468b6875a5beb2cb2ff4add3e8b6",
+      "mps_pointops/kernels/chamfer_nn.metal": "498325d79ddc463af9338a2e844723bd670809cf8c0b978a516ebcba64dfd176"
+    }
+  },
+  "method": {
+    "public_api": "mps_pointops.chamfer_distance(x, y, single_directional=False)",
+    "shape": "(1, N, 3) for both x and y",
+    "dtype": "torch.float32",
+    "distribution": "independent standard-normal x and y from a fixed CPU generator",
+    "seed": 2026,
+    "point_reduction": "mean",
+    "batch_reduction": "mean",
+    "warmup": 3,
+    "repeat": 10,
+    "timer": "perf_counter_ns; MPS synchronized before forward and after each forward/backward phase",
+    "data_transfer_in_timed_region": false,
+    "device_order": "CPU then MPS on even iterations; MPS then CPU on odd iterations",
+    "parity_before_timing": "CPU versus MPS loss and first-order x/y gradients, rtol=atol=1e-5",
+    "comparison_scope": "same public implementation on two devices; no SciPy or upstream PyTorch3D baseline"
+  },
+  "invocation": {
+    "argv": [
+      "<physical-m1-checkout>/.venv/bin/python",
+      "bench/bench_chamfer_cpu_mps.py",
+      "--sizes",
+      "256",
+      "1024",
+      "--warmup",
+      "3",
+      "--repeat",
+      "10",
+      "--output",
+      "/tmp/mps-pointops-m1-fast-chamfer-cpu-mps.json"
+    ],
+    "sizes": [
+      256,
+      1024
+    ]
+  },
+  "cases": [
+    {
+      "batch": 1,
+      "points_x": 256,
+      "points_y": 256,
+      "parity": {
+        "passed": true,
+        "rtol": 1e-05,
+        "atol": 1e-05,
+        "cpu_loss": 0.3998403251171112,
+        "mps_loss": 0.3998403549194336,
+        "max_abs_loss_error": 2.9802322387695312e-08,
+        "max_abs_x_gradient_error": 1.862645149230957e-09,
+        "max_abs_y_gradient_error": 1.862645149230957e-09
+      },
+      "cpu": {
+        "forward": {
+          "samples_ms": [
+            1.131666,
+            1.105916,
+            1.106833,
+            1.03325,
+            1.081167,
+            1.028625,
+            1.081667,
+            1.048042,
+            1.069875,
+            1.044875
+          ],
+          "median_ms": 1.075521
+        },
+        "backward": {
+          "samples_ms": [
+            0.134625,
+            0.193583,
+            0.13225,
+            0.125542,
+            0.150875,
+            0.146583,
+            0.136209,
+            0.127209,
+            0.134959,
+            0.1425
+          ],
+          "median_ms": 0.13558399999999998
+        }
+      },
+      "mps": {
+        "forward": {
+          "samples_ms": [
+            1.838042,
+            2.234958,
+            1.853875,
+            2.090125,
+            1.830959,
+            2.130084,
+            1.796709,
+            2.099917,
+            1.883709,
+            2.119459
+          ],
+          "median_ms": 1.986917
+        },
+        "backward": {
+          "samples_ms": [
+            0.914834,
+            0.945833,
+            0.917292,
+            0.927792,
+            0.88925,
+            0.913458,
+            0.9345,
+            0.9415,
+            0.91225,
+            0.928
+          ],
+          "median_ms": 0.922542
+        }
+      },
+      "cpu_over_mps_forward": 0.541301423260257,
+      "cpu_over_mps_backward": 0.14696783452677492
+    },
+    {
+      "batch": 1,
+      "points_x": 1024,
+      "points_y": 1024,
+      "parity": {
+        "passed": true,
+        "rtol": 1e-05,
+        "atol": 1e-05,
+        "cpu_loss": 0.16652971506118774,
+        "mps_loss": 0.16652971506118774,
+        "max_abs_loss_error": 0.0,
+        "max_abs_x_gradient_error": 2.3283064365386963e-10,
+        "max_abs_y_gradient_error": 5.820766091346741e-11
+      },
+      "cpu": {
+        "forward": {
+          "samples_ms": [
+            9.52275,
+            9.740667,
+            9.852458,
+            9.5735,
+            9.592792,
+            9.505666,
+            9.609417,
+            9.574417,
+            9.492542,
+            9.611833
+          ],
+          "median_ms": 9.5836045
+        },
+        "backward": {
+          "samples_ms": [
+            0.202958,
+            0.201625,
+            0.206166,
+            0.198,
+            0.203292,
+            0.197917,
+            0.200708,
+            0.194292,
+            0.199625,
+            0.20025
+          ],
+          "median_ms": 0.20047900000000002
+        }
+      },
+      "mps": {
+        "forward": {
+          "samples_ms": [
+            1.952375,
+            2.680041,
+            1.987959,
+            2.600542,
+            1.968667,
+            2.604709,
+            1.950375,
+            2.608083,
+            2.029875,
+            2.608958
+          ],
+          "median_ms": 2.3152085
+        },
+        "backward": {
+          "samples_ms": [
+            0.908959,
+            0.99575,
+            0.918167,
+            0.9865,
+            0.899917,
+            0.953875,
+            0.89975,
+            1.017208,
+            0.905958,
+            0.975459
+          ],
+          "median_ms": 0.936021
+        }
+      },
+      "cpu_over_mps_forward": 4.13941314572748,
+      "cpu_over_mps_backward": 0.21418216044298152
+    }
+  ]
+}

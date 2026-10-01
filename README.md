@@ -941,7 +941,9 @@ original implementation.
       fallback. The current `MAX_K=256` is a kernel constant, not a hardware
       limit.
 - [ ] Flat API benchmarks in the published results.
-- [ ] Benchmarks from other Apple Silicon chips (M1 to M4), on real hardware.
+- [~] Physical Apple M1 Safe/Fast validation and operator benchmarks are
+      [recorded](docs/phase3-physical-m1-2026-10-02.md). M2–M4 real-hardware
+      coverage remains open; the M1 Virtual CI runner is a separate environment.
 
 ### Phase 2: Feature-space and propagation operators (started in 0.5.0)
 
@@ -976,6 +978,8 @@ PyG 2.8's `pyg-lib` operator path, native graph aggregation, and the legacy
 listed versions, devices, models, and inputs that have passing logs.
 The [dated result matrix](docs/phase3-results-2026-10-01.md) links each tested
 surface to its source revision and raw logs.
+The [physical M1 report](docs/phase3-physical-m1-2026-10-02.md) adds Safe/Fast
+correctness and timing evidence without extending claims to M2–M4.
 
 - [~] Initial PyG operator survey (#17): GCN, GraphSAGE, and GAT forward and
       backward passed on a fixed synthetic 12-node graph with PyG 2.8.0,
@@ -1011,6 +1015,9 @@ surface to its source revision and raw logs.
       cover topology, duplicate edges, self-loops, batch labels, pooled values,
       and first-order gradients. General PyG model coverage remains open.
 - [ ] Measured speed of the separate compact voxel-downsampling API.
+- [ ] Design and benchmark a fused Metal voxel-pooling candidate only after it
+      matches the current cell IDs, mean/sum outputs, and first-order gradients.
+      No fused kernel exists in the measured release.
 - [~] Legacy `torch_cluster.nearest` CPU/MPS float32 shim. The
       [contract and source-pinned comparison](docs/nearest-contract.md) cover
       finite well-separated examples, ragged batches, and the CUDA source's
@@ -1046,7 +1053,11 @@ surface to its source revision and raw logs.
       runs (`single_directional=True`, batch 4, 256–16,384 points per cloud),
       concentrated selection did not consistently slow backward versus
       uniform selection. This supports the current PyTorch scatter path for
-      the tested sizes only.
+      the tested sizes only. On a [physical M1](docs/phase3-physical-m1-2026-10-02.md),
+      the same type of concentrated selection slowed backward at B=1,N=2,048,
+      while a separate random bidirectional Chamfer fixture had a faster MPS
+      forward than this package's CPU reference at N=1,024 and 4,096. These
+      input families have different nearest-neighbor distributions.
 - [ ] Compare supported Chamfer values and first-order gradients directly
       against PyTorch3D in CI, including `lengths`, weights, and each supported
       reduction mode. Current checks use analytic cases and an independent CPU

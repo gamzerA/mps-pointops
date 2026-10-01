@@ -1,0 +1,124 @@
+{
+  "created_utc": "2026-10-01T15:25:37.469152+00:00",
+  "environment": {
+    "chip": "Apple M1",
+    "hardware_model": "MacBookPro17,1",
+    "physical_memory_bytes": "8589934592",
+    "macos": "26.5.2",
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "python": "3.10.6",
+    "torch": "2.12.0",
+    "torch_cpu_threads": 4,
+    "mps_device": "Apple M1",
+    "pytorch_mps_fast_math": "1",
+    "pytorch_enable_mps_fallback": "0",
+    "git_head": "f4a886a08938a8a3c9785ecaec962300efd298e0",
+    "source_sha256": {
+      "bench/bench_chamfer_cpu_mps.py": "5738a5721f730c13983c6593483891144780ce74f6d07637b3b5a677b446cd61",
+      "mps_pointops/__init__.py": "6673fe390488d699146d26db55b014a1ffa5778dc805fadc721411337aabb658",
+      "mps_pointops/chamfer.py": "94fce0894f6d9dbaf313cc7e0cac80186036dc117b77f09b4f5c89967da9f14e",
+      "mps_pointops/_ball_query_mps.py": "d2fb88bc22ed80bcea9a17906427192777fe468b6875a5beb2cb2ff4add3e8b6",
+      "mps_pointops/kernels/chamfer_nn.metal": "498325d79ddc463af9338a2e844723bd670809cf8c0b978a516ebcba64dfd176"
+    }
+  },
+  "method": {
+    "public_api": "mps_pointops.chamfer_distance(x, y, single_directional=False)",
+    "shape": "(1, N, 3) for both x and y",
+    "dtype": "torch.float32",
+    "distribution": "independent standard-normal x and y from a fixed CPU generator",
+    "seed": 2026,
+    "point_reduction": "mean",
+    "batch_reduction": "mean",
+    "warmup": 2,
+    "repeat": 6,
+    "timer": "perf_counter_ns; MPS synchronized before forward and after each forward/backward phase",
+    "data_transfer_in_timed_region": false,
+    "device_order": "CPU then MPS on even iterations; MPS then CPU on odd iterations",
+    "parity_before_timing": "CPU versus MPS loss and first-order x/y gradients, rtol=atol=1e-5",
+    "comparison_scope": "same public implementation on two devices; no SciPy or upstream PyTorch3D baseline"
+  },
+  "invocation": {
+    "argv": [
+      "<physical-m1-checkout>/.venv/bin/python",
+      "bench/bench_chamfer_cpu_mps.py",
+      "--sizes",
+      "4096",
+      "--warmup",
+      "2",
+      "--repeat",
+      "6",
+      "--output",
+      "/tmp/mps-pointops-m1-fast-chamfer-cpu-mps-4096.json"
+    ],
+    "sizes": [
+      4096
+    ]
+  },
+  "cases": [
+    {
+      "batch": 1,
+      "points_x": 4096,
+      "points_y": 4096,
+      "parity": {
+        "passed": true,
+        "rtol": 1e-05,
+        "atol": 1e-05,
+        "cpu_loss": 0.07015062868595123,
+        "mps_loss": 0.07015062868595123,
+        "max_abs_loss_error": 0.0,
+        "max_abs_x_gradient_error": 5.820766091346741e-11,
+        "max_abs_y_gradient_error": 1.4551915228366852e-11
+      },
+      "cpu": {
+        "forward": {
+          "samples_ms": [
+            154.702333,
+            153.787667,
+            154.669375,
+            154.066417,
+            154.111375,
+            153.616167
+          ],
+          "median_ms": 154.088896
+        },
+        "backward": {
+          "samples_ms": [
+            0.437667,
+            0.462375,
+            0.331792,
+            0.315833,
+            0.316542,
+            0.395709
+          ],
+          "median_ms": 0.3637505
+        }
+      },
+      "mps": {
+        "forward": {
+          "samples_ms": [
+            5.719208,
+            4.376041,
+            5.774875,
+            4.465,
+            5.346917,
+            4.455167
+          ],
+          "median_ms": 4.9059585000000006
+        },
+        "backward": {
+          "samples_ms": [
+            1.06125,
+            0.928333,
+            0.99325,
+            0.886334,
+            1.020375,
+            0.88325
+          ],
+          "median_ms": 0.9607915
+        }
+      },
+      "cpu_over_mps_forward": 31.408520067994864,
+      "cpu_over_mps_backward": 0.3785946274503885
+    }
+  ]
+}

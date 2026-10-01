@@ -164,3 +164,14 @@ An isolated sdist and wheel build was checked against the source byte hash:
 `501f3b95c132900bd0ed919306de2154e665af5293e0cad3125307543a50ae27`
 appeared byte-for-byte in both archives. This is a development-branch build,
 not a published PyPI artifact.
+
+The later [physical M1 Safe/Fast report](phase3-physical-m1-2026-10-02.md)
+extends the size sweep to Q=N=2,048. Dense D=64/128 Metal was slower than
+both the package CPU reference and MPS `cdist+topk` on that 8 GiB M1. At
+D=128, CPU `cdist` and Metal differed in four output slots across two query
+rows. The [direct float32 ranking probe](../bench/probe_feature_knn_tie.py)
+found zero Metal-vs-oracle differences across all 2,048 queries and four
+CPU-vs-oracle differences: two adjacent swaps between candidates only two
+float32 ULPs apart in oracle squared distance. That observation follows the
+documented arithmetic distinction; it is not a universal index-parity
+guarantee. The linked report includes the raw JSON and timing limits.

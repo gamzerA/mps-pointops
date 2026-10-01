@@ -1,0 +1,360 @@
+{
+  "captured_utc": "2026-10-01T15:28:20.164648+00:00",
+  "environment": {
+    "chip": "Apple M1",
+    "mps_device": "Apple M1",
+    "os": "macOS-26.5.2-arm64-arm-64bit",
+    "python": "3.10.6",
+    "torch": "2.12.0",
+    "numpy": "2.2.6",
+    "pytorch_enable_mps_fallback": "0",
+    "pytorch_mps_fast_math": "1",
+    "git_commit": "f4a886a08938a8a3c9785ecaec962300efd298e0"
+  },
+  "method": {
+    "queries": 2048,
+    "references": 2048,
+    "dimension": 128,
+    "k": 20,
+    "benchmark_base_seed": 1601,
+    "generator_seed": 1729,
+    "input_order": "reference tensor then query tensor from one CPU torch.Generator",
+    "cpu_selection": "mps_pointops.knn CPU path: torch.cdist then topk",
+    "mps_selection": "mps_pointops.knn Metal feature_knn_dense",
+    "oracle": "each float32 subtract, square, then dimension-ordered float32 add; sort by (squared distance, reference index)",
+    "oracle_scope": "all query rows and all reference candidates",
+    "distance_ulp_scope": "float32 oracle squared distances for competing indices, not cdist or Metal internal squared distances",
+    "reference_tensor_sha256": "f154771e60628e1f4b6aed5b276024e9f2faa348be7f077b0e90a33f57292360",
+    "query_tensor_sha256": "2db3538dc794997585d8b872d0c6f740d18d18da0512d6e301f25ee476242f67",
+    "source_sha256": {
+      "bench/probe_feature_knn_tie.py": "3690d383c659ff5220c45e9bf8ec3bf6f083e2cffc17a5dee659feb91e4e029e",
+      "bench/bench_feature_knn.py": "9ad26b5a4718a2e3f12399538bddbf63bb84bd8c5eb300849acbaa461b2a5bec",
+      "mps_pointops/ops.py": "0cf93b76d49665f32751ace699dc6df350e6149bbbe97fa3cfd6fcda9ab7fe4a",
+      "mps_pointops/reference.py": "ff59b7ed4a264eb055a28f9f883054cf1309c2e181014360e880a1c448e8bce7",
+      "mps_pointops/kernels/feature_knn.metal": "501f3b95c132900bd0ed919306de2154e665af5293e0cad3125307543a50ae27",
+      "tests/test_feature_knn.py": "6f998c196b180412628fa427865b18166efc5cce5b7cb3e5cb3e8d8fc4e24cf2"
+    }
+  },
+  "counts": {
+    "cpu_vs_mps_slot_mismatches": 4,
+    "cpu_vs_mps_rows_with_mismatch": 2,
+    "cpu_vs_scalar_slot_mismatches": 4,
+    "mps_vs_scalar_slot_mismatches": 0,
+    "cpu_vs_scalar_rows_with_mismatch": 2,
+    "mps_vs_scalar_rows_with_mismatch": 0
+  },
+  "differing_rows": [
+    {
+      "query_index": 642,
+      "cpu_indices": [
+        172,
+        656,
+        668,
+        1081,
+        1507,
+        506,
+        1970,
+        1527,
+        1023,
+        585,
+        433,
+        1442,
+        1872,
+        521,
+        1189,
+        869,
+        1274,
+        1421,
+        1680,
+        1225
+      ],
+      "mps_indices": [
+        172,
+        656,
+        668,
+        1081,
+        1507,
+        506,
+        1970,
+        1527,
+        1023,
+        585,
+        433,
+        1442,
+        1872,
+        521,
+        869,
+        1189,
+        1274,
+        1421,
+        1680,
+        1225
+      ],
+      "scalar_indices": [
+        172,
+        656,
+        668,
+        1081,
+        1507,
+        506,
+        1970,
+        1527,
+        1023,
+        585,
+        433,
+        1442,
+        1872,
+        521,
+        869,
+        1189,
+        1274,
+        1421,
+        1680,
+        1225
+      ],
+      "cpu_vs_mps_slot_mismatches": 2,
+      "cpu_vs_scalar_slot_mismatches": 2,
+      "mps_vs_scalar_slot_mismatches": 0,
+      "differing_slots": [
+        {
+          "slot_zero_based": 14,
+          "candidates": {
+            "cpu": {
+              "reference_index": 1189,
+              "scalar_rank_zero_based": 15,
+              "scalar_squared_distance": {
+                "decimal": 198.45797729492188,
+                "binary_hex": "0x1.8cea7c0000000p+7",
+                "float32_bits": "0x4346753e"
+              }
+            },
+            "mps": {
+              "reference_index": 869,
+              "scalar_rank_zero_based": 14,
+              "scalar_squared_distance": {
+                "decimal": 198.45794677734375,
+                "binary_hex": "0x1.8cea780000000p+7",
+                "float32_bits": "0x4346753c"
+              }
+            },
+            "scalar": {
+              "reference_index": 869,
+              "scalar_rank_zero_based": 14,
+              "scalar_squared_distance": {
+                "decimal": 198.45794677734375,
+                "binary_hex": "0x1.8cea780000000p+7",
+                "float32_bits": "0x4346753c"
+              }
+            }
+          },
+          "scalar_score_ulp_gaps": {
+            "cpu_vs_mps": 2,
+            "cpu_vs_scalar": 2,
+            "mps_vs_scalar": 0
+          },
+          "reported_euclidean_distance": {
+            "cpu": 14.08751106262207,
+            "mps": 14.087510108947754
+          }
+        },
+        {
+          "slot_zero_based": 15,
+          "candidates": {
+            "cpu": {
+              "reference_index": 869,
+              "scalar_rank_zero_based": 14,
+              "scalar_squared_distance": {
+                "decimal": 198.45794677734375,
+                "binary_hex": "0x1.8cea780000000p+7",
+                "float32_bits": "0x4346753c"
+              }
+            },
+            "mps": {
+              "reference_index": 1189,
+              "scalar_rank_zero_based": 15,
+              "scalar_squared_distance": {
+                "decimal": 198.45797729492188,
+                "binary_hex": "0x1.8cea7c0000000p+7",
+                "float32_bits": "0x4346753e"
+              }
+            },
+            "scalar": {
+              "reference_index": 1189,
+              "scalar_rank_zero_based": 15,
+              "scalar_squared_distance": {
+                "decimal": 198.45797729492188,
+                "binary_hex": "0x1.8cea7c0000000p+7",
+                "float32_bits": "0x4346753e"
+              }
+            }
+          },
+          "scalar_score_ulp_gaps": {
+            "cpu_vs_mps": 2,
+            "cpu_vs_scalar": 2,
+            "mps_vs_scalar": 0
+          },
+          "reported_euclidean_distance": {
+            "cpu": 14.08751106262207,
+            "mps": 14.087512016296387
+          }
+        }
+      ]
+    },
+    {
+      "query_index": 1138,
+      "cpu_indices": [
+        948,
+        892,
+        571,
+        830,
+        1798,
+        1385,
+        1748,
+        1008,
+        125,
+        1905,
+        852,
+        1691,
+        2033,
+        1268,
+        1623,
+        158,
+        602,
+        1990,
+        1857,
+        765
+      ],
+      "mps_indices": [
+        948,
+        892,
+        571,
+        830,
+        1798,
+        1385,
+        1748,
+        1008,
+        125,
+        1905,
+        852,
+        1691,
+        1268,
+        2033,
+        1623,
+        158,
+        602,
+        1990,
+        1857,
+        765
+      ],
+      "scalar_indices": [
+        948,
+        892,
+        571,
+        830,
+        1798,
+        1385,
+        1748,
+        1008,
+        125,
+        1905,
+        852,
+        1691,
+        1268,
+        2033,
+        1623,
+        158,
+        602,
+        1990,
+        1857,
+        765
+      ],
+      "cpu_vs_mps_slot_mismatches": 2,
+      "cpu_vs_scalar_slot_mismatches": 2,
+      "mps_vs_scalar_slot_mismatches": 0,
+      "differing_slots": [
+        {
+          "slot_zero_based": 12,
+          "candidates": {
+            "cpu": {
+              "reference_index": 2033,
+              "scalar_rank_zero_based": 13,
+              "scalar_squared_distance": {
+                "decimal": 181.68917846679688,
+                "binary_hex": "0x1.6b60dc0000000p+7",
+                "float32_bits": "0x4335b06e"
+              }
+            },
+            "mps": {
+              "reference_index": 1268,
+              "scalar_rank_zero_based": 12,
+              "scalar_squared_distance": {
+                "decimal": 181.68914794921875,
+                "binary_hex": "0x1.6b60d80000000p+7",
+                "float32_bits": "0x4335b06c"
+              }
+            },
+            "scalar": {
+              "reference_index": 1268,
+              "scalar_rank_zero_based": 12,
+              "scalar_squared_distance": {
+                "decimal": 181.68914794921875,
+                "binary_hex": "0x1.6b60d80000000p+7",
+                "float32_bits": "0x4335b06c"
+              }
+            }
+          },
+          "scalar_score_ulp_gaps": {
+            "cpu_vs_mps": 2,
+            "cpu_vs_scalar": 2,
+            "mps_vs_scalar": 0
+          },
+          "reported_euclidean_distance": {
+            "cpu": 13.47921371459961,
+            "mps": 13.479211807250977
+          }
+        },
+        {
+          "slot_zero_based": 13,
+          "candidates": {
+            "cpu": {
+              "reference_index": 1268,
+              "scalar_rank_zero_based": 12,
+              "scalar_squared_distance": {
+                "decimal": 181.68914794921875,
+                "binary_hex": "0x1.6b60d80000000p+7",
+                "float32_bits": "0x4335b06c"
+              }
+            },
+            "mps": {
+              "reference_index": 2033,
+              "scalar_rank_zero_based": 13,
+              "scalar_squared_distance": {
+                "decimal": 181.68917846679688,
+                "binary_hex": "0x1.6b60dc0000000p+7",
+                "float32_bits": "0x4335b06e"
+              }
+            },
+            "scalar": {
+              "reference_index": 2033,
+              "scalar_rank_zero_based": 13,
+              "scalar_squared_distance": {
+                "decimal": 181.68917846679688,
+                "binary_hex": "0x1.6b60dc0000000p+7",
+                "float32_bits": "0x4335b06e"
+              }
+            }
+          },
+          "scalar_score_ulp_gaps": {
+            "cpu_vs_mps": 2,
+            "cpu_vs_scalar": 2,
+            "mps_vs_scalar": 0
+          },
+          "reported_euclidean_distance": {
+            "cpu": 13.47921371459961,
+            "mps": 13.479212760925293
+          }
+        }
+      ]
+    }
+  ]
+}

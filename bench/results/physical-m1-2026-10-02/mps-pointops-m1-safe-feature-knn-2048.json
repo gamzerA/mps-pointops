@@ -1,0 +1,224 @@
+{
+  "environment": {
+    "device": "Apple M1",
+    "os": "macOS-26.5.2-arm64-arm-64bit",
+    "python": "3.10.6",
+    "torch": "2.12.0",
+    "mps_fast_math": "0",
+    "mps_fallback": "0",
+    "git_head": "f4a886a08938a8a3c9785ecaec962300efd298e0"
+  },
+  "method": {
+    "warmups": 3,
+    "repeats": 10,
+    "timing": "perf_counter_ns around public API with torch.mps.synchronize before and after MPS calls",
+    "source_sha256": {
+      "bench/bench_feature_knn.py": "9ad26b5a4718a2e3f12399538bddbf63bb84bd8c5eb300849acbaa461b2a5bec",
+      "mps_pointops/kernels/feature_knn.metal": "501f3b95c132900bd0ed919306de2154e665af5293e0cad3125307543a50ae27",
+      "mps_pointops/ops.py": "0cf93b76d49665f32751ace699dc6df350e6149bbbe97fa3cfd6fcda9ab7fe4a",
+      "mps_pointops/flat.py": "bf1f5571d7eec01f1a6f2149451245141dbf1044a21891f1fe82932cf6fcff6c",
+      "mps_pointops/_flat_search_mps.py": "4fb494f3cf159c09382f510152c650115c86d8a7e89e4612547ff1911ac1002c",
+      "tests/test_feature_knn.py": "6f998c196b180412628fa427865b18166efc5cce5b7cb3e5cb3e8d8fc4e24cf2"
+    }
+  },
+  "cases": [
+    {
+      "kind": "dense",
+      "batch": 1,
+      "queries": 2048,
+      "references": 2048,
+      "dimension": 64,
+      "k": 20,
+      "cpu_mps_index_mismatches": 0,
+      "cpu_mps_max_abs_distance_error": 2.86102294921875e-06,
+      "logical_pairwise_matrix_bytes_for_cdist": 16777216,
+      "logical_dense_native_output_bytes": 491520,
+      "cpu": {
+        "median_ms": 5.9289585,
+        "samples_ms": [
+          5.976958,
+          6.142875,
+          5.929875,
+          6.046583,
+          5.903291,
+          5.8615,
+          5.874125,
+          5.864,
+          5.978125,
+          5.928042
+        ]
+      },
+      "mps": {
+        "median_ms": 34.310271,
+        "samples_ms": [
+          34.102958,
+          34.096958,
+          34.459542,
+          34.458958,
+          34.176708,
+          34.283167,
+          34.50325,
+          34.221166,
+          34.520958,
+          34.337375
+        ]
+      },
+      "mps_cdist_topk": {
+        "median_ms": 21.4740415,
+        "samples_ms": [
+          21.864583,
+          21.219042,
+          21.26775,
+          21.074167,
+          21.103625,
+          21.448208,
+          21.499875,
+          21.973834,
+          23.84675,
+          21.7855
+        ]
+      }
+    },
+    {
+      "kind": "flat",
+      "batch": 1,
+      "queries": 512,
+      "references": 2048,
+      "dimension": 64,
+      "k": 20,
+      "cpu_mps_index_mismatches": 0,
+      "cpu_mps_max_abs_distance_error": null,
+      "logical_pairwise_matrix_bytes_for_cdist": 4194304,
+      "logical_dense_native_output_bytes": null,
+      "cpu": {
+        "median_ms": 246.647021,
+        "samples_ms": [
+          248.729584,
+          246.381708,
+          243.191708,
+          245.060459,
+          247.281791,
+          248.642667,
+          246.43575,
+          240.705542,
+          247.972333,
+          246.858292
+        ]
+      },
+      "mps": {
+        "median_ms": 11.054041999999999,
+        "samples_ms": [
+          10.922041,
+          10.898833,
+          10.864333,
+          10.865,
+          11.024334,
+          11.08375,
+          11.148208,
+          11.128,
+          11.382375,
+          11.362291
+        ]
+      }
+    },
+    {
+      "kind": "dense",
+      "batch": 1,
+      "queries": 2048,
+      "references": 2048,
+      "dimension": 128,
+      "k": 20,
+      "cpu_mps_index_mismatches": 4,
+      "cpu_mps_max_abs_distance_error": 5.7220458984375e-06,
+      "logical_pairwise_matrix_bytes_for_cdist": 16777216,
+      "logical_dense_native_output_bytes": 491520,
+      "cpu": {
+        "median_ms": 6.8085,
+        "samples_ms": [
+          9.302208,
+          7.832291,
+          7.321,
+          6.812042,
+          7.171375,
+          6.804958,
+          6.698834,
+          6.696834,
+          6.4285,
+          6.513125
+        ]
+      },
+      "mps": {
+        "median_ms": 71.3310625,
+        "samples_ms": [
+          71.144084,
+          71.503167,
+          71.401417,
+          71.682,
+          71.280958,
+          71.381167,
+          71.080375,
+          71.162417,
+          71.043,
+          71.516083
+        ]
+      },
+      "mps_cdist_topk": {
+        "median_ms": 22.213604,
+        "samples_ms": [
+          21.983208,
+          22.287917,
+          22.325083,
+          22.22225,
+          22.208208,
+          22.248792,
+          22.178583,
+          22.219,
+          22.125208,
+          22.165667
+        ]
+      }
+    },
+    {
+      "kind": "flat",
+      "batch": 1,
+      "queries": 512,
+      "references": 2048,
+      "dimension": 128,
+      "k": 20,
+      "cpu_mps_index_mismatches": 0,
+      "cpu_mps_max_abs_distance_error": null,
+      "logical_pairwise_matrix_bytes_for_cdist": 4194304,
+      "logical_dense_native_output_bytes": null,
+      "cpu": {
+        "median_ms": 400.1209795,
+        "samples_ms": [
+          400.590541,
+          400.224667,
+          400.157333,
+          400.405542,
+          399.902916,
+          400.13825,
+          400.010875,
+          400.103709,
+          400.044959,
+          399.76475
+        ]
+      },
+      "mps": {
+        "median_ms": 21.5585415,
+        "samples_ms": [
+          20.250458,
+          20.579583,
+          20.514542,
+          21.056625,
+          21.314875,
+          21.802208,
+          22.212625,
+          22.86975,
+          23.701583,
+          23.933583
+        ]
+      }
+    }
+  ]
+}

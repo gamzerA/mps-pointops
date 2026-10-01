@@ -1,0 +1,265 @@
+{
+  "environment": {
+    "chip": "Apple M1",
+    "memory_gib": 8.0,
+    "macos": "26.5.2",
+    "python": "3.10.6",
+    "torch": "2.12.0",
+    "mps_available": true,
+    "pytorch_mps_fast_math": "1",
+    "pytorch_enable_mps_fallback": "0"
+  },
+  "sources": {
+    "baseline_commit": "ea07179dd13bd8545753f9275e628ba4974c6639",
+    "baseline_path": "mps_pointops/kernels/ball_query.metal",
+    "baseline_sha256": "331d385610346131ef73f306411bf2a9bfe3f532bab6bd2e6cf41dcd48d3816f",
+    "simd_path": "mps_pointops/kernels/ball_query.metal",
+    "simd_sha256": "2856fa046cbbafb71ec0cd688f071c7dc5d2280e9f04d00471241e24d6f85ba3",
+    "checkout_head": "f4a886a08938a8a3c9785ecaec962300efd298e0",
+    "benchmark_path": "bench/bench_ball_query_simd_ablation.py",
+    "benchmark_sha256": "5ed2200ad208a3a6970b3cec1c22231d8a2c7ca80bae7c2d388758f5d3326e12"
+  },
+  "method": {
+    "distribution": "float32 noisy unit-sphere shell; sorted means ascending x coordinate",
+    "queries": "sampled from point cloud by torch.randperm with seed+1",
+    "batch": 1,
+    "warmup_per_kernel": 3,
+    "repeat_per_kernel": 12,
+    "invocation_order": "alternated every round",
+    "timing": "time.perf_counter around Metal dispatch and torch.mps.synchronize; allocation, transfers, shader compilation, and checks excluded",
+    "scipy_comparison": {
+      "performed": false,
+      "reason": "This paired ablation isolates two Metal shaders; SciPy is measured separately by bench_pointops.py."
+    }
+  },
+  "cases": [
+    {
+      "order": "sorted",
+      "points": 20000,
+      "queries": 1024,
+      "k": 64,
+      "radius_input": 0.1,
+      "radius_float32": 0.10000000149011612,
+      "radius_squared_float32": 0.010000000707805157,
+      "seed": 0,
+      "input_hashes": {
+        "points_float32_sha256": "71ee240d32f7b366b83688ac97804d979a14d0d5c8f533d82afb98f9840767d3",
+        "queries_float32_sha256": "5cd9b2de695f57d7704b9f419e0884dedb6ea4f4157f702276dc606c4002d2ad"
+      },
+      "baseline": {
+        "threads": 1024,
+        "group_size": 256,
+        "times_ms": [
+          5.738916981499642,
+          5.721084016840905,
+          5.733666999731213,
+          5.735916027333587,
+          5.744167021475732,
+          5.760167026892304,
+          5.727834010031074,
+          5.749790987465531,
+          5.7829589932225645,
+          5.79079199815169,
+          5.799833044875413,
+          5.8086669887416065
+        ],
+        "median_ms": 5.7469790044706315
+      },
+      "simd": {
+        "threads": 32768,
+        "group_size": 256,
+        "times_ms": [
+          2.5519999908283353,
+          2.554291975684464,
+          2.54491699161008,
+          2.551040961407125,
+          2.551790967117995,
+          2.5646249996498227,
+          2.537707972805947,
+          2.567749994341284,
+          2.5522909709252417,
+          2.562750014476478,
+          2.6019170181825757,
+          2.5988330016843975
+        ],
+        "median_ms": 2.553291473304853
+      },
+      "speedup_baseline_over_simd": 2.2508119674374774,
+      "indices_bitwise_equal": true,
+      "distances_bitwise_equal": true,
+      "indices_sha256": "0fb3782e99cf183b1dd0fa59588627397d175b775777946445d2db84542714ce",
+      "distances_sha256": "b89612295c6febb60de4212dc057847bb92c647c4ad06cbabcd6736bdcfdf35b"
+    },
+    {
+      "order": "sorted",
+      "points": 100000,
+      "queries": 1024,
+      "k": 64,
+      "radius_input": 0.1,
+      "radius_float32": 0.10000000149011612,
+      "radius_squared_float32": 0.010000000707805157,
+      "seed": 0,
+      "input_hashes": {
+        "points_float32_sha256": "dcc10eb3c79d54b4926749b3246b3029a77ee7e53a82d8587f70a60ad90641ff",
+        "queries_float32_sha256": "ab261ff01e69434e3c1d438d5b21dee74d9103e33ea76f213ddbbfd5f77699f3"
+      },
+      "baseline": {
+        "threads": 1024,
+        "group_size": 256,
+        "times_ms": [
+          29.504459002055228,
+          30.673082976136357,
+          29.65158299775794,
+          30.407208018004894,
+          29.779500036966056,
+          30.476250045467168,
+          28.575167001690716,
+          30.27100005419925,
+          29.474124952685088,
+          30.514666985254735,
+          29.1821249993518,
+          30.424292024690658
+        ],
+        "median_ms": 30.025250045582652
+      },
+      "simd": {
+        "threads": 32768,
+        "group_size": 256,
+        "times_ms": [
+          6.738791009411216,
+          6.920957996044308,
+          6.840249989181757,
+          6.906333030201495,
+          6.82162499288097,
+          6.896332954056561,
+          6.855083047412336,
+          6.843958981335163,
+          6.827375036664307,
+          6.899415981024504,
+          6.811958039179444,
+          6.82366598630324
+        ],
+        "median_ms": 6.84210448525846
+      },
+      "speedup_baseline_over_simd": 4.388306274812529,
+      "indices_bitwise_equal": true,
+      "distances_bitwise_equal": true,
+      "indices_sha256": "36bc33abf881c1603905760cbdb2c9f61cd52749f7c70a77b27bbdc04312a67d",
+      "distances_sha256": "0e02546b28bed70b9e6e63416c453bd035c3fc1e4fc0bc7b1eedf4b5bca43c55"
+    },
+    {
+      "order": "random",
+      "points": 20000,
+      "queries": 1024,
+      "k": 64,
+      "radius_input": 0.1,
+      "radius_float32": 0.10000000149011612,
+      "radius_squared_float32": 0.010000000707805157,
+      "seed": 0,
+      "input_hashes": {
+        "points_float32_sha256": "a3008620d0fdce12bc719b37b9f641c2afa3ae32c9374441bfbea5690cea3d18",
+        "queries_float32_sha256": "04dada870dabc3a78b736f4bff7033154adb4154bdc2f04451f54e04cb11279c"
+      },
+      "baseline": {
+        "threads": 1024,
+        "group_size": 256,
+        "times_ms": [
+          5.861042009200901,
+          5.917667003814131,
+          5.830791953485459,
+          5.841582955326885,
+          5.8058330323547125,
+          5.836167023517191,
+          5.823624960612506,
+          5.8883330202661455,
+          5.831209011375904,
+          5.895458976738155,
+          5.854832998011261,
+          5.843999970238656
+        ],
+        "median_ms": 5.84279146278277
+      },
+      "simd": {
+        "threads": 32768,
+        "group_size": 256,
+        "times_ms": [
+          2.634083037264645,
+          2.708874992094934,
+          2.6299169985577464,
+          2.696082985494286,
+          2.638499950990081,
+          2.671333961188793,
+          2.624790999107063,
+          2.7202089549973607,
+          2.6412499719299376,
+          2.6692920364439487,
+          2.6336659793742,
+          2.6707500219345093
+        ],
+        "median_ms": 2.655271004186943
+      },
+      "speedup_baseline_over_simd": 2.20045014372153,
+      "indices_bitwise_equal": true,
+      "distances_bitwise_equal": true,
+      "indices_sha256": "a53904930609683ae21d2de015c21aa5f1f275b39a4d0abb6e4122ba63fc23de",
+      "distances_sha256": "702324ef334c1d2ec0626a62380508f464901e0fa206594d2bab0b0d3df85b81"
+    },
+    {
+      "order": "random",
+      "points": 100000,
+      "queries": 1024,
+      "k": 64,
+      "radius_input": 0.1,
+      "radius_float32": 0.10000000149011612,
+      "radius_squared_float32": 0.010000000707805157,
+      "seed": 0,
+      "input_hashes": {
+        "points_float32_sha256": "c1346ed38252b54f1260d79a6c82a837ada55a9e7a6e52bed945b296574836f3",
+        "queries_float32_sha256": "fee43f879b2ccc52432d3d2b577b1249a17d71c69a1310059797550a79ad8e05"
+      },
+      "baseline": {
+        "threads": 1024,
+        "group_size": 256,
+        "times_ms": [
+          10.271167033351958,
+          10.854166001081467,
+          10.295292013324797,
+          11.168042023200542,
+          10.273041960317641,
+          10.972083022352308,
+          10.240708012133837,
+          10.876625019591302,
+          10.259000002406538,
+          10.48187498236075,
+          10.709625028539449,
+          10.427791974507272
+        ],
+        "median_ms": 10.454833478434011
+      },
+      "simd": {
+        "threads": 32768,
+        "group_size": 256,
+        "times_ms": [
+          3.4785839961841702,
+          3.5219169803895056,
+          3.510874987114221,
+          3.551166970282793,
+          3.4752500359900296,
+          3.57279198942706,
+          3.485916997306049,
+          3.4964579972438514,
+          3.4899579477496445,
+          3.5337500157766044,
+          3.478832950349897,
+          3.5275000263936818
+        ],
+        "median_ms": 3.503666492179036
+      },
+      "speedup_baseline_over_simd": 2.9839693651697523,
+      "indices_bitwise_equal": true,
+      "distances_bitwise_equal": true,
+      "indices_sha256": "06c90554dd35fb17ed6ad1ba712d5087804a91c9ed956f4c6e03fa3fdd6786af",
+      "distances_sha256": "d06d7f3d12342405b14ef30b36423bf43fb787fbf8e09f85635b3be413823add"
+    }
+  ]
+}
