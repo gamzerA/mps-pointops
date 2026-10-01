@@ -163,15 +163,16 @@ def render_markdown(report: dict) -> str:
         f"- UTC: {report['date_utc']}",
         f"- Device: {env['chip']}; macOS {env['macos']}; PyTorch {env['torch']}",
         f"- Math mode: `{env['pytorch_mps_fast_math']}`; CPU fallback: `{env['pytorch_enable_mps_fallback']}`",
+        f"- Base Chamfer code commit (last edit to module or Metal kernel): `{env['base_chamfer_code_commit']}`",
         f"- Reproduction: `{report['command']}`",
         f"- {method['warmup']} warmups and {method['repeat']} measured runs per case; synchronized wall time, Python launch included.",
         "",
         "## Results",
         "",
-        "All timings are medians in milliseconds. F/B is backward divided by forward. "
+        "All timings are medians in milliseconds. B/F is backward divided by forward. "
         "Concentrated / uniform is the median of paired per-iteration ratios.",
         "",
-        "| B | N | Pattern | Forward | Backward | F/B | Direct scatter |",
+        "| B | N | Pattern | Forward | Backward | B/F | Direct scatter |",
         "| ---: | ---: | --- | ---: | ---: | ---: | ---: |",
     ]
     for row in report["results"]:
@@ -293,7 +294,10 @@ def main() -> int:
             "torch": torch.__version__,
             "pytorch_mps_fast_math": os.environ.get("PYTORCH_MPS_FAST_MATH", "unset"),
             "pytorch_enable_mps_fallback": os.environ["PYTORCH_ENABLE_MPS_FALLBACK"],
-            "source_commit": command("git", "rev-parse", "HEAD"),
+            "base_chamfer_code_commit": command(
+                "git", "log", "-1", "--format=%H", "--",
+                "mps_pointops/chamfer.py", "mps_pointops/kernels/chamfer_nn.metal",
+            ),
             "script_sha256": sha256(Path(__file__)),
             "chamfer_sha256": sha256(ROOT / "mps_pointops/chamfer.py"),
             "metal_sha256": sha256(ROOT / "mps_pointops/kernels/chamfer_nn.metal"),
