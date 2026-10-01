@@ -53,12 +53,23 @@ kNN and PointNet++ segmentation validation remain open.
   in Euclidean distances by at most `2.3842e-7`. The original CUDA kernel
   source was unchanged; two `setup.py` build settings were adapted for the
   available Windows toolchain.
+- Final-candidate M5 Pro [Safe](bench/results/2026-10-01-apple-m5-pro-v050-final-safe.md)
+  and [Fast](bench/results/2026-10-01-apple-m5-pro-v050-final-fast.md)
+  benchmarks measure the public experimental APIs with synchronization,
+  four warmups, and 20 samples per case. The matching
+  [Safe JSON](bench/results/2026-10-01-apple-m5-pro-v050-final-safe.json) and
+  [Fast JSON](bench/results/2026-10-01-apple-m5-pro-v050-final-fast.json)
+  record every timing, source commit `7c1406e`, and source SHA-256 values.
 
 ### Verified
 
-- The integrated `main` source (`00fd654`) passed **240 tests with 12 expected
-  skips** in each M5 Pro Safe and Fast Math run with MPS fallback disabled;
-  all six required CI jobs passed on [PR #18](https://github.com/gamzerA/mps-pointops/pull/18).
+- The v0.5.0 release candidate passed **260 tests with 12 expected skips** in
+  separate M5 Pro [Safe](docs/pytest-v050-safe-torch214-2026-10-01.log) and
+  [Fast](docs/pytest-v050-fast-torch214-2026-10-01.log) processes with MPS
+  fallback disabled. The 12 local skips are seven existing `k > n` cases and
+  five PyG 2.8 checks requiring optional packages; the pinned PyG CI job
+  supplies those packages. The v0.5.0 wheel and source distribution built,
+  passed `twine check`, and contain the new operator code and licenses.
 
 ## 0.4.0 — 2026-10-01
 
