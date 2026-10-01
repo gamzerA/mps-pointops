@@ -26,7 +26,7 @@ Requires an Apple Silicon Mac, Python 3.10 or later, and PyTorch 2.7 or later
 with MPS. The Metal kernels compile on first use.
 
 ```bash
-python -m pip install "git+https://github.com/gamzerA/mps-pointops.git@v0.1.1"
+python -m pip install "git+https://github.com/gamzerA/mps-pointops.git@v0.2.0"
 ```
 
 ```python
