@@ -30,6 +30,10 @@ not segmentation accuracy on a labeled dataset or a training-convergence test.
   SHA-256 are in [CUDA metadata](pointnet2-segmentation-cuda.json). The
   host-local extension directory was redacted from that metadata after
   capture; its filename, binary hash, and model-output NPZ bytes were kept.
+  The recorded `harness_sha256` values refer to the executed pre-redaction
+  harness (and differ between Windows CRLF and macOS LF); the committed
+  harness now records only the extension filename. The model computations
+  were not changed by this metadata adjustment.
 - MPS: Apple M5 Pro, PyTorch `2.14.1`, `PYTORCH_ENABLE_MPS_FALLBACK=0`.
   [Safe](pointnet2-segmentation-mps-safe.json) and
   [Fast Math](pointnet2-segmentation-mps-fast.json) ran in separate processes.
@@ -106,9 +110,10 @@ On M5 Pro with PyTorch 2.14.1, each process reported `2 passed`; the
 [Safe log](pointnet2-e2e-pytest-safe.log) and
 [Fast log](pointnet2-e2e-pytest-fast.log) are preserved. A non-MPS CI runner
 runs the CPU test and skips only the device comparison.
-The complete test suite on the merged branch also passed with fallback
-disabled: [Safe](pointnet2-e2e-full-safe.log) `286 passed, 13 skipped` and
-[Fast](pointnet2-e2e-full-fast.log) `285 passed, 14 skipped`. The modes were
+The complete test suite on the branch merged with main `68fbbf89c0a396ce3c331518c64aba9e41523b4b`
+also passed with fallback disabled: [Safe](pointnet2-e2e-full-safe.log)
+`293 passed, 15 skipped` and [Fast](pointnet2-e2e-full-fast.log)
+`292 passed, 16 skipped`. The modes were
 run in separate Python processes so the MPS shader cache used the requested
 math setting in each run.
 
