@@ -64,17 +64,20 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--warmups", type=int, default=4)
     parser.add_argument("--repeats", type=int, default=20)
-    parser.add_argument("--queries", type=int, default=512)
+    parser.add_argument("--queries", type=int, default=1024)
+    parser.add_argument("--flat-queries", type=int, default=256)
     parser.add_argument("--references", type=int, default=1024)
     parser.add_argument("--k", type=int, default=20)
     parser.add_argument("--seed", type=int, default=1601)
     args = parser.parse_args()
     if not torch.backends.mps.is_available():
         parser.error("MPS is unavailable")
-    if min(args.warmups, args.repeats, args.queries, args.references, args.k) < 1:
-        parser.error("warmups, repeats, queries, references, and k must be positive")
+    if min(args.warmups, args.repeats, args.queries, args.flat_queries, args.references, args.k) < 1:
+        parser.error("warmups, repeats, queries, flat-queries, references, and k must be positive")
     if args.k > min(args.references, 256):
         parser.error("k must be <= min(references, 256)")
+    if args.flat_queries > args.queries:
+        parser.error("flat-queries must not exceed queries")
 
     files = [
         "bench/bench_feature_knn.py", "mps_pointops/kernels/feature_knn.metal",
@@ -105,12 +108,27 @@ def main() -> None:
             if kind == "dense":
                 call_cpu = lambda: knn(q_cpu, x_cpu, args.k)
                 call_mps = lambda: knn(q_mps, x_mps, args.k)
+                query_count = args.queries
             else:
-                call_cpu = lambda: flat.knn(x_cpu[0], q_cpu[0], args.k)
-                call_mps = lambda: flat.knn(x_mps[0], q_mps[0], args.k)
+                call_cpu = lambda: flat.knn(x_cpu[0], q_cpu[0, :args.flat_queries], args.k)
+                call_mps = lambda: flat.knn(x_mps[0], q_mps[0, :args.flat_queries], args.k)
+                query_count = args.flat_queries
+            cpu_result = call_cpu()
+            mps_result = call_mps()
+            torch.mps.synchronize()
+            if kind == "dense":
+                index_mismatches = int((cpu_result[1] != mps_result[1].cpu()).sum().item())
+                distance_error = float((cpu_result[0] - mps_result[0].cpu()).abs().max().item())
+            else:
+                index_mismatches = int((cpu_result != mps_result.cpu()).sum().item())
+                distance_error = None
             case = {
-                "kind": kind, "batch": 1, "queries": args.queries,
+                "kind": kind, "batch": 1, "queries": query_count,
                 "references": args.references, "dimension": dim, "k": args.k,
+                "cpu_mps_index_mismatches": index_mismatches,
+                "cpu_mps_max_abs_distance_error": distance_error,
+                "logical_pairwise_matrix_bytes_for_cdist": query_count * args.references * 4,
+                "logical_dense_native_output_bytes": query_count * args.k * 12 if kind == "dense" else None,
                 "cpu": _timed(call_cpu, device="cpu", warmups=args.warmups, repeats=args.repeats),
                 "mps": _timed(call_mps, device="mps", warmups=args.warmups, repeats=args.repeats),
             }
@@ -123,7 +141,16 @@ def main() -> None:
                     device="mps", warmups=args.warmups, repeats=args.repeats,
                 )
             results["cases"].append(case)
-            print(f"{kind} D={dim}: CPU {case['cpu']['median_ms']:.3f} ms; MPS {case['mps']['median_ms']:.3f} ms", flush=True)
+            baseline = (
+                f"; MPS cdist+topk {case['mps_cdist_topk']['median_ms']:.3f} ms"
+                if kind == "dense" else ""
+            )
+            print(
+                f"{kind} Q={query_count} N={args.references} D={dim}: "
+                f"CPU {case['cpu']['median_ms']:.3f} ms; "
+                f"native MPS {case['mps']['median_ms']:.3f} ms{baseline}; "
+                f"index mismatches {index_mismatches}", flush=True,
+            )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(results, indent=2) + "\n")
 
