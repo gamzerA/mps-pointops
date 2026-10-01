@@ -217,6 +217,10 @@ and MPS available reported **105 passed, 7 skipped** in each of the Safe and
 Fast Math test processes
 ([Safe log](docs/pytest-safe-torch27-2026-10-01.log),
 [Fast log](docs/pytest-fast-torch27-2026-10-01.log)).
+For the flat API implementation at commit `38cf71d6db25a6e204889d4b971b5c1f47d2ffab`,
+PyTorch 2.7.0 on the same M5 Pro reported **125 passed, 7 skipped** in each
+separate process ([Safe log](docs/pytest-flat-safe-torch27-2026-10-01.log),
+[Fast log](docs/pytest-flat-fast-torch27-2026-10-01.log)).
 
 ### Run it
 
@@ -271,7 +275,8 @@ radius_edges = flat.radius(x, y, 1.1, batch_x, batch_y, max_num_neighbors=32)
 ```
 
 `fps` returns `int64` sampled point indices, with `ceil(ratio * N_b)` samples
-per non-empty batch (`ratio=None` means `0.5`). `knn` and `radius` return
+per non-empty batch (`ratio=None` means `0.5`; `random_start=True` by default).
+It also accepts an explicit `ptr` offset array. `knn` and `radius` return
 `int64` `edge_index` tensors of shape `[2, E]`: row 0 is a query index into
 `y` and row 1 is a reference index into `x`. kNN is ordered by squared distance,
 then reference index; if a batch has fewer than `k` references, it emits only
@@ -279,7 +284,9 @@ the available edges. Radius search uses strict `distance² < r²` and takes up
 to `max_num_neighbors` matches in reference input order. Padded internal slots
 are removed before returning the edge tensor. CPU inputs use PyTorch; MPS
 inputs use Metal for supported sizes, with a PyTorch fallback for kNN `k > 256`.
-Flat FPS uses one threadgroup per non-empty cloud and scans only that cloud's
+On MPS, FPS and kNN require float32; radius accepts float32 or float16 and
+the same positive-radius lower bound as the native Ball Query contract.
+Flat FPS uses one threadgroup per cloud and scans only that cloud's
 offset range. Very uneven batch sizes can still leave a long-running group;
 splitting one FPS sequence across groups would need synchronization after each
 selected point and remains a performance task.

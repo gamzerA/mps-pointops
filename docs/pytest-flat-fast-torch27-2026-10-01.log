@@ -1,0 +1,25 @@
+UTC: 2026-10-01T02:45:17.905375+00:00
+Commit: 38cf71d6db25a6e204889d4b971b5c1f47d2ffab
+Platform: macOS-26.5.2-arm64-arm-64bit
+PyTorch: 2.7.0
+MPS available: True
+PYTORCH_MPS_FAST_MATH: 1
+Command: python -m pytest -ra tests
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: /private/tmp/mps-pointops-torch-cluster
+configfile: pyproject.toml
+collected 132 items
+
+tests/test_ball_query_api.py ......................                      [ 16%]
+tests/test_ball_query_mps.py ........................                    [ 34%]
+tests/test_compat.py ...........                                         [ 43%]
+tests/test_flat.py ...........                                           [ 51%]
+tests/test_flat_graph.py ...                                             [ 53%]
+tests/test_flat_ragged_mps.py ....                                       [ 56%]
+tests/test_fps.py ...................                                    [ 71%]
+tests/test_knn.py ......s.....ss....ssss................                 [100%]
+
+=========================== short test summary info ============================
+SKIPPED [7] tests/test_knn.py:40: k > n
+======================== 125 passed, 7 skipped in 1.73s ========================
