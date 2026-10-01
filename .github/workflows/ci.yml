@@ -135,8 +135,8 @@ jobs:
           assert torch.backends.mps.is_available(), "MPS is required for this job"
           PY
       - name: PyG integration (Metal safe math)
-        run: pytest -ra tests/test_pyg28.py
+        run: pytest -ra tests/test_pyg28.py tests/test_pyg28_grid.py tests/test_pyg28_voxel_avg_pool.py
       - name: PyG integration (Metal fast math)
         env:
           PYTORCH_MPS_FAST_MATH: "1"
-        run: pytest -ra tests/test_pyg28.py
+        run: pytest -ra tests/test_pyg28.py tests/test_pyg28_grid.py tests/test_pyg28_voxel_avg_pool.py

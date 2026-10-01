@@ -562,12 +562,39 @@ This adds MPS dispatch for pyg-lib's existing `pyg::fps`, `pyg::knn`,
 `pyg::radius`, and `pyg::grid_cluster` schemas; it does not replace pyg-lib's
 CPU or CUDA kernels. [`voxel_grid` support](docs/pyg28-grid-cluster-contract.md)
 currently covers finite float32 1D–3D spatial coordinates and returns
-mixed-radix voxel IDs. Voxel downsampling and feature pooling remain separate
-work. The pinned PyG 2.8.0 and pyg-lib 0.7.0 M5 Pro
+mixed-radix voxel IDs. The grid operator does not pool features. The pinned
+PyG 2.8.0 and pyg-lib 0.7.0 M5 Pro
 [Safe](docs/pytest-pyg28-grid-safe-2026-10-01.log) and
 [Fast](docs/pytest-pyg28-grid-fast-2026-10-01.log) full-suite runs passed
 327/326 tests respectively, with 9/10 skips, on the branch rebased onto
 `c3c7cc73bab1b2181815ba38a7d16bf6c0332601`.
+
+The [PyG 2.8 `voxel_grid` → `avg_pool_x` feature path](docs/pyg28-voxel-avg-pool.md)
+also runs on MPS after registration. PyG itself performs the mean reduction
+with PyTorch `scatter_add_`; this project supplies the grid-ID dispatch and
+tests the pooled features and gradients. For finite float32 positions and
+features:
+
+```python
+import torch
+from mps_pointops.pyg import register_mps
+from torch_geometric.nn import avg_pool_x, voxel_grid
+
+register_mps()
+pos = torch.tensor([[0.0, 0.0], [0.2, 0.0], [1.0, 1.0]], device="mps")
+batch = torch.zeros(3, dtype=torch.long, device="mps")
+x = torch.tensor([[1.0], [3.0], [5.0]], device="mps", requires_grad=True)
+cluster = voxel_grid(pos, size=1.0, batch=batch, start=0.0, end=2.0)
+pooled_x, pooled_batch = avg_pool_x(cluster, x, batch)
+```
+
+The pinned M5 Pro full-suite [Safe](docs/pytest-pyg28-voxel-avg-safe-2026-10-01.log)
+and [Fast](docs/pytest-pyg28-voxel-avg-fast-2026-10-01.log) runs passed
+352/351 tests, with 9/10 skips, on source revision `0c3a62d82f94128886df1ce725428f704e67bd49`
+based on `main` commit `94398da77fb305039c9648380182d55747609ad1`.
+The model fixture uses a bias-free projection; a hosted Torch 2.12 MPS
+[`nn.Linear` bias discrepancy](docs/pyg28-voxel-avg-pool.md) is documented
+separately with an independent reproduction probe.
 
 PyG's graph wrappers use those same operators. The MPS path supports flat
 three-dimensional coordinates for FPS/radius and arbitrary positive feature
@@ -918,8 +945,10 @@ listed versions, devices, models, and inputs that have passing logs.
       shim (#30) has its own [contract](docs/grid-cluster-contract.md); the
       separate PyG 2.8 `voxel_grid` MPS registration has a pinned
       [operator contract](docs/pyg28-grid-cluster-contract.md). Both cover
-      finite inputs and produce IDs, without feature pooling.
-- [ ] Voxel feature/graph downsampling and pooling.
+      finite inputs and produce IDs; grid IDs alone do not pool features.
+- [~] Finite float32 voxel feature mean pooling through PyG 2.8 `avg_pool_x`
+      after `voxel_grid`, with a pinned [forward/backward contract](docs/pyg28-voxel-avg-pool.md).
+- [ ] Graph coarsening (`avg_pool`) and measured voxel-downsampling speed.
 - [~] Legacy `torch_cluster.nearest` CPU/MPS float32 shim. The
       [contract and source-pinned comparison](docs/nearest-contract.md) cover
       finite well-separated examples, ragged batches, and the CUDA source's
