@@ -1,0 +1,1159 @@
+{
+  "schema": "mps-pointops.native-scatter-fanin.v1",
+  "captured_utc": "2026-10-01T14:32:49.406640+00:00",
+  "command": "PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=1 python3 bench/bench_scatter_fanin_mps.py --output bench/results/2026-10-01-apple-m5-pro-scatter-fanin-fast.json",
+  "environment": {
+    "chip": "Apple M5 Pro",
+    "macos": "26.5.2",
+    "machine": "arm64",
+    "python": "3.12.13",
+    "torch": "2.14.1",
+    "pyg": null,
+    "fallback": "0",
+    "fast_math": "1",
+    "base_commit": "0a0ce426fcffe291ee88b805db81bf618c6558fe",
+    "script_sha256": "ff8f61a707b24b41e67699bb68e415d6639f965dc3778e75ff4c6985bc915220"
+  },
+  "method": {
+    "edges": [
+      262144,
+      1048576,
+      2097152
+    ],
+    "degree": 8,
+    "channels": 32,
+    "patterns": [
+      "uniform",
+      "hub",
+      "single_hot"
+    ],
+    "operations": [
+      "add_c32",
+      "amax_scalar"
+    ],
+    "warmup": 3,
+    "repeat": 12,
+    "seed": 2201,
+    "timing": "perf_counter_ns synchronized before and after each native PyTorch call",
+    "output_reset_in_timed_forward": false,
+    "forward_construction_in_timed_backward": false
+  },
+  "cases": [
+    {
+      "shape": {
+        "edges": 262144,
+        "nodes": 32768,
+        "degree": 8,
+        "channels": 32,
+        "pattern": "uniform",
+        "operation": "add_c32",
+        "occupied_destinations": 32754,
+        "max_in_degree": 20,
+        "p99_in_degree": 15.0,
+        "top_one_percent_edge_fraction": 0.0204010009765625
+      },
+      "validation": {
+        "cpu_mps_output_bitwise_equal": true,
+        "cpu_mps_source_gradient_bitwise_equal": true,
+        "output_all_finite": true,
+        "gradient_all_finite": true
+      },
+      "forward": {
+        "samples_ms": [
+          6.070084,
+          2.095708,
+          7.357959,
+          1.286083,
+          3.008334,
+          2.281583,
+          1.567375,
+          1.809334,
+          10.43125,
+          7.262917,
+          1.926167,
+          3.109917
+        ],
+        "median_ms": 2.6449585,
+        "min_ms": 1.286083,
+        "max_ms": 10.43125,
+        "p10_ms": 1.567375,
+        "p90_ms": 7.357959
+      },
+      "backward": {
+        "samples_ms": [
+          1.334375,
+          1.388292,
+          1.889583,
+          1.316541,
+          3.64825,
+          5.086917,
+          1.380667,
+          1.346833,
+          1.327667,
+          1.286917,
+          1.476042,
+          6.222167
+        ],
+        "median_ms": 1.3844795,
+        "min_ms": 1.286917,
+        "max_ms": 6.222167,
+        "p10_ms": 1.316541,
+        "p90_ms": 5.086917
+      }
+    },
+    {
+      "shape": {
+        "edges": 262144,
+        "nodes": 32768,
+        "degree": 8,
+        "channels": 1,
+        "pattern": "uniform",
+        "operation": "amax_scalar",
+        "occupied_destinations": 32754,
+        "max_in_degree": 20,
+        "p99_in_degree": 15.0,
+        "top_one_percent_edge_fraction": 0.0204010009765625
+      },
+      "validation": {
+        "cpu_mps_output_bitwise_equal": true,
+        "cpu_mps_source_gradient_bitwise_equal": true,
+        "output_all_finite": true,
+        "gradient_all_finite": true
+      },
+      "forward": {
+        "samples_ms": [
+          0.525,
+          0.201042,
+          0.190417,
+          0.234417,
+          2.220042,
+          2.916834,
+          0.271333,
+          0.218792,
+          0.185209,
+          0.174042,
+          0.396917,
+          0.165833
+        ],
+        "median_ms": 0.2266045,
+        "min_ms": 0.165833,
+        "max_ms": 2.916834,
+        "p10_ms": 0.174042,
+        "p90_ms": 2.220042
+      },
+      "backward": {
+        "samples_ms": [
+          0.3025,
+          0.243083,
+          0.372667,
+          0.217125,
+          0.412083,
+          3.506042,
+          2.984375,
+          0.540166,
+          0.947875,
+          0.423292,
+          1.141042,
+          0.351667
+        ],
+        "median_ms": 0.4176875,
+        "min_ms": 0.217125,
+        "max_ms": 3.506042,
+        "p10_ms": 0.243083,
+        "p90_ms": 2.984375
+      }
+    },
+    {
+      "shape": {
+        "edges": 262144,
+        "nodes": 32768,
+        "degree": 8,
+        "channels": 32,
+        "pattern": "hub",
+        "operation": "add_c32",
+        "occupied_destinations": 26137,
+        "max_in_degree": 714,
+        "p99_in_degree": 8.0,
+        "top_one_percent_edge_fraction": 0.8025741577148438
+      },
+      "validation": {
+        "cpu_mps_output_bitwise_equal": true,
+        "cpu_mps_source_gradient_bitwise_equal": true,
+        "output_all_finite": true,
+        "gradient_all_finite": true
+      },
+      "forward": {
+        "samples_ms": [
+          1.815042,
+          1.756333,
+          4.345875,
+          5.676584,
+          2.666416,
+          7.893042,
+          4.582916,
+          1.637541,
+          1.24025,
+          1.694458,
+          1.36225,
+          6.292583
+        ],
+        "median_ms": 2.240729,
+        "min_ms": 1.24025,
+        "max_ms": 7.893042,
+        "p10_ms": 1.36225,
+        "p90_ms": 6.292583
+      },
+      "backward": {
+        "samples_ms": [
+          1.27825,
+          1.720583,
+          1.305958,
+          1.287417,
+          1.755375,
+          1.718042,
+          3.901625,
+          4.243125,
+          1.333875,
+          1.344583,
+          1.365625,
+          2.270541
+        ],
+        "median_ms": 1.5418335,
+        "min_ms": 1.27825,
+        "max_ms": 4.243125,
+        "p10_ms": 1.287417,
+        "p90_ms": 3.901625
+      }
+    },
+    {
+      "shape": {
+        "edges": 262144,
+        "nodes": 32768,
+        "degree": 8,
+        "channels": 1,
+        "pattern": "hub",
+        "operation": "amax_scalar",
+        "occupied_destinations": 26137,
+        "max_in_degree": 714,
+        "p99_in_degree": 8.0,
+        "top_one_percent_edge_fraction": 0.8025741577148438
+      },
+      "validation": {
+        "cpu_mps_output_bitwise_equal": true,
+        "cpu_mps_source_gradient_bitwise_equal": true,
+        "output_all_finite": true,
+        "gradient_all_finite": true
+      },
+      "forward": {
+        "samples_ms": [
+          0.289042,
+          0.332084,
+          0.287041,
+          0.30375,
+          0.313875,
+          1.991958,
+          0.2465,
+          0.233083,
+          3.099083,
+          0.343917,
+          0.852042,
+          0.283167
+        ],
+        "median_ms": 0.30881250000000005,
+        "min_ms": 0.233083,
+        "max_ms": 3.099083,
+        "p10_ms": 0.2465,
+        "p90_ms": 1.991958
+      },
+      "backward": {
+        "samples_ms": [
+          0.572584,
+          0.638959,
+          1.042416,
+          0.3545,
+          0.448667,
+          0.331167,
+          0.265833,
+          0.359958,
+          0.503666,
+          0.3205,
+          3.629791,
+          0.277958
+        ],
+        "median_ms": 0.40431249999999996,
+        "min_ms": 0.265833,
+        "max_ms": 3.629791,
+        "p10_ms": 0.277958,
+        "p90_ms": 1.042416
+      }
+    },
+    {
+      "shape": {
+        "edges": 262144,
+        "nodes": 32768,
+        "degree": 8,
+        "channels": 32,
+        "pattern": "single_hot",
+        "operation": "add_c32",
+        "occupied_destinations": 1,
+        "max_in_degree": 262144,
+        "p99_in_degree": 0.0,
+        "top_one_percent_edge_fraction": 1.0
+      },
+      "validation": {
+        "cpu_mps_output_bitwise_equal": true,
+        "cpu_mps_source_gradient_bitwise_equal": true,
+        "output_all_finite": true,
+        "gradient_all_finite": true
+      },
+      "forward": {
+        "samples_ms": [
+          4.955083,
+          5.879792,
+          4.639334,
+          1.29175,
+          1.27475,
+          1.278375,
+          1.307792,
+          1.265,
+          1.315791,
+          1.734208,
+          4.615084,
+          4.469292
+        ],
+        "median_ms": 1.5249994999999998,
+        "min_ms": 1.265,
+        "max_ms": 5.879792,
+        "p10_ms": 1.27475,
+        "p90_ms": 4.955083
+      },
+      "backward": {
+        "samples_ms": [
+          3.997916,
+          1.763583,
+          8.815458,
+          2.916792,
+          6.418292,
+          1.324083,
+          1.926833,
+          1.418,
+          1.33075,
+          1.36975,
+          1.324042,
+          1.299667
+        ],
+        "median_ms": 1.5907915,
+        "min_ms": 1.299667,
+        "max_ms": 8.815458,
+        "p10_ms": 1.324042,
+        "p90_ms": 6.418292
+      }
+    },
+    {
+      "shape": {
+        "edges": 262144,
+        "nodes": 32768,
+        "degree": 8,
+        "channels": 1,
+        "pattern": "single_hot",
+        "operation": "amax_scalar",
+        "occupied_destinations": 1,
+        "max_in_degree": 262144,
+        "p99_in_degree": 0.0,
+        "top_one_percent_edge_fraction": 1.0
+      },
+      "validation": {
+        "cpu_mps_output_bitwise_equal": true,
+        "cpu_mps_source_gradient_bitwise_equal": true,
+        "output_all_finite": true,
+        "gradient_all_finite": true
+      },
+      "forward": {
+        "samples_ms": [
+          0.379375,
+          0.373833,
+          0.420375,
+          0.405166,
+          1.878083,
+          0.678458,
+          3.244417,
+          0.404458,
+          0.500291,
+          0.432792,
+          0.412292,
+          0.447
+        ],
+        "median_ms": 0.4265835,
+        "min_ms": 0.373833,
+        "max_ms": 3.244417,
+        "p10_ms": 0.379375,
+        "p90_ms": 1.878083
+      },
+      "backward": {
+        "samples_ms": [
+          0.407,
+          0.402875,
+          0.429667,
+          0.36775,
+          0.648333,
+          0.709375,
+          3.001375,
+          1.8695,
+          0.765541,
+          2.820458,
+          3.730583,
+          0.8255
+        ],
+        "median_ms": 0.737458,
+        "min_ms": 0.36775,
+        "max_ms": 3.730583,
+        "p10_ms": 0.402875,
+        "p90_ms": 3.001375
+      }
+    },
+    {
+      "shape": {
+        "edges": 1048576,
+        "nodes": 131072,
+        "degree": 8,
+        "channels": 32,
+        "pattern": "uniform",
+        "operation": "add_c32",
+        "occupied_destinations": 131035,
+        "max_in_degree": 24,
+        "p99_in_degree": 15.0,
+        "top_one_percent_edge_fraction": 0.02054595947265625
+      },
+      "validation": {
+        "cpu_mps_output_bitwise_equal": true,
+        "cpu_mps_source_gradient_bitwise_equal": true,
+        "output_all_finite": true,
+        "gradient_all_finite": true
+      },
+      "forward": {
+        "samples_ms": [
+          10.346083,
+          19.668125,
+          15.459292,
+          15.610125,
+          10.794875,
+          5.665834,
+          5.422625,
+          5.135875,
+          6.543208,
+          8.306833,
+          9.18725,
+          5.091375
+        ],
+        "median_ms": 8.7470415,
+        "min_ms": 5.091375,
+        "max_ms": 19.668125,
+        "p10_ms": 5.135875,
+        "p90_ms": 15.610125
+      },
+      "backward": {
+        "samples_ms": [
+          5.7675,
+          5.118125,
+          11.775208,
+          9.462125,
+          17.278625,
+          14.077125,
+          5.918125,
+          5.534917,
+          5.241209,
+          12.451333,
+          5.669375,
+          14.906834
+        ],
+        "median_ms": 7.690125,
+        "min_ms": 5.118125,
+        "max_ms": 17.278625,
+        "p10_ms": 5.241209,
+        "p90_ms": 14.906834
+      }
+    },
+    {
+      "shape": {
+        "edges": 1048576,
+        "nodes": 131072,
+        "degree": 8,
+        "channels": 1,
+        "pattern": "uniform",
+        "operation": "amax_scalar",
+        "occupied_destinations": 131035,
+        "max_in_degree": 24,
+        "p99_in_degree": 15.0,
+        "top_one_percent_edge_fraction": 0.02054595947265625
+      },
+      "validation": {
+        "cpu_mps_output_bitwise_equal": true,
+        "cpu_mps_source_gradient_bitwise_equal": true,
+        "output_all_finite": true,
+        "gradient_all_finite": true
+      },
+      "forward": {
+        "samples_ms": [
+          0.339458,
+          2.199917,
+          0.3605,
+          0.298875,
+          0.328666,
+          0.300041,
+          0.284292,
+          0.316875,
+          0.347167,
+          0.299375,
+          0.381375,
+          0.311125
+        ],
+        "median_ms": 0.3227705,
+        "min_ms": 0.284292,
+        "max_ms": 2.199917,
+        "p10_ms": 0.298875,
+        "p90_ms": 0.381375
+      },
+      "backward": {
+        "samples_ms": [
+          0.527666,
+          0.547541,
+          0.514125,
+          0.551667,
+          0.534541,
+          0.54,
+          0.543875,
+          0.721333,
+          0.533083,
+          1.091875,
+          2.442042,
+          0.9775
+        ],
+        "median_ms": 0.5457080000000001,
+        "min_ms": 0.514125,
+        "max_ms": 2.442042,
+        "p10_ms": 0.527666,
+        "p90_ms": 1.091875
+      }
+    },
+    {
+      "shape": {
+        "edges": 1048576,
+        "nodes": 131072,
+        "degree": 8,
+        "channels": 32,
+        "pattern": "hub",
+        "operation": "add_c32",
+        "occupied_destinations": 104929,
+        "max_in_degree": 726,
+        "p99_in_degree": 10.0,
+        "top_one_percent_edge_fraction": 0.8016805648803711
+      },
+      "validation": {
+        "cpu_mps_output_bitwise_equal": true,
+        "cpu_mps_source_gradient_bitwise_equal": true,
+        "output_all_finite": true,
+        "gradient_all_finite": true
+      },
+      "forward": {
+        "samples_ms": [
+          7.810125,
+          5.586083,
+          5.066375,
+          5.583583,
+          13.923208,
+          5.106167,
+          5.070584,
+          5.629,
+          13.907292,
+          9.055959,
+          11.147875,
+          11.880958
+        ],
+        "median_ms": 6.7195625,
+        "min_ms": 5.066375,
+        "max_ms": 13.923208,
+        "p10_ms": 5.070584,
+        "p90_ms": 13.907292
+      },
+      "backward": {
+        "samples_ms": [
+          13.57975,
+          5.655083,
+          12.430917,
+          16.174084,
+          19.980167,
+          5.463458,
+          5.566,
+          18.052708,
+          9.267708,
+          9.043,
+          15.432333,
+          13.824459
+        ],
+        "median_ms": 13.0053335,
+        "min_ms": 5.463458,
+        "max_ms": 19.980167,
+        "p10_ms": 5.566,
+        "p90_ms": 18.052708
+      }
+    },
+    {
+      "shape": {
+        "edges": 1048576,
+        "nodes": 131072,
+        "degree": 8,
+        "channels": 1,
+        "pattern": "hub",
+        "operation": "amax_scalar",
+        "occupied_destinations": 104929,
+        "max_in_degree": 726,
+        "p99_in_degree": 10.0,
+        "top_one_percent_edge_fraction": 0.8016805648803711
+      },
+      "validation": {
+        "cpu_mps_output_bitwise_equal": true,
+        "cpu_mps_source_gradient_bitwise_equal": true,
+        "output_all_finite": true,
+        "gradient_all_finite": true
+      },
+      "forward": {
+        "samples_ms": [
+          0.440084,
+          0.430834,
+          0.417292,
+          0.425,
+          0.823208,
+          0.439792,
+          0.402,
+          0.497916,
+          0.386166,
+          0.51475,
+          0.408292,
+          0.453833
+        ],
+        "median_ms": 0.435313,
+        "min_ms": 0.386166,
+        "max_ms": 0.823208,
+        "p10_ms": 0.402,
+        "p90_ms": 0.51475
+      },
+      "backward": {
+        "samples_ms": [
+          0.763125,
+          0.995625,
+          5.932667,
+          5.351541,
+          1.146334,
+          2.526958,
+          1.4225,
+          0.714458,
+          0.605458,
+          4.341125,
+          1.733791,
+          6.628083
+        ],
+        "median_ms": 1.5781455000000002,
+        "min_ms": 0.605458,
+        "max_ms": 6.628083,
+        "p10_ms": 0.714458,
+        "p90_ms": 5.932667
+      }
+    },
+    {
+      "shape": {
+        "edges": 1048576,
+        "nodes": 131072,
+        "degree": 8,
+        "channels": 32,
+        "pattern": "single_hot",
+        "operation": "add_c32",
+        "occupied_destinations": 1,
+        "max_in_degree": 1048576,
+        "p99_in_degree": 0.0,
+        "top_one_percent_edge_fraction": 1.0
+      },
+      "validation": {
+        "cpu_mps_output_bitwise_equal": true,
+        "cpu_mps_source_gradient_bitwise_equal": true,
+        "output_all_finite": true,
+        "gradient_all_finite": true
+      },
+      "forward": {
+        "samples_ms": [
+          5.765541,
+          12.230792,
+          12.313792,
+          5.799792,
+          15.038625,
+          13.253667,
+          13.55325,
+          12.606875,
+          6.507083,
+          5.553875,
+          5.05625,
+          5.547209
+        ],
+        "median_ms": 9.3689375,
+        "min_ms": 5.05625,
+        "max_ms": 15.038625,
+        "p10_ms": 5.547209,
+        "p90_ms": 13.55325
+      },
+      "backward": {
+        "samples_ms": [
+          15.127125,
+          9.539375,
+          6.116709,
+          5.02425,
+          5.067834,
+          16.275458,
+          8.793,
+          13.177792,
+          21.221333,
+          9.524375,
+          5.457459,
+          5.164208
+        ],
+        "median_ms": 9.1586875,
+        "min_ms": 5.02425,
+        "max_ms": 21.221333,
+        "p10_ms": 5.067834,
+        "p90_ms": 16.275458
+      }
+    },
+    {
+      "shape": {
+        "edges": 1048576,
+        "nodes": 131072,
+        "degree": 8,
+        "channels": 1,
+        "pattern": "single_hot",
+        "operation": "amax_scalar",
+        "occupied_destinations": 1,
+        "max_in_degree": 1048576,
+        "p99_in_degree": 0.0,
+        "top_one_percent_edge_fraction": 1.0
+      },
+      "validation": {
+        "cpu_mps_output_bitwise_equal": true,
+        "cpu_mps_source_gradient_bitwise_equal": true,
+        "output_all_finite": true,
+        "gradient_all_finite": true
+      },
+      "forward": {
+        "samples_ms": [
+          1.008625,
+          0.999708,
+          1.0055,
+          1.014833,
+          1.602375,
+          1.265916,
+          1.053709,
+          1.588792,
+          2.365334,
+          1.02475,
+          1.529834,
+          1.261208
+        ],
+        "median_ms": 1.1574585000000002,
+        "min_ms": 0.999708,
+        "max_ms": 2.365334,
+        "p10_ms": 1.0055,
+        "p90_ms": 1.602375
+      },
+      "backward": {
+        "samples_ms": [
+          2.528834,
+          7.012041,
+          1.469792,
+          2.125666,
+          1.746584,
+          1.335625,
+          1.794917,
+          1.2845,
+          6.079833,
+          1.91375,
+          5.082167,
+          2.516583
+        ],
+        "median_ms": 2.019708,
+        "min_ms": 1.2845,
+        "max_ms": 7.012041,
+        "p10_ms": 1.335625,
+        "p90_ms": 6.079833
+      }
+    },
+    {
+      "shape": {
+        "edges": 2097152,
+        "nodes": 262144,
+        "degree": 8,
+        "channels": 32,
+        "pattern": "uniform",
+        "operation": "add_c32",
+        "occupied_destinations": 262052,
+        "max_in_degree": 23,
+        "p99_in_degree": 15.0,
+        "top_one_percent_edge_fraction": 0.020592689514160156
+      },
+      "validation": {
+        "cpu_mps_output_bitwise_equal": true,
+        "cpu_mps_source_gradient_bitwise_equal": true,
+        "output_all_finite": true,
+        "gradient_all_finite": true
+      },
+      "forward": {
+        "samples_ms": [
+          10.868833,
+          16.149709,
+          18.000084,
+          14.992291,
+          34.310375,
+          24.850834,
+          15.859875,
+          10.221166,
+          10.665375,
+          19.132708,
+          22.851041,
+          25.386916
+        ],
+        "median_ms": 17.0748965,
+        "min_ms": 10.221166,
+        "max_ms": 34.310375,
+        "p10_ms": 10.665375,
+        "p90_ms": 25.386916
+      },
+      "backward": {
+        "samples_ms": [
+          20.078042,
+          23.18725,
+          11.154916,
+          23.7295,
+          20.899625,
+          30.8845,
+          10.7905,
+          15.434583,
+          20.99425,
+          21.1345,
+          11.210875,
+          14.9905
+        ],
+        "median_ms": 20.4888335,
+        "min_ms": 10.7905,
+        "max_ms": 30.8845,
+        "p10_ms": 11.154916,
+        "p90_ms": 23.7295
+      }
+    },
+    {
+      "shape": {
+        "edges": 2097152,
+        "nodes": 262144,
+        "degree": 8,
+        "channels": 1,
+        "pattern": "uniform",
+        "operation": "amax_scalar",
+        "occupied_destinations": 262052,
+        "max_in_degree": 23,
+        "p99_in_degree": 15.0,
+        "top_one_percent_edge_fraction": 0.020592689514160156
+      },
+      "validation": {
+        "cpu_mps_output_bitwise_equal": true,
+        "cpu_mps_source_gradient_bitwise_equal": true,
+        "output_all_finite": true,
+        "gradient_all_finite": true
+      },
+      "forward": {
+        "samples_ms": [
+          1.449041,
+          0.807709,
+          0.601958,
+          0.517541,
+          0.5885,
+          0.471458,
+          0.610084,
+          0.52875,
+          0.503583,
+          0.532917,
+          0.507084,
+          0.483666
+        ],
+        "median_ms": 0.5308335,
+        "min_ms": 0.471458,
+        "max_ms": 1.449041,
+        "p10_ms": 0.483666,
+        "p90_ms": 0.807709
+      },
+      "backward": {
+        "samples_ms": [
+          0.958417,
+          0.994083,
+          1.418792,
+          1.573625,
+          6.634292,
+          4.574583,
+          0.984542,
+          0.995,
+          0.957583,
+          0.967667,
+          1.212875,
+          2.115083
+        ],
+        "median_ms": 1.1039375,
+        "min_ms": 0.957583,
+        "max_ms": 6.634292,
+        "p10_ms": 0.958417,
+        "p90_ms": 4.574583
+      }
+    },
+    {
+      "shape": {
+        "edges": 2097152,
+        "nodes": 262144,
+        "degree": 8,
+        "channels": 32,
+        "pattern": "hub",
+        "operation": "add_c32",
+        "occupied_destinations": 209642,
+        "max_in_degree": 729,
+        "p99_in_degree": 9.0,
+        "top_one_percent_edge_fraction": 0.8021798133850098
+      },
+      "validation": {
+        "cpu_mps_output_bitwise_equal": true,
+        "cpu_mps_source_gradient_bitwise_equal": true,
+        "output_all_finite": true,
+        "gradient_all_finite": true
+      },
+      "forward": {
+        "samples_ms": [
+          10.192667,
+          10.524459,
+          19.819458,
+          20.906916,
+          31.795083,
+          29.738958,
+          11.344875,
+          10.717625,
+          22.8385,
+          11.307334,
+          32.046292,
+          18.216875
+        ],
+        "median_ms": 19.0181665,
+        "min_ms": 10.192667,
+        "max_ms": 32.046292,
+        "p10_ms": 10.524459,
+        "p90_ms": 31.795083
+      },
+      "backward": {
+        "samples_ms": [
+          15.78475,
+          10.759541,
+          17.3885,
+          30.135792,
+          18.558125,
+          10.689792,
+          14.922042,
+          15.774291,
+          13.418459,
+          16.342791,
+          24.222291,
+          20.294917
+        ],
+        "median_ms": 16.0637705,
+        "min_ms": 10.689792,
+        "max_ms": 30.135792,
+        "p10_ms": 10.759541,
+        "p90_ms": 24.222291
+      }
+    },
+    {
+      "shape": {
+        "edges": 2097152,
+        "nodes": 262144,
+        "degree": 8,
+        "channels": 1,
+        "pattern": "hub",
+        "operation": "amax_scalar",
+        "occupied_destinations": 209642,
+        "max_in_degree": 729,
+        "p99_in_degree": 9.0,
+        "top_one_percent_edge_fraction": 0.8021798133850098
+      },
+      "validation": {
+        "cpu_mps_output_bitwise_equal": true,
+        "cpu_mps_source_gradient_bitwise_equal": true,
+        "output_all_finite": true,
+        "gradient_all_finite": true
+      },
+      "forward": {
+        "samples_ms": [
+          0.441125,
+          0.834542,
+          0.871167,
+          2.970666,
+          2.062833,
+          0.620041,
+          2.99975,
+          0.558959,
+          0.590125,
+          0.599833,
+          0.57725,
+          0.734792
+        ],
+        "median_ms": 0.6774165,
+        "min_ms": 0.441125,
+        "max_ms": 2.99975,
+        "p10_ms": 0.558959,
+        "p90_ms": 2.970666
+      },
+      "backward": {
+        "samples_ms": [
+          1.115292,
+          0.986875,
+          4.43675,
+          2.47875,
+          6.423833,
+          2.916875,
+          1.475375,
+          0.985417,
+          0.963583,
+          0.946167,
+          0.913125,
+          0.976916
+        ],
+        "median_ms": 1.0510834999999998,
+        "min_ms": 0.913125,
+        "max_ms": 6.423833,
+        "p10_ms": 0.946167,
+        "p90_ms": 4.43675
+      }
+    },
+    {
+      "shape": {
+        "edges": 2097152,
+        "nodes": 262144,
+        "degree": 8,
+        "channels": 32,
+        "pattern": "single_hot",
+        "operation": "add_c32",
+        "occupied_destinations": 1,
+        "max_in_degree": 2097152,
+        "p99_in_degree": 0.0,
+        "top_one_percent_edge_fraction": 1.0
+      },
+      "validation": {
+        "cpu_mps_output_bitwise_equal": true,
+        "cpu_mps_source_gradient_bitwise_equal": true,
+        "output_all_finite": true,
+        "gradient_all_finite": true
+      },
+      "forward": {
+        "samples_ms": [
+          20.187375,
+          10.712625,
+          19.683042,
+          10.754458,
+          28.944208,
+          23.0415,
+          27.124833,
+          12.233209,
+          10.740958,
+          23.327334,
+          11.2775,
+          32.929959
+        ],
+        "median_ms": 19.9352085,
+        "min_ms": 10.712625,
+        "max_ms": 32.929959,
+        "p10_ms": 10.740958,
+        "p90_ms": 28.944208
+      },
+      "backward": {
+        "samples_ms": [
+          20.89925,
+          21.040208,
+          14.563833,
+          20.364208,
+          27.568958,
+          10.2745,
+          18.8775,
+          29.023125,
+          18.150084,
+          19.739792,
+          25.55025,
+          29.145
+        ],
+        "median_ms": 20.631729,
+        "min_ms": 10.2745,
+        "max_ms": 29.145,
+        "p10_ms": 14.563833,
+        "p90_ms": 29.023125
+      }
+    },
+    {
+      "shape": {
+        "edges": 2097152,
+        "nodes": 262144,
+        "degree": 8,
+        "channels": 1,
+        "pattern": "single_hot",
+        "operation": "amax_scalar",
+        "occupied_destinations": 1,
+        "max_in_degree": 2097152,
+        "p99_in_degree": 0.0,
+        "top_one_percent_edge_fraction": 1.0
+      },
+      "validation": {
+        "cpu_mps_output_bitwise_equal": true,
+        "cpu_mps_source_gradient_bitwise_equal": true,
+        "output_all_finite": true,
+        "gradient_all_finite": true
+      },
+      "forward": {
+        "samples_ms": [
+          1.837458,
+          1.783208,
+          4.485791,
+          2.091166,
+          2.230541,
+          3.5895,
+          2.55975,
+          1.862084,
+          6.679958,
+          1.9815,
+          1.953708,
+          2.174
+        ],
+        "median_ms": 2.132583,
+        "min_ms": 1.783208,
+        "max_ms": 6.679958,
+        "p10_ms": 1.837458,
+        "p90_ms": 4.485791
+      },
+      "backward": {
+        "samples_ms": [
+          8.164167,
+          7.247125,
+          4.137,
+          2.865792,
+          2.162542,
+          2.129208,
+          2.102625,
+          2.536375,
+          5.1225,
+          3.811791,
+          5.513209,
+          2.192417
+        ],
+        "median_ms": 3.3387915,
+        "min_ms": 2.102625,
+        "max_ms": 8.164167,
+        "p10_ms": 2.129208,
+        "p90_ms": 7.247125
+      }
+    }
+  ]
+}
