@@ -2,6 +2,8 @@
   "upstream_tag": "torch-cluster 1.6.3",
   "upstream_commit": "29cd22bf1a5b82fc06b108d6573f81302c5d6b12",
   "upstream_source_sha256": "047209f84999997d378d6a1bb96f228f1ac58e1bbefaef1899920a5b5c59c904",
+  "implementation_python_sha256": "9ee04b2f74a10a0c3decccdae1b4b2050df120a7e55d613c484751c0157a6364",
+  "implementation_metal_sha256": "115a1e04bae8e89e8cae022b61c2ca4352401fb43b11bc6fecaae06e43edeabc",
   "reference": "unmodified upstream Python/SciPy CPU nearest, not its CUDA binary",
   "device": "cpu",
   "torch": "2.14.1",
@@ -10,7 +12,7 @@
   "mps_fast_math": "unset",
   "cases": [
     {
-      "name": "upstream_fixture_with_empty_id",
+      "name": "batch_fixture_with_empty_id",
       "rows": 8,
       "same_indices": true
     },

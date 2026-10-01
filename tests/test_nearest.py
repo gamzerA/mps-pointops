@@ -16,11 +16,10 @@ def _on(device, *items):
     return [item.to(device) for item in items]
 
 
-def test_original_torch_cluster_163_fixture_and_global_indices():
-    # From upstream test/test_nearest.py at tag 1.6.3, with extra empty ID 1.
-    x = torch.tensor([[-1., -1.], [-1., 1.], [1., 1.], [1., -1.],
-                      [-2., -2.], [-2., 2.], [2., 2.], [2., -2.]])
-    y = torch.tensor([[-1., 0.], [1., 0.], [-2., 0.], [2., 0.]])
+def test_batch_assignment_fixture_and_global_indices():
+    x = torch.tensor([[-3., -2.], [-3., 2.], [4., 2.], [4., -2.],
+                      [-7., -1.], [-7., 1.], [9., 1.], [9., -1.]])
+    y = torch.tensor([[-3., 0.], [4., 0.], [-7., 0.], [9., 0.]])
     bx = torch.tensor([0] * 4 + [2] * 4)
     by = torch.tensor([0] * 2 + [2] * 2)
     assert nearest(x, y, bx, by).tolist() == [0, 0, 1, 1, 2, 2, 3, 3]

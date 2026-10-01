@@ -44,7 +44,7 @@ NaNs, infinity, and float32 overflow cannot beat the finite initializer.
 Distances are accumulated directly in increasing feature order. Metal
 contraction is disabled in this kernel, while the CUDA compiler may contract
 multiply-adds. Near ties and underflow boundaries therefore have no bitwise
-cross-backend guarantee. The fixed upstream CPU fixture and well-separated
+cross-backend guarantee. A fixed batch fixture and well-separated
 feature inputs pass exact-index checks. An adversarial tie at local indices 1
 and 1024 returns 1024 by the CUDA source rule while upstream SciPy CPU returns
 1. No CUDA binary was executed on the Apple test machine; no general CUDA
@@ -57,7 +57,7 @@ binary parity or speedup claim follows from the source and CPU comparisons.
 SHA-256 before comparing the actual SciPy CPU output with this project. It
 also records the known CPU/CUDA-style tie difference. The upstream source is
 not redistributed here. Each of CPU, MPS Safe Math, and MPS
-Fast Math matched all 408 indices across the original eight-row fixture and
+Fast Math matched all 408 indices across an eight-row batch fixture and
 four 100-row feature cases (D=1, 3, 64, 128):
 
 - [CPU comparison](parity/nearest-upstream-cpu-2026-10-01.json)

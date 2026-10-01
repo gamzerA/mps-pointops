@@ -907,7 +907,11 @@ listed versions, devices, models, and inputs that have passing logs.
       [contract and parity tests](docs/grid-cluster-contract.md) cover finite
       points; it is not a full PyG voxelization path.
 - [ ] Voxelization and voxel downsampling.
-- [ ] Remaining `torch_cluster` operators: `nearest`, `graclus`, `random_walk`.
+- [~] Legacy `torch_cluster.nearest` CPU/MPS float32 shim. The
+      [contract and source-pinned comparison](docs/nearest-contract.md) cover
+      finite well-separated examples, ragged batches, and the CUDA source's
+      1024-lane tie priority; CUDA binary parity remains untested.
+- [ ] Remaining `torch_cluster` operators: `graclus`, `random_walk`.
       Done when: no function in the stand-in raises `NotImplementedError`.
 
 ### Phase 4: Geometry losses and large-scale search (target 0.8.0 to 0.9.0)

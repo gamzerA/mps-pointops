@@ -18,9 +18,9 @@ Covered: ``furthest_point_sample``, ``gather_operation``,
 ``grouping_operation`` and ``ball_query`` from ``pointnet2_utils``, and
 ``KNN`` from ``knn_cuda``. Differences from the CUDA versions:
 
-- Near ties can resolve differently. The kernels round each squared
-  distance without FMA and break ties by the smaller index; the CUDA
-  kernels use their own reduction order.
+- Near ties can resolve differently because floating-point accumulation and
+  CUDA reduction order differ. The ``nearest`` kernel reproduces the legacy
+  1024-lane CUDA tie priority described in ``docs/nearest-contract.md``.
 - ``ball_query`` uses the Metal kernel for MPS inputs and pads in the
   ``pointnet2_ops`` convention.
 - The ``torch_cluster`` shim exposes ``fps``, ``knn``, ``radius``, ``nearest``,

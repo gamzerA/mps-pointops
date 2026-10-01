@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import importlib.util
+from importlib import resources
 import json
 import os
 from pathlib import Path
@@ -36,11 +37,11 @@ def _upstream(path: Path):
 
 def _cases():
     x = torch.tensor([
-        [-1., -1.], [-1., 1.], [1., 1.], [1., -1.],
-        [-2., -2.], [-2., 2.], [2., 2.], [2., -2.],
+        [-3., -2.], [-3., 2.], [4., 2.], [4., -2.],
+        [-7., -1.], [-7., 1.], [9., 1.], [9., -1.],
     ])
-    y = torch.tensor([[-1., 0.], [1., 0.], [-2., 0.], [2., 0.]])
-    yield "upstream_fixture_with_empty_id", x, y, torch.tensor([0] * 4 + [2] * 4), torch.tensor([0] * 2 + [2] * 2)
+    y = torch.tensor([[-3., 0.], [4., 0.], [-7., 0.], [9., 0.]])
+    yield "batch_fixture_with_empty_id", x, y, torch.tensor([0] * 4 + [2] * 4), torch.tensor([0] * 2 + [2] * 2)
 
     generator = torch.Generator().manual_seed(123)
     for dim in (1, 3, 64, 128):
@@ -80,6 +81,12 @@ def main() -> None:
         "upstream_tag": "torch-cluster 1.6.3",
         "upstream_commit": "29cd22bf1a5b82fc06b108d6573f81302c5d6b12",
         "upstream_source_sha256": _UPSTREAM_SHA256,
+        "implementation_python_sha256": hashlib.sha256(
+            Path(nearest.__code__.co_filename).read_bytes()
+        ).hexdigest(),
+        "implementation_metal_sha256": hashlib.sha256(
+            resources.files("mps_pointops").joinpath("kernels", "nearest.metal").read_bytes()
+        ).hexdigest(),
         "reference": "unmodified upstream Python/SciPy CPU nearest, not its CUDA binary",
         "device": args.device,
         "torch": torch.__version__,
