@@ -44,4 +44,4 @@ SKIPPED [2] tests/test_pyg28_grid.py:183: requires MPS, torch-geometric 2.8 and 
 SKIPPED [1] tests/test_pyg28_voxel_avg_pool.py:34: requires torch-geometric 2.8.0 and pyg-lib 0.7.0
 SKIPPED [6] tests/test_pyg28_voxel_avg_pool.py:58: requires MPS, torch-geometric 2.8.0 and pyg-lib 0.7.0
 SKIPPED [1] tests/test_pyg28_voxel_avg_pool.py:123: requires MPS, torch-geometric 2.8.0 and pyg-lib 0.7.0
-======================= 353 passed, 28 skipped in 5.60s ========================
+======================= 353 passed, 28 skipped in 4.80s ========================

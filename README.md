@@ -946,7 +946,10 @@ surface to its source revision and raw logs.
       4,096 and 32,768 node uniform and hub graphs with synchronized GCN,
       GraphSAGE, and GAT runs. The [raw results and limits](docs/pyg-survey/2026-10-01-m5-pro-scatter-profile.md)
       do not yet justify a new Metal kernel; broader graph distributions and
-      stable GAT timings remain to be established.
+      stable GAT timings remain to be established. A separate
+      [backward probe](docs/pyg-survey/2026-10-01-m5-pro-scatter-backward.md)
+      records native PyTorch's zero-extremum gradient behavior before any
+      replacement contract is chosen.
 - [ ] Core scatter reductions on Metal: sum, mean, max, min, with argmax and
       argmin. Check floating-point atomic support on each device at runtime
       instead of inferring it from the MSL version. Use a reproducible segmented
