@@ -113,7 +113,7 @@ The [synchronized benchmark script](../bench/bench_feature_knn.py) records
 public API timing on the M5 Pro in separate Safe/Fast processes, with four
 warmups and 20 timed calls per case. Each MPS timing includes dispatch,
 allocation, and `torch.mps.synchronize()`. Raw samples, source commit
-`8819a233800a3f8e99a5bd237a07623bed33d9ca`, six source SHA-256 values,
+`63962a56c734c236d5226fc711a24f6e960c57c7`, six source SHA-256 values,
 and CPU/MPS index mismatch counts are in the
 [Safe 1,024-point](../bench/results/2026-10-01-apple-m5-pro-feature-knn-safe.json),
 [Fast 1,024-point](../bench/results/2026-10-01-apple-m5-pro-feature-knn-fast.json),
@@ -123,15 +123,15 @@ JSON files. Each case had zero CPU/MPS index mismatches on its seeded fixture.
 
 | Public dense kNN shape | Safe Metal | Safe MPS `cdist+topk` | Fast Metal | Fast MPS `cdist+topk` |
 |:--|--:|--:|--:|--:|
-| Q=N=64, D=64, k=8 | 0.180 ms | 0.611 ms | 0.144 ms | 0.634 ms |
-| Q=N=64, D=128, k=8 | 0.173 ms | 0.646 ms | 0.180 ms | 0.430 ms |
-| Q=N=1,024, D=64, k=20 | 0.704 ms | 0.775 ms | 0.629 ms | 0.858 ms |
-| Q=N=1,024, D=128, k=20 | 1.283 ms | 0.749 ms | 1.324 ms | 0.765 ms |
+| Q=N=64, D=64, k=8 | 0.172 ms | 0.575 ms | 0.207 ms | 0.252 ms |
+| Q=N=64, D=128, k=8 | 0.189 ms | 0.252 ms | 0.182 ms | 0.281 ms |
+| Q=N=1,024, D=64, k=20 | 0.822 ms | 0.770 ms | 0.837 ms | 0.777 ms |
+| Q=N=1,024, D=128, k=20 | 1.577 ms | 0.782 ms | 1.203 ms | 1.761 ms |
 
 For the flat public API at Q=256, N=1,024, k=20, Safe/Fast Metal medians
-were `2.325/1.898 ms` at D=64 and `2.731/2.504 ms` at D=128. Flat API
+were `2.212/2.645 ms` at D=64 and `3.702/3.231 ms` at D=128. Flat API
 timings include batch-pointer construction and validation; the small
-Q=N=64 flat cases still took `2.217–2.725 ms` on MPS. These timings are
+Q=N=64 flat cases still took `2.055–2.996 ms` on MPS. These timings are
 not directly comparable with the dense kernel alone. CPU PyTorch reference
 medians and all 20 samples are in the raw JSON.
 
@@ -139,11 +139,14 @@ The direct accumulation path keeps only `k <= 256` candidates per query and
 does not allocate a full `(M,N)` distance matrix. At Q=N=1,024, a float32
 `cdist` result is logically `1,024*1,024*4 = 4,194,304` bytes per batch;
 the dense native outputs are `1,024*20*(4+8) = 245,760` bytes. These are
-shape-derived quantities, **not measured allocator peaks**. The new kernel
-is faster than MPS `cdist+topk` in the shown D=64 dense cases, but slower at
-D=128 with 1,024 points. The direct path is therefore a numerical baseline;
-a tiled/vectorized D=128 path is a performance follow-up. No general GPU or
-CPU speedup is claimed from these fixtures.
+shape-derived quantities, **not measured allocator peaks**. Even without a
+second project benchmark using the GPU, the raw timed samples vary widely:
+for example, Safe native Q=N=1,024 D=128 ranged from `1.070` to `7.293 ms`,
+and Fast native D=64 ranged from `0.562` to `1.671 ms`. The Safe large D=128
+median is slower than the MPS `cdist+topk` control. Other individual cases
+reverse that ordering. The direct path is a numerical baseline; a
+tiled/vectorized D=128 path and controlled repeated performance experiments
+remain follow-ups. No general GPU or CPU speedup is claimed.
 
 An isolated sdist and wheel build was checked against the source byte hash:
 `mps_pointops/kernels/feature_knn.metal` SHA-256

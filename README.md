@@ -762,10 +762,12 @@ Ball Query is specified separately in the numerical contract.
   part of the validated contract. See [feature-space kNN](docs/feature-knn.md)
   for the rounding policy and model comparison. The CPU `cdist`/`topk`
   reference is a baseline, not a bitwise oracle near ties. On the M5 Pro at
-  Q=N=1,024 and k=20, synchronized Safe Math native medians were 0.704 ms
-  for D=64 and 1.283 ms for D=128; MPS `cdist+topk` took 0.775 ms and
-  0.749 ms respectively. The [raw Safe/Fast samples](docs/feature-knn.md)
-  show that the direct D=128 path still needs performance work.
+  Q=N=1,024 and k=20, synchronized Safe Math native medians in one final run
+  were 0.822 ms for D=64 and 1.577 ms for D=128; MPS `cdist+topk` took
+  0.770 ms and 0.782 ms respectively. The
+  [raw Safe/Fast samples](docs/feature-knn.md) have substantial timing spread;
+  no general speedup is claimed, and the direct D=128 path remains a
+  performance follow-up.
 - `ball_query(query, ref, radius, K)`: PyTorch3D-style first-K contract. It
   returns the first `K` points in input order satisfying strict radius
   membership, with index `-1` and distance `0` padding. The threshold is
