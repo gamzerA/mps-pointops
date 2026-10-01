@@ -1,6 +1,7 @@
 # Chamfer distance experimental contract
 
-This branch adds a squared-L2 bidirectional Chamfer implementation. MPS uses
+The `main` source tree includes an experimental squared-L2 bidirectional
+Chamfer implementation; PyPI v0.4.0 does not include it. MPS uses
 `kernels/chamfer_nn.metal` to find each nearest point; CPU and CUDA use a tiled
 PyTorch search. Both searches cost $O(BPQ)$ time. The CPU/CUDA path bounds
 temporary pair storage. The Metal path uses one 32-lane SIMD group per query
@@ -76,19 +77,20 @@ with FMA contraction disabled in source. Safe and Fast Math modes can still
 differ on underflow or near-tie inputs; exact cross-backend equality at those
 boundaries is not promised. Repeated point ties use the lowest reference
 index. Many-to-one nearest selections can contend during scatter accumulation;
-whether this dominates runtime depends on the input and remains to be
-benchmarked. Floating-point scatter accumulation can also change its last
-bits with execution order; bitwise repeatability of MPS gradients is not
-promised. The implementation and equations here were independently written
-for this project; no PyTorch3D source was copied.
+the first measurement below tests this effect on one M5 Pro, while larger
+clouds and other devices remain open. Floating-point scatter accumulation can
+also change its last bits with execution order; bitwise repeatability of MPS
+gradients is not promised. The implementation and equations here were
+independently written for this project; no PyTorch3D source was copied.
 
 ## First contention measurement
 
 The [Safe](../bench/results/2026-10-01-apple-m5-pro-chamfer-contention-safe.md)
 and [Fast](../bench/results/2026-10-01-apple-m5-pro-chamfer-contention-fast.md)
-M5 Pro measurements use four clouds of 256 to 16,384 points, 20 timed repeats
-per case, and synchronized forward/backward timings. Uniform selection sends
-each query to a different reference; concentrated selection sends all queries
+M5 Pro measurements use `single_directional=True`, four clouds of 256 to
+16,384 points, 20 timed repeats per case, and synchronized forward/backward
+timings. Uniform selection sends each query to a different reference;
+concentrated selection sends all queries
 to reference zero. The paired median concentrated/uniform backward ratios
 were 0.79–1.08 in Safe Math and 0.94–1.08 in Fast Math. A direct
 `scatter_add_` control also showed no consistent concentrated slowdown in
