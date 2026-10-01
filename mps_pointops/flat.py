@@ -229,7 +229,8 @@ def _reference_search(
         for query_idx in range(y_lo, y_hi):
             d2 = _sqdist(y[query_idx], refs)
             if r2 is None:
-                local = torch.argsort(d2, stable=True)[:take]
+                ordered = torch.argsort(d2, stable=True)
+                local = ordered[torch.isfinite(d2[ordered])][:take]
             else:
                 local = torch.nonzero(d2 < r2, as_tuple=False).flatten()[:take]
             indices[query_idx, : len(local)] = local + x_lo

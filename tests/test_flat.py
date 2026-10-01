@@ -54,6 +54,18 @@ def test_knn_bipartite_global_edges_and_missing_batch():
     assert flat.knn(x, y, 5, batch_x, batch_y).shape == (2, 7)
 
 
+@pytest.mark.parametrize("device", ["cpu", "mps"])
+def test_knn_excludes_nonfinite_coordinates(device):
+    if device == "mps" and not torch.backends.mps.is_available():
+        pytest.skip("MPS not available")
+    x = torch.tensor(
+        [[0.0, 0.0, 0.0], [float("nan"), 0.0, 0.0], [float("inf"), 0.0, 0.0]],
+        device=device,
+    )
+    y = torch.tensor([[0.0, 0.0, 0.0], [float("nan"), 0.0, 0.0]], device=device)
+    assert flat.knn(x, y, 3).cpu().tolist() == [[0], [0]]
+
+
 def test_radius_compacts_first_neighbors_and_strict_boundary():
     x, y, batch_x, batch_y = bipartite()
     edge = flat.radius(x, y, 1.1, batch_x, batch_y, max_num_neighbors=2)
