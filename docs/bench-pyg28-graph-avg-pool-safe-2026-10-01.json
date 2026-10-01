@@ -1,0 +1,189 @@
+{
+  "date_utc": "2026-10-01T14:35:25.466980+00:00",
+  "device": "Apple M5 Pro",
+  "macos": "26.5.2",
+  "torch": "2.12.0",
+  "torch_geometric": "2.8.0",
+  "pyg_lib": "0.7.0+pt212",
+  "mps_fallback": "0",
+  "mps_fast_math": "0",
+  "warmups": 3,
+  "repeats": 10,
+  "degree": 8,
+  "features": 32,
+  "edge_attr_features": 4,
+  "positions": 3,
+  "benchmark_script_commit": "a0b904d2264cdb3cf5fad09f301fffe0171183ac",
+  "benchmark_script_sha256": "f61453504df6406c8f0ba8ef7638b841cb704b27b74a2b864d6ba8d3344799ac",
+  "backward_scope": "loss construction plus autograd backward and MPS synchronization",
+  "cases": [
+    {
+      "nodes": 16384,
+      "edges": 131072,
+      "coarse_nodes": 4096,
+      "batch_lengths": [
+        2048,
+        4096,
+        10240
+      ],
+      "timings": {
+        "cpu": {
+          "forward": {
+            "median_ms": 2.619,
+            "min_ms": 2.393,
+            "max_ms": 3.015,
+            "samples_ms": [
+              2.393,
+              2.475,
+              2.622,
+              2.616,
+              2.565,
+              2.593,
+              2.648,
+              2.691,
+              3.015,
+              2.628
+            ]
+          },
+          "backward": {
+            "median_ms": 1.353,
+            "min_ms": 1.184,
+            "max_ms": 1.675,
+            "samples_ms": [
+              1.41,
+              1.641,
+              1.309,
+              1.248,
+              1.394,
+              1.184,
+              1.283,
+              1.675,
+              1.312,
+              1.427
+            ]
+          }
+        },
+        "mps": {
+          "forward": {
+            "median_ms": 3.933,
+            "min_ms": 2.984,
+            "max_ms": 15.216,
+            "samples_ms": [
+              11.122,
+              3.145,
+              3.634,
+              15.216,
+              10.501,
+              4.232,
+              12.29,
+              3.137,
+              3.19,
+              2.984
+            ]
+          },
+          "backward": {
+            "median_ms": 1.527,
+            "min_ms": 0.879,
+            "max_ms": 9.275,
+            "samples_ms": [
+              4.605,
+              0.957,
+              1.716,
+              9.275,
+              3.016,
+              8.541,
+              1.337,
+              0.911,
+              0.904,
+              0.879
+            ]
+          }
+        }
+      }
+    },
+    {
+      "nodes": 65536,
+      "edges": 524288,
+      "coarse_nodes": 16384,
+      "batch_lengths": [
+        8192,
+        16384,
+        40960
+      ],
+      "timings": {
+        "cpu": {
+          "forward": {
+            "median_ms": 8.953,
+            "min_ms": 7.966,
+            "max_ms": 10.148,
+            "samples_ms": [
+              7.966,
+              8.109,
+              8.95,
+              9.218,
+              10.148,
+              9.526,
+              9.032,
+              8.314,
+              8.452,
+              8.957
+            ]
+          },
+          "backward": {
+            "median_ms": 3.713,
+            "min_ms": 3.049,
+            "max_ms": 4.253,
+            "samples_ms": [
+              3.726,
+              4.253,
+              4.078,
+              3.661,
+              3.54,
+              4.023,
+              4.063,
+              3.594,
+              3.049,
+              3.7
+            ]
+          }
+        },
+        "mps": {
+          "forward": {
+            "median_ms": 12.055,
+            "min_ms": 5.145,
+            "max_ms": 23.187,
+            "samples_ms": [
+              5.145,
+              5.356,
+              14.159,
+              14.594,
+              19.455,
+              23.187,
+              5.355,
+              5.375,
+              14.081,
+              10.029
+            ]
+          },
+          "backward": {
+            "median_ms": 2.778,
+            "min_ms": 1.976,
+            "max_ms": 11.05,
+            "samples_ms": [
+              1.984,
+              5.881,
+              2.063,
+              10.507,
+              2.694,
+              2.861,
+              1.976,
+              5.76,
+              2.081,
+              11.05
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
