@@ -13,6 +13,8 @@ Call ``install()`` before importing code that uses them::
 ``knn_cuda`` and ``torch_cluster`` in ``sys.modules``. A name that is already
 importable, such as the real package on a CUDA machine, is left alone unless
 ``force=True``. Call it before importing the packages that use these names.
+Pass ``pointcept=True`` to additionally register the narrow Pointcept v1.2.1
+PTv1 ``pointops`` surface; the default installation remains unchanged.
 
 Covered: ``furthest_point_sample``, ``gather_operation``,
 ``grouping_operation`` and ``ball_query`` from ``pointnet2_utils``, and
@@ -42,7 +44,7 @@ import types
 import torch
 from torch import Tensor
 
-from . import flat, graclus, grid, nearest as nearest_ops, ops, random_walk as random_walk_ops
+from . import flat, graclus, grid, nearest as nearest_ops, ops, pointcept as pointcept_ops, random_walk as random_walk_ops
 
 
 # ---------------------------------------------------------------- pointnet2_ops
@@ -120,8 +122,8 @@ def _module(name: str, **attrs) -> types.ModuleType:
     return module
 
 
-def install(force: bool = False) -> list[str]:
-    """Register the stand-in modules. Returns the names that were installed."""
+def install(force: bool = False, *, pointcept: bool = False) -> list[str]:
+    """Register stand-ins; optionally include Pointcept PTv1 ``pointops``."""
     pointnet2_utils = _module(
         "pointnet2_ops.pointnet2_utils",
         furthest_point_sample=furthest_point_sample,
@@ -150,6 +152,17 @@ def install(force: bool = False) -> list[str]:
             )
         },
     }
+    if pointcept:
+        packages["pointops"] = {
+            "pointops": _module(
+                "pointops",
+                farthest_point_sampling=pointcept_ops.farthest_point_sampling,
+                knn_query=pointcept_ops.knn_query,
+                grouping=pointcept_ops.grouping,
+                knn_query_and_group=pointcept_ops.knn_query_and_group,
+                interpolation=pointcept_ops.interpolation,
+            ),
+        }
     installed = []
     for top, modules in packages.items():
         if not force and (top in sys.modules or importlib.util.find_spec(top) is not None):
