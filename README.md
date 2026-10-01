@@ -812,9 +812,10 @@ original implementation.
 
       In the synchronized M5 Pro [Safe](bench/results/2026-10-01-apple-m5-pro-chamfer-contention-safe.md)
       and [Fast](bench/results/2026-10-01-apple-m5-pro-chamfer-contention-fast.md)
-      runs (batch 4, 256–16,384 points per cloud), concentrated selection did
-      not consistently slow backward versus uniform selection. This supports
-      the current PyTorch scatter path for the tested sizes only.
+      runs (`single_directional=True`, batch 4, 256–16,384 points per cloud),
+      concentrated selection did not consistently slow backward versus
+      uniform selection. This supports the current PyTorch scatter path for
+      the tested sizes only.
 - [ ] Compare supported Chamfer values and first-order gradients directly
       against PyTorch3D in CI, including `lengths`, weights, and each supported
       reduction mode. Current checks use analytic cases and an independent CPU

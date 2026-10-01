@@ -30,6 +30,12 @@
   direct `scatter_add_` control showed a consistent contention slowdown in
   this range; larger clouds, other GPUs, and bidirectional losses are untested.
 
+### Verified
+
+- The integrated `main` source (`00fd654`) passed **240 tests with 12 expected
+  skips** in each M5 Pro Safe and Fast Math run with MPS fallback disabled;
+  all six required CI jobs passed on [PR #18](https://github.com/gamzerA/mps-pointops/pull/18).
+
 ## 0.4.0 — 2026-10-01
 
 ### Documentation
