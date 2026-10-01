@@ -1,5 +1,5 @@
 {
-  "date_utc": "2026-10-01T17:25:17.290790+00:00",
+  "date_utc": "2026-10-01T17:28:28.983112+00:00",
   "pointcept_commit": "21fb5c51d8c622550b8e22c8ead984511e11d54a",
   "pointcept_checkout_clean": true,
   "pointcept_source": {
@@ -15,9 +15,9 @@
     "replacement_original": "torch.cuda.IntTensor(n_o)",
     "replacement_applied": "torch.tensor(n_o, dtype=torch.int32, device=p.device)"
   },
-  "mps_pointops_commit": "86a96cf2791d9ac3f298d6798d49cb3827424288",
+  "mps_pointops_commit": "9199d1743536bb5bc30e4f2a1db30200f3082de7",
   "pointcept_shim_sha256": "7118a712592f289551d08e0714605eda7fe6dfb3b5cf13f0534582e8b8d51aa1",
-  "probe_sha256": "b78678c76ceeac5ab015d23963839182468ef73019dc11e84fddcb6ba0341163",
+  "probe_sha256": "31a19be52ebf58cd8e41473ad8a780d346bc247d88039471244d6bbef76f61a3",
   "python": "3.12.13",
   "torch": "2.14.1",
   "einops": "0.8.1",
@@ -38,8 +38,8 @@
     "gradient_rtol": 0.005,
     "gradient_relative_l2_limit": 0.01
   },
-  "cpu_elapsed_ms": 407.08520798943937,
-  "mps_elapsed_ms": 665.1264580432326,
+  "cpu_elapsed_ms": 396.06462500523776,
+  "mps_elapsed_ms": 626.1784579837695,
   "cpu_loss": 0.020267795771360397,
   "mps_loss": 0.020267795771360397,
   "comparisons": {
@@ -64,14 +64,14 @@
         512,
         3
       ],
-      "max_abs": 1.8189894035458565e-11,
-      "mean_abs": 4.718493933249246e-13,
+      "max_abs": 1.6370904631912708e-11,
+      "mean_abs": 4.94689955232025e-13,
       "max_excess_over_atol_rtol": 0.0,
-      "cpu_max_abs": 2.184747609135229e-05,
-      "mps_max_abs": 2.1847494281246327e-05,
-      "cpu_l2_norm": 0.00010822492303266342,
-      "mps_l2_norm": 0.000108224935512108,
-      "relative_l2_error": 3.593291630274337e-07,
+      "cpu_max_abs": 2.18474797293311e-05,
+      "mps_max_abs": 2.1847488824278116e-05,
+      "cpu_l2_norm": 0.00010822492178831854,
+      "mps_l2_norm": 0.00010822493600993435,
+      "relative_l2_error": 3.704717304958472e-07,
       "pointwise_close": true,
       "nonzero_gradient": true,
       "relative_l2_limit": 0.01,
@@ -82,14 +82,14 @@
         512,
         6
       ],
-      "max_abs": 4.547473508864641e-12,
-      "mean_abs": 4.761215835653865e-13,
+      "max_abs": 3.637978807091713e-12,
+      "mean_abs": 4.86339809570302e-13,
       "max_excess_over_atol_rtol": 0.0,
       "cpu_max_abs": 1.3881437553209253e-05,
-      "mps_max_abs": 1.3881439372198656e-05,
-      "cpu_l2_norm": 0.00014258889899918987,
-      "mps_l2_norm": 0.0001425888992164132,
-      "relative_l2_error": 2.481641307884366e-07,
+      "mps_max_abs": 1.3881438462703954e-05,
+      "cpu_l2_norm": 0.00014258889919617365,
+      "mps_l2_norm": 0.00014258889901471009,
+      "relative_l2_error": 2.5153509687947117e-07,
       "pointwise_close": true,
       "nonzero_gradient": true,
       "relative_l2_limit": 0.01,
@@ -101,13 +101,13 @@
         6
       ],
       "max_abs": 1.1641532182693481e-10,
-      "mean_abs": 1.7750467762311928e-11,
+      "mean_abs": 1.938330919382114e-11,
       "max_excess_over_atol_rtol": 0.0,
       "cpu_max_abs": 0.0006578483735211194,
-      "mps_max_abs": 0.0006578483735211194,
-      "cpu_l2_norm": 0.0027386490589418108,
-      "mps_l2_norm": 0.00273864906309035,
-      "relative_l2_error": 1.2924648948887538e-07,
+      "mps_max_abs": 0.0006578482571057975,
+      "cpu_l2_norm": 0.0027386490754520315,
+      "mps_l2_norm": 0.002738649022306883,
+      "relative_l2_error": 1.3933564262750715e-07,
       "pointwise_close": true,
       "nonzero_gradient": true,
       "relative_l2_limit": 0.01,
@@ -118,19 +118,19 @@
     "coordinate_gradient": {
       "old_logit_scale_rule_accepts_zero": true,
       "new_gradient_rule_rejects_zero": true,
-      "cpu_l2_norm": 0.00010822492303266342,
+      "cpu_l2_norm": 0.00010822492178831854,
       "relative_l2_error_if_zero": 1.0
     },
     "feature_gradient": {
       "old_logit_scale_rule_accepts_zero": true,
       "new_gradient_rule_rejects_zero": true,
-      "cpu_l2_norm": 0.00014258889899918987,
+      "cpu_l2_norm": 0.00014258889919617365,
       "relative_l2_error_if_zero": 1.0
     },
     "first_weight_gradient": {
       "old_logit_scale_rule_accepts_zero": true,
       "new_gradient_rule_rejects_zero": true,
-      "cpu_l2_norm": 0.0027386490589418108,
+      "cpu_l2_norm": 0.0027386490754520315,
       "relative_l2_error_if_zero": 1.0
     }
   }

@@ -59,10 +59,10 @@ the temporary one-substitution source SHA-256 is
 `3b79a8e79f9991ccd039fea4157b56a7fd18977c64e0e801a2e6dbe1e5666111`.
 The harness rejects a dirty pinned checkout, including untracked files, and
 records SHA-256 values for all four unchanged official files that it loads.
-The shim/probe source commit is `86a96cf2791d9ac3f298d6798d49cb3827424288`;
+The shim/probe source commit is `9199d1743536bb5bc30e4f2a1db30200f3082de7`;
 their SHA-256 values are
 `7118a712592f289551d08e0714605eda7fe6dfb3b5cf13f0534582e8b8d51aa1`
-and `b78678c76ceeac5ab015d23963839182468ef73019dc11e84fddcb6ba0341163`.
+and `31a19be52ebf58cd8e41473ad8a780d346bc247d88039471244d6bbef76f61a3`.
 
 The fixed probe has two 256-point batches, six input channels, 13 classes,
 seed `2701`, and a mean-square-logit loss. The model is in **eval mode with
@@ -89,21 +89,24 @@ probes both passed. Maximum absolute CPU/MPS differences were:
 | Tensor | Safe | Fast |
 | --- | ---: | ---: |
 | Logits `(512,13)` | `1.04e-7` | `8.94e-8` |
-| Coordinate gradient `(512,3)` | `4.55e-12` | `5.46e-12` |
-| Feature gradient `(512,6)` | `3.64e-12` | `3.52e-12` |
+| Coordinate gradient `(512,3)` | `4.55e-12` | `3.64e-12` |
+| Feature gradient `(512,6)` | `3.64e-12` | `2.96e-12` |
 | First encoder weight gradient `(32,6)` | `1.16e-10` | `1.16e-10` |
 
 A second, tie-heavy line-grid fixture also passed in
 [Safe](pointcept-ptv1-seg26-m5pro-line-safe-2026-10-02.json) and
 [Fast](pointcept-ptv1-seg26-m5pro-line-fast-2026-10-02.json) Math, with
 maximum logit difference `1.19e-7` in both. Across all four probes, the
-largest gradient relative L2 error was `3.59e-7`, well below `0.01`.
+largest gradient relative L2 error was `3.70e-7`, well below `0.01`.
 This fixture exposed an earlier CPU top-k tie
 ordering mismatch; the final shim uses stable CPU sorting to make its stated
 smaller-index rule explicit. The focused CPU/MPS shim and probe tests in
 [`tests/test_pointcept.py`](../tests/test_pointcept.py) and
 [`tests/test_pointcept_probe.py`](../tests/test_pointcept_probe.py) passed
 **19/19** in each Safe and Fast process.
+These tests used the `pytest` CLI against a regular installation of this
+checkout in a temporary package target, matching CI's installed-package
+import path; the probe test loads the benchmark script by file path.
 
 Reproduce with the official tag checkout and `einops==0.8.1` available on
 `PYTHONPATH` or installed in the test environment:
