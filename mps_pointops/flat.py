@@ -17,6 +17,8 @@ from torch import Tensor
 
 from . import reference
 
+_MPS_KNN_MAX_K = 256
+
 
 def _points(value: Tensor, name: str) -> None:
     if not isinstance(value, Tensor):
@@ -233,6 +235,15 @@ def _nonnegative_int(value: int, name: str) -> int:
     return value
 
 
+def _check_mps_knn_width(width: int) -> None:
+    """Reject requests that the native flat/PyG Metal kNN kernel cannot serve."""
+    if width > _MPS_KNN_MAX_K:
+        raise ValueError(
+            f"effective k must be at most {_MPS_KNN_MAX_K} on MPS, got {width}; "
+            "use CPU for larger k"
+        )
+
+
 def _edges(indices: Tensor) -> Tensor:
     if indices.numel() == 0:
         return torch.empty((2, 0), dtype=torch.long, device=indices.device)
@@ -291,6 +302,8 @@ def knn(
 
     The ``batch_size`` argument sets the number of batch slots, including
     empty ones. x and y can be coordinate or feature vectors with D >= 1.
+    On MPS, the effective neighbor count ``min(k, len(x))`` must be at most
+    256. Larger requests raise instead of silently taking a slow PyTorch path.
     ``cosine=True`` is not implemented.
     ``num_workers`` is accepted for call-site compatibility and has no effect
     for MPS tensors or batched inputs.
@@ -306,9 +319,8 @@ def knn(
         return torch.empty((2, 0), dtype=torch.long, device=x.device)
     ptr_x, ptr_y = _pair_ptrs(x, y, batch_x, batch_y, batch_size)
     width = min(k, len(x))
-    if x.device.type == "mps" and x.shape[1] != 3 and width > 256:
-        raise ValueError("feature-space kNN supports at most 256 neighbors on MPS")
-    if x.device.type == "mps" and width <= 256:
+    if x.device.type == "mps":
+        _check_mps_knn_width(width)
         from ._flat_search_mps import knn_indices
 
         indices = knn_indices(x.contiguous(), y.contiguous(), ptr_x, ptr_y, width)
