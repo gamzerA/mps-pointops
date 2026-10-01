@@ -509,7 +509,7 @@ offset range. Very uneven batch sizes can still leave a long-running group;
 splitting one FPS sequence across groups would need synchronization after each
 selected point and remains a performance task.
 
-This follows the `fps`, `knn`, `radius`, and `nearest` call signatures of
+This follows the `fps`, `knn`, `radius`, `nearest`, and `random_walk` call signatures of
 [`torch_cluster` 1.6.3](https://github.com/rusty1s/pytorch_cluster/tree/1.6.3/torch_cluster)
 for three-dimensional FPS/radius coordinates and arbitrary-dimensional kNN
 features. Cosine kNN and `ignore_same_index=True` are
@@ -523,8 +523,13 @@ inputs, including ragged batches with empty ID gaps. Its source-level CUDA
 threshold, error choices, and cross-backend limits are in the
 [nearest contract](docs/nearest-contract.md). The experimental
 `graclus_cluster` CPU/MPS path follows the
-[legacy matching contract](docs/graclus-contract.md). `random_walk` remains
-an explicit placeholder that raises `NotImplementedError`.
+[legacy matching contract](docs/graclus-contract.md). Experimental
+[`random_walk`](docs/random-walk-contract.md) uses PyTorch CPU/MPS tensor
+operations. Its uniform CPU walk can match the pinned upstream CPU RNG state;
+biased walks approximate the upstream CPU transition distribution, with
+device-specific random draws. The pinned CUDA source has a different biased
+rejection-loop state update, so CUDA biased-path parity is not claimed. This
+is not a native Metal performance path.
 
 [PyG 2.7.0](https://github.com/pyg-team/pytorch_geometric/blob/2.7.0/torch_geometric/nn/pool/__init__.py)
 calls these `torch_cluster` functions directly. Its `fps`, `knn`, `radius`,
@@ -956,8 +961,10 @@ listed versions, devices, models, and inputs that have passing logs.
 - [~] Experimental legacy `torch_cluster.graclus_cluster` CPU/MPS greedy
       matching subset; see its [contract and original CPU comparison](docs/graclus-contract.md).
       The Metal decision is serial and has no speedup claim.
-- [ ] Remaining `torch_cluster` operator: `random_walk`.
-      Done when: no function in the stand-in raises `NotImplementedError`.
+- [~] Experimental legacy `torch_cluster.random_walk` CPU/MPS tensor path.
+      The [stochastic contract](docs/random-walk-contract.md) separates exact
+      uniform CPU parity from biased transition probabilities; performance is
+      not yet established.
 
 ### Phase 4: Geometry losses and large-scale search (target 0.8.0 to 0.9.0)
 

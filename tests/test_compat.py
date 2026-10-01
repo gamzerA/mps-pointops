@@ -80,6 +80,18 @@ def test_torch_cluster_positional_pool_signatures(installed):
     ]
 
 
+def test_torch_cluster_random_walk_shim(installed):
+    from torch_cluster import random_walk
+
+    assert random_walk is compat.random_walk_ops.random_walk
+    row = torch.tensor([0, 1], dtype=torch.long)
+    col = torch.tensor([1, 0], dtype=torch.long)
+    starts = torch.tensor([0], dtype=torch.long)
+    nodes, edges = random_walk(row, col, starts, 3, return_edge_indices=True)
+    assert nodes.tolist() == [[0, 1, 0, 1]]
+    assert edges.tolist() == [[0, 1, 0]]
+
+
 @mps
 def test_fps_skips_points_near_origin_like_pointnet2():
     xyz = cloud(1, 2000)
