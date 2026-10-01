@@ -24,12 +24,11 @@ Covered: ``furthest_point_sample``, ``gather_operation``,
 - ``ball_query`` uses the Metal kernel for MPS inputs and pads in the
   ``pointnet2_ops`` convention.
 - The ``torch_cluster`` shim exposes ``fps``, ``knn``, ``radius``, ``nearest``,
-  ``graclus_cluster``, and kNN/radius graph wrappers. FPS and radius use
-  three-dimensional point coordinates; kNN also accepts float32 feature
-  vectors on MPS. Experimental
-  ``grid_cluster`` accepts float32 3D coordinates. Graclus has the documented
-  CPU/Metal greedy matching subset. Other names needed for PyG 2.7 package
-  import raise ``NotImplementedError`` when called. It does not
+  ``graclus_cluster``, ``random_walk``, and kNN/radius graph wrappers. FPS and
+  radius use three-dimensional point coordinates; kNN also accepts float32
+  feature vectors on MPS. Experimental ``grid_cluster`` accepts float32 3D
+  coordinates, Graclus has a CPU/Metal greedy matching subset, and
+  ``random_walk`` uses PyTorch tensor operators on CPU/MPS. The shim does not
   register PyG's separate ``torch.ops.pyg`` operators.
 """
 
@@ -43,7 +42,7 @@ import types
 import torch
 from torch import Tensor
 
-from . import flat, graclus, grid, nearest as nearest_ops, ops
+from . import flat, graclus, grid, nearest as nearest_ops, ops, random_walk as random_walk_ops
 
 
 # ---------------------------------------------------------------- pointnet2_ops
@@ -121,16 +120,6 @@ def _module(name: str, **attrs) -> types.ModuleType:
     return module
 
 
-def _unsupported_torch_cluster(name: str):
-    def unsupported(*args, **kwargs):
-        raise NotImplementedError(
-            f"torch_cluster.{name} is outside the mps_pointops point-cloud subset"
-        )
-
-    unsupported.__name__ = name
-    return unsupported
-
-
 def install(force: bool = False) -> list[str]:
     """Register the stand-in modules. Returns the names that were installed."""
     pointnet2_utils = _module(
@@ -156,7 +145,7 @@ def install(force: bool = False) -> list[str]:
                 radius_graph=flat.radius_graph,
                 grid_cluster=grid.grid_cluster,
                 graclus_cluster=graclus.graclus_cluster,
-                random_walk=_unsupported_torch_cluster("random_walk"),
+                random_walk=random_walk_ops.random_walk,
                 nearest=nearest_ops.nearest,
             )
         },

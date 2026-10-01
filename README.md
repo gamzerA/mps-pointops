@@ -509,7 +509,8 @@ offset range. Very uneven batch sizes can still leave a long-running group;
 splitting one FPS sequence across groups would need synchronization after each
 selected point and remains a performance task.
 
-This follows the `fps`, `knn`, `radius`, and `nearest` call signatures of
+The shim follows the `fps`, `knn`, `radius`, `nearest`, `grid_cluster`,
+`graclus_cluster`, and `random_walk` call signatures of
 [`torch_cluster` 1.6.3](https://github.com/rusty1s/pytorch_cluster/tree/1.6.3/torch_cluster)
 for three-dimensional FPS/radius coordinates and arbitrary-dimensional kNN
 features. Cosine kNN and `ignore_same_index=True` are
@@ -523,8 +524,13 @@ inputs, including ragged batches with empty ID gaps. Its source-level CUDA
 threshold, error choices, and cross-backend limits are in the
 [nearest contract](docs/nearest-contract.md). The experimental
 `graclus_cluster` CPU/MPS path follows the
-[legacy matching contract](docs/graclus-contract.md). `random_walk` remains
-an explicit placeholder that raises `NotImplementedError`.
+[legacy matching contract](docs/graclus-contract.md). Experimental
+[`random_walk`](docs/random-walk-contract.md) uses PyTorch CPU/MPS tensor
+operations. Its uniform CPU walk can match the pinned upstream CPU RNG state;
+biased walks approximate the upstream CPU transition distribution, with
+device-specific random draws. The pinned CUDA source has a different biased
+rejection-loop state update, so CUDA biased-path parity is not claimed. This
+is not a native Metal performance path.
 
 [PyG 2.7.0](https://github.com/pyg-team/pytorch_geometric/blob/2.7.0/torch_geometric/nn/pool/__init__.py)
 calls these `torch_cluster` functions directly. Its `fps`, `knn`, `radius`,
@@ -532,8 +538,9 @@ calls these `torch_cluster` functions directly. Its `fps`, `knn`, `radius`,
 on an M5 Pro. In contrast,
 [PyG 2.8.0](https://github.com/pyg-team/pytorch_geometric/blob/2.8.0/torch_geometric/nn/pool/__init__.py)
 calls separate `torch.ops.pyg` operators. For that version, use the MPS
-registration below. The `torch_cluster` shim does not provide the rest of
-`torch_cluster`.
+registration below. The `torch_cluster` shim has the separately documented
+legacy API subsets listed above; it does not register PyG's `pyg-lib`
+operators.
 
 ### PyG 2.8 MPS operator registration
 
@@ -927,15 +934,22 @@ Release claims follow the [pinned compatibility matrix](docs/phase3-compatibilit
 PyG 2.8's `pyg-lib` operator path, native graph aggregation, and the legacy
 `torch_cluster` shim are checked separately. “No failures” refers only to the
 listed versions, devices, models, and inputs that have passing logs.
+The [dated result matrix](docs/phase3-results-2026-10-01.md) links each tested
+surface to its source revision and raw logs.
 
 - [~] Initial PyG operator survey (#17): GCN, GraphSAGE, and GAT forward and
       backward passed on a fixed synthetic 12-node graph with PyG 2.8.0,
       PyTorch 2.14.1, and an M5 Pro, with `PYTORCH_ENABLE_MPS_FALLBACK=0` and
       no optional pyg-lib/torch-scatter packages. No missing operator was
       observed in this [tested configuration](docs/pyg-survey/2026-10-01-m5-pro-pyg28.md).
-- [ ] Profile native `scatter_add_` and `scatter_reduce_` on representative
-      graph workloads before choosing new Metal kernels; revise the operator
-      list below from those measurements.
+- [~] Native `scatter_add_` and `scatter_reduce_` were profiled on synthetic
+      4,096 and 32,768 node uniform and hub graphs with synchronized GCN,
+      GraphSAGE, and GAT runs. The [raw results and limits](docs/pyg-survey/2026-10-01-m5-pro-scatter-profile.md)
+      do not yet justify a new Metal kernel; broader graph distributions and
+      stable GAT timings remain to be established. A separate
+      [backward probe](docs/pyg-survey/2026-10-01-m5-pro-scatter-backward.md)
+      records native PyTorch's zero-extremum gradient behavior before any
+      replacement contract is chosen.
 - [ ] Core scatter reductions on Metal: sum, mean, max, min, with argmax and
       argmin. Check floating-point atomic support on each device at runtime
       instead of inferring it from the MSL version. Use a reproducible segmented
@@ -956,8 +970,10 @@ listed versions, devices, models, and inputs that have passing logs.
 - [~] Experimental legacy `torch_cluster.graclus_cluster` CPU/MPS greedy
       matching subset; see its [contract and original CPU comparison](docs/graclus-contract.md).
       The Metal decision is serial and has no speedup claim.
-- [ ] Remaining `torch_cluster` operator: `random_walk`.
-      Done when: no function in the stand-in raises `NotImplementedError`.
+- [~] Experimental legacy `torch_cluster.random_walk` CPU/MPS tensor path.
+      The [stochastic contract](docs/random-walk-contract.md) separates exact
+      uniform CPU parity from biased transition probabilities; performance is
+      not yet established.
 
 ### Phase 4: Geometry losses and large-scale search (target 0.8.0 to 0.9.0)
 

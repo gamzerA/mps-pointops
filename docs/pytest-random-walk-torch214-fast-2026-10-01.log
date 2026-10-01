@@ -1,0 +1,48 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: <repository>
+configfile: pyproject.toml
+plugins: platformdirs-4.12.2, dash-4.4.1, anyio-4.15.1
+collected 381 items
+
+tests/test_ball_query_api.py ......................                      [  5%]
+tests/test_ball_query_mps.py ........................................... [ 17%]
+..                                                                       [ 17%]
+tests/test_chamfer.py ......................................             [ 27%]
+tests/test_compat.py ............                                        [ 30%]
+tests/test_feature_knn.py ..................s.....                       [ 37%]
+tests/test_flat.py .................................                     [ 45%]
+tests/test_flat_graph.py ...                                             [ 46%]
+tests/test_flat_ragged_mps.py ....                                       [ 47%]
+tests/test_fps.py ................................                       [ 55%]
+tests/test_graclus.py .................                                  [ 60%]
+tests/test_grid_cluster.py .........                                     [ 62%]
+tests/test_knn.py ......s.....ss....ssss................                 [ 72%]
+tests/test_nearest.py ...................                                [ 77%]
+tests/test_pointnet2.py .....................                            [ 83%]
+tests/test_pointnet2_e2e.py ..                                           [ 83%]
+tests/test_pyg28.py ssssss                                               [ 85%]
+tests/test_pyg28_grid.py ..sssssss                                       [ 87%]
+tests/test_pyg28_voxel_avg_pool.py ssssssss                              [ 89%]
+tests/test_pytorch3d_adapter.py ....................                     [ 95%]
+tests/test_random_walk.py ...................                            [100%]
+
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_feature_knn.py:121: non-finite Safe Math policy only
+SKIPPED [7] tests/test_knn.py:40: k > n
+SKIPPED [1] tests/test_pyg28.py:27: requires MPS, torch-geometric 2.8 and pyg-lib>=0.6
+SKIPPED [1] tests/test_pyg28.py:53: requires MPS, torch-geometric 2.8 and pyg-lib>=0.6
+SKIPPED [1] tests/test_pyg28.py:61: requires MPS, torch-geometric 2.8 and pyg-lib>=0.6
+SKIPPED [1] tests/test_pyg28.py:70: requires MPS, torch-geometric 2.8 and pyg-lib>=0.6
+SKIPPED [1] tests/test_pyg28.py:78: requires MPS, torch-geometric 2.8 and pyg-lib>=0.6
+SKIPPED [1] tests/test_pyg28.py:89: requires MPS, torch-geometric 2.8 and pyg-lib>=0.6
+SKIPPED [1] tests/test_pyg28_grid.py:62: requires torch-geometric 2.8 and pyg-lib 0.7 reference
+SKIPPED [1] tests/test_pyg28_grid.py:79: requires torch-geometric 2.8 and pyg-lib 0.7 reference
+SKIPPED [1] tests/test_pyg28_grid.py:95: requires torch-geometric 2.8 and pyg-lib 0.7 reference
+SKIPPED [1] tests/test_pyg28_grid.py:119: requires MPS, torch-geometric 2.8 and pyg-lib 0.7
+SKIPPED [1] tests/test_pyg28_grid.py:149: requires MPS, torch-geometric 2.8 and pyg-lib 0.7
+SKIPPED [2] tests/test_pyg28_grid.py:183: requires MPS, torch-geometric 2.8 and pyg-lib 0.7
+SKIPPED [1] tests/test_pyg28_voxel_avg_pool.py:34: requires torch-geometric 2.8.0 and pyg-lib 0.7.0
+SKIPPED [6] tests/test_pyg28_voxel_avg_pool.py:58: requires MPS, torch-geometric 2.8.0 and pyg-lib 0.7.0
+SKIPPED [1] tests/test_pyg28_voxel_avg_pool.py:123: requires MPS, torch-geometric 2.8.0 and pyg-lib 0.7.0
+======================= 352 passed, 29 skipped in 4.19s ========================
