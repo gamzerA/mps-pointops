@@ -88,6 +88,39 @@ The PyG integration job explicitly fails if MPS is unavailable. See
 [the CI workflow](.github/workflows/ci.yml) for the authoritative dependency
 versions and commands if they change.
 
+## Release archival and DOI lineage
+
+This project prioritizes one Zenodo DOI lineage. The
+[v0.3.0 archive](https://zenodo.org/records/23076058) has version DOI
+`10.5281/zenodo.23076058` and concept DOI `10.5281/zenodo.23076057`.
+The README badge uses the concept DOI; papers and `CITATION.cff` cite the
+specific release's version DOI.
+
+For the next release, use **New version** from the existing Zenodo record,
+following [Zenodo's versioning guide](https://help.zenodo.org/docs/deposit/manage-versions/):
+
+1. Create a new version draft from the existing record and reserve its DOI.
+   Before publishing, check that it remains under concept DOI
+   `10.5281/zenodo.23076057`.
+2. Update the package version and `CITATION.cff` version, date, release URL,
+   and reserved version DOI through a pull request. Merge only after the six
+   required checks pass, then create the Git tag, GitHub release, and PyPI
+   distribution from the same commit.
+3. Archive that exact tag as one source ZIP. Compare its files with the Git
+   tree and verify its checksum. Set the Zenodo version, author/ORCID, release
+   links, and component licenses; keep the MIT Ball Query notice in the ZIP
+   and explain the mixed license in the description. Publish the Zenodo draft
+   after verifying the preview.
+4. Confirm the public version DOI, concept DOI, uploaded ZIP checksum, and
+   GitHub/PyPI release identity. Put the version DOI in the GitHub release
+   notes. The README concept DOI badge stays unchanged.
+
+GitHub auto-archiving is not enabled for this repository. Zenodo's GitHub
+integration documentation does not guarantee that an automatically captured
+release will join this existing, manually created concept DOI lineage. Do not
+enable it for a release until a verified migration plan preserves the citation
+history. See [Zenodo's DOI guidance](https://zenodo.org/help/versioning).
+
 ## If required CI fails because of an external outage
 
 First inspect the failed job's log. Distinguish a code or test failure from
