@@ -95,6 +95,7 @@ jobs:
               "mps_pointops/nearest.py",
               "mps_pointops/graclus.py",
               "mps_pointops/random_walk.py",
+              "mps_pointops/voxel.py",
           }
           missing = required - names
           licenses = [n for n in names if "/licenses/" in n]
@@ -136,8 +137,8 @@ jobs:
           assert torch.backends.mps.is_available(), "MPS is required for this job"
           PY
       - name: PyG integration (Metal safe math)
-        run: pytest -ra tests/test_pyg28.py tests/test_pyg28_grid.py tests/test_pyg28_voxel_avg_pool.py
+        run: pytest -ra tests/test_pyg28.py tests/test_pyg28_grid.py tests/test_pyg28_voxel_avg_pool.py tests/test_voxel.py
       - name: PyG integration (Metal fast math)
         env:
           PYTORCH_MPS_FAST_MATH: "1"
-        run: pytest -ra tests/test_pyg28.py tests/test_pyg28_grid.py tests/test_pyg28_voxel_avg_pool.py
+        run: pytest -ra tests/test_pyg28.py tests/test_pyg28_grid.py tests/test_pyg28_voxel_avg_pool.py tests/test_voxel.py
