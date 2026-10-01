@@ -9,4 +9,4 @@ __all__ = [
     "ball_query", "chamfer_distance", "flat", "furthest_point_sample", "knn", "reference",
     "three_interpolate", "three_nn",
 ]
-__version__ = "0.6.0"
+__version__ = "0.7.0"

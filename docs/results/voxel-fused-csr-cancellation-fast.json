@@ -1,0 +1,35 @@
+{
+  "torch_version": "2.14.1",
+  "mps_fast_math": "1",
+  "mps_fallback": "0",
+  "rtol": 0.0001,
+  "atol": 1e-05,
+  "cases": [
+    {
+      "features": "341 repeats of [10000, -10000, float32(0.1)]",
+      "float32_residue": 0.10000000149011612,
+      "float64_oracle": 34.1000005081296,
+      "fused_csr": 34.099998474121094,
+      "index_add": 34.008201599121094,
+      "absolute_backend_difference": 0.091796875,
+      "allowed_backend_difference": 0.0034108201599121098,
+      "backend_parity": false,
+      "fused_oracle_error": 2.034008502960205e-06,
+      "index_add_oracle_error": 0.09179890900850296,
+      "integer_maps_equal": true
+    },
+    {
+      "features": "341 repeats of [1e+06, -1e+06, float32(0.1)]",
+      "float32_residue": 0.10000000149011612,
+      "float64_oracle": 34.1000005081296,
+      "fused_csr": 34.0999870300293,
+      "index_add": 40.037498474121094,
+      "absolute_backend_difference": 5.937511444091797,
+      "allowed_backend_difference": 0.004013749847412109,
+      "backend_parity": false,
+      "fused_oracle_error": 1.3478100299835205e-05,
+      "index_add_oracle_error": 5.937497965991497,
+      "integer_maps_equal": true
+    }
+  ]
+}

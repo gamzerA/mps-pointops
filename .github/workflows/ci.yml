@@ -89,6 +89,7 @@ jobs:
               "mps_pointops/kernels/flat_search.metal",
               "mps_pointops/kernels/pointnet2.metal",
               "mps_pointops/kernels/chamfer_nn.metal",
+              "mps_pointops/kernels/voxel_pool.metal",
               "mps_pointops/pytorch3d.py",
               "mps_pointops/pointnet2.py",
               "mps_pointops/chamfer.py",
@@ -137,8 +138,8 @@ jobs:
           assert torch.backends.mps.is_available(), "MPS is required for this job"
           PY
       - name: PyG integration (Metal safe math)
-        run: pytest -ra tests/test_pyg28.py tests/test_pyg28_grid.py tests/test_pyg28_voxel_avg_pool.py tests/test_pyg28_avg_pool_graph.py tests/test_voxel.py
+        run: pytest -ra tests/test_pyg28.py tests/test_pyg28_grid.py tests/test_pyg28_voxel_avg_pool.py tests/test_pyg28_avg_pool_graph.py tests/test_voxel.py tests/test_voxel_fused.py
       - name: PyG integration (Metal fast math)
         env:
           PYTORCH_MPS_FAST_MATH: "1"
-        run: pytest -ra tests/test_pyg28.py tests/test_pyg28_grid.py tests/test_pyg28_voxel_avg_pool.py tests/test_pyg28_avg_pool_graph.py tests/test_voxel.py
+        run: pytest -ra tests/test_pyg28.py tests/test_pyg28_grid.py tests/test_pyg28_voxel_avg_pool.py tests/test_pyg28_avg_pool_graph.py tests/test_voxel.py tests/test_voxel_fused.py

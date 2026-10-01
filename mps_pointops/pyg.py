@@ -92,12 +92,8 @@ def _knn_mps(
     if k == 0 or len(x) == 0 or len(y) == 0:
         return torch.empty((2, 0), dtype=torch.long, device=x.device)
     width = min(k, len(x))
-    if x.shape[1] != 3 and width > 256:
-        raise ValueError("feature-space kNN supports at most 256 neighbors on MPS")
-    if width <= 256:
-        indices = knn_indices(x.contiguous(), y.contiguous(), ptr_x, ptr_y, width)
-    else:
-        indices = flat._reference_search(x, y, ptr_x, ptr_y, width, radius=None)
+    flat._check_mps_knn_width(width)
+    indices = knn_indices(x.contiguous(), y.contiguous(), ptr_x, ptr_y, width)
     return flat._edges(indices)
 
 

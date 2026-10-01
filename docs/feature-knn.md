@@ -46,10 +46,11 @@ float32 square/sum and become invalid; callers needing valid neighbors must
 keep their feature scale in a finite-distance range. The existing `D=3`
 kernels have their separately documented behavior.
 
-The MPS `D != 3` path raises a `ValueError` when effective `k > 256`; it does
-not silently use PyTorch search. The existing 3D flat/PyG `k > 256` fallback
-is a Phase 1 policy issue tracked separately. CPU tensors continue to use the
-PyTorch reference implementation. `cosine=True` is unsupported.
+All MPS kNN entry points now raise a `ValueError` when effective `k > 256`;
+none silently switches to PyTorch search. Flat and PyG effective `k` is
+`min(k, len(x))`; dense kNN requires `k <= N`. CPU tensors continue to use
+the PyTorch reference implementation for larger requests. `cosine=True` is
+unsupported.
 
 ## Direct and model-level evidence
 

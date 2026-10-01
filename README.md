@@ -12,7 +12,7 @@
 
 **Point-cloud operators for PyTorch on Apple Silicon.** Native Metal kernels
 run farthest point sampling, k nearest neighbors, and Ball Query on MPS.
-Version 0.6.0 also provides experimental PointNet++ feature propagation,
+Version 0.7.0 also provides experimental PointNet++ feature propagation,
 squared-L2 Chamfer distance, feature-space kNN, and graph/grid interfaces.
 Compatibility stand-ins cover supported `pointnet2_ops`, `knn_cuda`, and
 `torch_cluster` call sites; CPU tensors use PyTorch reference implementations.
@@ -39,11 +39,12 @@ kernels compile on first use.
 python -m pip install mps-pointops
 ```
 
-Version 0.6.0 includes dense SIMD Ball Query, the PyTorch3D-style Ball Query
+Version 0.7.0 includes dense SIMD Ball Query, the PyTorch3D-style Ball Query
 adapter, and the large-cloud FPS path for a single cloud. Experimental
 `three_nn`, `three_interpolate`, squared-L2 `chamfer_distance`, and
-feature-space kNN APIs are available; the legacy graph and voxel interfaces
-have bounded input contracts. The supported propagation and loss inputs and
+feature-space kNN APIs are available; the graph and voxel interfaces have
+bounded input contracts. Compact voxel downsampling now includes an opt-in
+Metal CSR pooling prototype. The supported propagation and loss inputs and
 their differences from upstream are specified in the
 [PointNet++ propagation](docs/pointnet2-propagation.md) and
 [Chamfer](docs/chamfer-contract.md) contracts.
@@ -210,8 +211,8 @@ by [this script](tools/render_readme_assets.py). The JSON records SHA-256 for
 the benchmark, operator dispatch, reference code, and all three timed kernels.
 The benchmark script and three timed Metal kernels still match those hashes;
 the shared dispatch and reference code have since changed, so these are
-snapshot timings rather than a new v0.6.0 benchmark. The Ball Query row times the dense
-`mps_pointops.ball_query` API, without the optional PyTorch3D adapter's
+snapshot timings rather than a current-release benchmark. The Ball Query row
+times the dense `mps_pointops.ball_query` API, without the optional PyTorch3D adapter's
 neighbor gathering. Displayed times are rounded to 0.1 ms; the speedups use
 unrounded medians in the JSON.
 
@@ -505,9 +506,11 @@ so near-boundary bits may differ. It takes up to `max_num_neighbors` matches in
 reference input order, like `torch_cluster`'s CUDA kernel; `torch_cluster` on
 CPU keeps an arbitrary subset when there are more matches. Padded internal slots
 are removed before returning the edge tensor. CPU inputs use PyTorch; MPS
-inputs use Metal for supported sizes. The existing 3D flat/PyG kNN path has a
-PyTorch fallback for `k > 256`; feature-space kNN (`D != 3`) raises an explicit
-error above 256 instead. The [feature-space contract and DGCNN evidence](docs/feature-knn.md)
+inputs use Metal for supported sizes. Dense, flat, and PyG kNN raise an explicit
+error when the effective MPS neighbor count exceeds 256; there is no implicit
+slow PyTorch search. For flat/PyG calls the effective count is `min(k, len(x))`;
+`knn_graph` requests one extra neighbor when `loop=False`. Use CPU explicitly
+for larger counts. The [feature-space contract and DGCNN evidence](docs/feature-knn.md)
 explain direct dimension accumulation, numerical limits, and model scope.
 On MPS, FPS and kNN require float32; radius accepts float32 or float16 and
 the same positive-radius lower bound as the native Ball Query contract. The
@@ -517,6 +520,29 @@ Flat FPS uses one threadgroup per cloud and scans only that cloud's
 offset range. Very uneven batch sizes can still leave a long-running group;
 splitting one FPS sequence across groups would need synchronization after each
 selected point and remains a performance task.
+
+The public flat FPS, kNN, and radius calls were measured on one physical
+**Apple M5 Pro (48 GiB, macOS 26.5.2, PyTorch 2.14.1)** with 1,024 or 4,096
+randomly ordered dyadic 3D reference points across uneven batches, 32 or 128
+queries, `k=16`, and 16-neighbor radius limits. CPU/MPS outputs matched
+exactly in all cases. Values below are median synchronized, preloaded-input
+public-call milliseconds; each cell has 20 raw samples. CPU is this package's
+PyTorch path, not an optimized CPU library.
+
+| Math mode | References / queries | FPS CPU / MPS | kNN CPU / MPS | Radius CPU / MPS |
+| --- | ---: | ---: | ---: | ---: |
+| Safe | 1,024 / 32 | 0.212 / 2.607 | 1.152 / 3.901 | 0.456 / 2.819 |
+| Safe | 4,096 / 128 | 1.447 / 2.312 | 19.665 / 4.377 | 3.102 / 4.297 |
+| Fast | 1,024 / 32 | 0.220 / 1.216 | 1.116 / 4.048 | 0.444 / 2.911 |
+| Fast | 4,096 / 128 | 1.453 / 1.865 | 19.851 / 3.896 | 3.083 / 3.485 |
+
+The [reproduction method and limits](docs/flat-api-bench-2026-10-02.md),
+[Safe raw samples](bench/results/2026-10-02-apple-m5-pro-flat-public-safe.json),
+and [Fast raw samples](bench/results/2026-10-02-apple-m5-pro-flat-public-fast.json)
+record source commit `584f4580b2ff899d2e73e4a2dcdaf0bf490912be`, file hashes,
+environment, and timing spread. Only the 4,096-point kNN fixture beat the
+tested CPU reference in both modes; the measurements do not establish a
+general flat API speedup.
 
 The shim follows the `fps`, `knn`, `radius`, `nearest`, `grid_cluster`,
 `graclus_cluster`, and `random_walk` call signatures of
@@ -648,8 +674,14 @@ result.features.sum().backward()
 This API uses `floor` for negative cell coordinates and compact labels. PyG
 `voxel_grid` and legacy `torch_cluster.grid_cluster` use different raw ID
 contracts; this submodule does not replace their signatures or implement
-PyG graph `avg_pool`. Its native PyTorch tensor path has MPS validation
-synchronization and no speed claim.
+PyG graph `avg_pool`. The default `pool_backend="index_add"` uses native
+PyTorch reductions. On MPS, experimental `pool_backend="fused_csr"` pools
+positions and features in one Metal dispatch **after** constructing the same
+CSR map. The [numerical contract](docs/voxel-api-contract.md) documents an
+expected severe-cancellation difference from MPS `index_add_`; this opt-in
+prototype has [mixed full-call results](docs/voxel-fused-benchmark.md) and no
+general speedup claim. Both paths currently synchronize MPS
+for input validation and data-dependent compact output shape.
 
 PyG's graph wrappers use those same operators. The MPS path supports flat
 three-dimensional coordinates for FPS/radius and arbitrary positive feature
@@ -942,13 +974,15 @@ original implementation.
       whether the segmented schedule removes long-running groups without
       increasing per-sample synchronization costs. Validate any automatic
       switch separately on other Apple GPUs.
-- [ ] kNN with `k > 256` on Metal. First replace the current mismatch between
-      the dense API's explicit error and the flat/PyG path's implicit PyTorch
-      fallback with a documented warning or error policy. Then evaluate tiled
-      top-k merging and benchmark its memory use and speed against the CPU
-      fallback. The current `MAX_K=256` is a kernel constant, not a hardware
-      limit.
-- [ ] Flat API benchmarks in the published results.
+- [~] kNN with `k > 256` on Metal. Dense, flat, and PyG MPS calls now raise
+      explicitly for unsupported effective widths; CPU remains available for
+      larger requests. Tiled top-k merging and its memory/speed comparison
+      with CPU remain open. The current `MAX_K=256` is a kernel constant, not
+      a hardware limit.
+- [x] Public flat FPS, kNN, and radius benchmarks on a physical M5 Pro for the
+      [recorded synthetic cases](docs/flat-api-bench-2026-10-02.md), with exact
+      CPU/MPS output checks and Safe/Fast raw samples. Other hardware and input
+      distributions remain unmeasured.
 - [~] Physical Apple M1 Safe/Fast validation and operator benchmarks are
       [recorded](docs/phase3-physical-m1-2026-10-02.md). M2–M4 real-hardware
       coverage remains open; the M1 Virtual CI runner is a separate environment.
@@ -1020,15 +1054,29 @@ correctness and timing evidence without extending claims to M2–M4.
 - [~] Experimental compact [voxelization and downsampling API](docs/voxel-api-contract.md):
       batched floor-based cells, exact inverse/CSR maps and counts, mean
       positions, and mean/sum features with first-order gradients on CPU/MPS.
-      M1–M4, performance, and wider dtype coverage remain unverified.
+      The physical M1 Safe/Fast full suites passed the 20 voxel tests before
+      the opt-in fused backend was added. Separate [Safe](docs/pytest-v070-m1-fused-safe-2026-10-02.log)
+      and [Fast](docs/pytest-v070-m1-fused-fast-2026-10-02.log) M1 focused
+      runs each passed 12 fused tests with one expected failure. M2–M4 and
+      wider dtype coverage remain unverified.
 - [~] PyG 2.8 graph `avg_pool` on finite float32 synthetic graphs: the
       [coarsening contract and synchronized measurement](docs/pyg28-graph-avg-pool.md)
       cover topology, duplicate edges, self-loops, batch labels, pooled values,
       and first-order gradients. General PyG model coverage remains open.
-- [ ] Measured speed of the separate compact voxel-downsampling API.
-- [ ] Design and benchmark a fused Metal voxel-pooling candidate only after it
-      matches the current cell IDs, mean/sum outputs, and first-order gradients.
-      No fused kernel exists in the measured release.
+- [~] Measured speed of the separate compact voxel-downsampling API on a
+      [physical M5 Pro and M1](docs/voxel-api-benchmark.md) across 20k/100k/500k
+      points, uniform/ragged batches, and dense/sparse cells. The report keeps
+      stage timings separate from the full forward/backward call and labels
+      MPS allocator readings as current values, not memory peaks. These
+      device-specific measurements do not establish a universal crossover.
+- [~] An opt-in [fused Metal CSR pooling prototype](docs/voxel-api-contract.md)
+      retains the exact integer cell/inverse/CSR maps and matches bounded
+      mean/sum and first-order gradient fixtures. It reduces position and
+      feature values in one dispatch **after** map construction. Severe
+      cancellation can exceed the tolerance against MPS `index_add_`, so it
+      remains opt in. The [M5 Pro full-call ablation](docs/voxel-fused-benchmark.md)
+      has mixed wins and losses, with no general speedup or lower-peak-memory
+      claim.
 - [~] Legacy `torch_cluster.nearest` CPU/MPS float32 shim. The
       [contract and source-pinned comparison](docs/nearest-contract.md) cover
       finite well-separated examples, ragged batches, and the CUDA source's
@@ -1111,7 +1159,9 @@ local Safe/Fast Math tests, and the six required CI checks for `main`.
 
 ## Citation
 
-For v0.6.0, cite its archived
+For v0.7.0, cite the reserved
+[version DOI (10.5281/zenodo.23087369)](https://doi.org/10.5281/zenodo.23087369)
+after the archive is published. For results using v0.6.0, cite its archived
 [version DOI (10.5281/zenodo.23086417)](https://doi.org/10.5281/zenodo.23086417).
 For results using v0.5.0, cite its archived
 [version DOI (10.5281/zenodo.23080506)](https://doi.org/10.5281/zenodo.23080506).
