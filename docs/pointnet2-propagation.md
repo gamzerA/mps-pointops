@@ -6,8 +6,10 @@ shapes documented by
 [`pointnet2_ops.pointnet2_utils`](https://github.com/erikwijmans/Pointnet2_PyTorch/blob/master/pointnet2_ops_lib/pointnet2_ops/pointnet2_utils.py).
 The upstream CUDA implementation is a compatibility reference, not source for
 the Metal kernels. No upstream code is copied into this project. This feature
-is experimental in v0.5.0. A full PointNet++ segmentation run remains future
-validation.
+was introduced experimentally in v0.5.0. A fixed synthetic PointNet++ SSG
+segmentation forward/backward run was compared with the original CUDA
+extension for v0.6.0 ([report](parity/pointnet2-segmentation.md)). Labeled-data
+accuracy and training convergence remain untested.
 
 ## Inputs and outputs
 
@@ -97,5 +99,6 @@ PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=1 python -m pytest -q tests/
 
 The tests cover exact ties, non-contiguous inputs, empty dimensions, invalid
 indices, repeated indices, forward values, and the feature gradient against
-an independent PyTorch reference. A full PointNet++ segmentation run remains
-future validation.
+an independent PyTorch reference. The fixed synthetic segmentation comparison
+is documented in the [model-level report](parity/pointnet2-segmentation.md);
+labeled-data accuracy and training convergence remain future validation.
