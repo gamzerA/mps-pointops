@@ -91,14 +91,21 @@ def test_voxel_avg_pool_model_cpu_mps_forward_backward(
     mps_cluster = voxel_grid(
         pos.to("mps"), size=1.0, batch=batch.to("mps"), start=0.0, end=2.0,
     )
+    assert mps_cluster.device.type == "mps"
+    assert torch.equal(mps_cluster.cpu(), cpu_cluster)
     kwargs = {"batch_size": 3, "size": 3**spatial_dimensions} if fixed_size else {}
     cpu_pooled, cpu_batch = avg_pool_x(cpu_cluster, cpu_x, batch, **kwargs)
     mps_pooled, mps_batch = avg_pool_x(
         mps_cluster, mps_x, batch.to("mps"), **kwargs,
     )
+    assert mps_pooled.device.type == "mps" and mps_pooled.dtype == torch.float32
+    if fixed_size:
+        assert cpu_batch is mps_batch is None
+    else:
+        assert torch.equal(mps_batch.cpu(), cpu_batch)
+    torch.testing.assert_close(mps_pooled.cpu(), cpu_pooled, rtol=1e-5, atol=1e-6)
     cpu_output = cpu_model(cpu_pooled)
     mps_output = mps_model(mps_pooled)
-    torch.testing.assert_close(mps_pooled.cpu(), cpu_pooled, rtol=1e-5, atol=1e-6)
     torch.testing.assert_close(mps_output.cpu(), cpu_output, rtol=1e-5, atol=1e-6)
     cpu_loss = cpu_output.square().mean()
     mps_loss = mps_output.square().mean()
@@ -106,14 +113,6 @@ def test_voxel_avg_pool_model_cpu_mps_forward_backward(
     mps_loss.backward()
     torch.mps.synchronize()
 
-    assert mps_cluster.device.type == "mps" and mps_pooled.device.type == "mps"
-    assert mps_pooled.dtype == torch.float32
-    assert torch.equal(mps_cluster.cpu(), cpu_cluster)
-    if fixed_size:
-        assert cpu_batch is mps_batch is None
-    else:
-        assert torch.equal(mps_batch.cpu(), cpu_batch)
-    torch.testing.assert_close(mps_pooled.cpu(), cpu_pooled, rtol=1e-5, atol=1e-6)
     torch.testing.assert_close(mps_loss.cpu(), cpu_loss, rtol=1e-5, atol=1e-6)
     torch.testing.assert_close(mps_x.grad.cpu(), cpu_x.grad, rtol=1e-5, atol=1e-6)
     torch.testing.assert_close(
