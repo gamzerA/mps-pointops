@@ -84,7 +84,11 @@ jobs:
               "mps_pointops/kernels/ball_query.metal",
               "mps_pointops/kernels/fps_flat.metal",
               "mps_pointops/kernels/flat_search.metal",
+              "mps_pointops/kernels/pointnet2.metal",
+              "mps_pointops/kernels/chamfer_nn.metal",
               "mps_pointops/pytorch3d.py",
+              "mps_pointops/pointnet2.py",
+              "mps_pointops/chamfer.py",
           }
           missing = required - names
           licenses = [n for n in names if "/licenses/" in n]
