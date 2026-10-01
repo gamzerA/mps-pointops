@@ -509,7 +509,8 @@ offset range. Very uneven batch sizes can still leave a long-running group;
 splitting one FPS sequence across groups would need synchronization after each
 selected point and remains a performance task.
 
-This follows the `fps`, `knn`, `radius`, `nearest`, and `random_walk` call signatures of
+The shim follows the `fps`, `knn`, `radius`, `nearest`, `grid_cluster`,
+`graclus_cluster`, and `random_walk` call signatures of
 [`torch_cluster` 1.6.3](https://github.com/rusty1s/pytorch_cluster/tree/1.6.3/torch_cluster)
 for three-dimensional FPS/radius coordinates and arbitrary-dimensional kNN
 features. Cosine kNN and `ignore_same_index=True` are

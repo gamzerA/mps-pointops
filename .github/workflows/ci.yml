@@ -94,6 +94,7 @@ jobs:
               "mps_pointops/chamfer.py",
               "mps_pointops/nearest.py",
               "mps_pointops/graclus.py",
+              "mps_pointops/random_walk.py",
           }
           missing = required - names
           licenses = [n for n in names if "/licenses/" in n]
