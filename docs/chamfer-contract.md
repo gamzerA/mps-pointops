@@ -76,9 +76,11 @@ The Metal search accumulates squared coordinate differences in x, y, z order
 with FMA contraction disabled in source. Safe and Fast Math modes can still
 differ on underflow or near-tie inputs; exact cross-backend equality at those
 boundaries is not promised. Repeated point ties use the lowest reference
-index. Many-to-one nearest selections can contend during scatter accumulation;
-the first measurement below tests this effect on one M5 Pro, while larger
-clouds and other devices remain open. Floating-point scatter accumulation can
+index, including when finite coordinates make every float32 squared distance
+overflow to infinity. Many-to-one nearest selections can contend during
+scatter accumulation. The first measurement below tests this effect on one
+M5 Pro, while larger clouds and other devices remain open. Floating-point
+scatter accumulation can
 also change its last bits with execution order; bitwise repeatability of MPS
 gradients is not promised. The implementation and equations here were
 independently written for this project; no PyTorch3D source was copied.

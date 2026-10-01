@@ -130,6 +130,28 @@ def test_reference_tiles_preserve_lowest_index_tie(monkeypatch):
     assert y.grad[0, 4, 0].item() == 0.0
 
 
+@pytest.mark.parametrize("device", ["cpu", "mps"])
+def test_overflowed_squared_distances_keep_a_valid_first_index(device):
+    if device == "mps" and not torch.backends.mps.is_available():
+        pytest.skip("MPS not available")
+    # The coordinates are finite, but every squared distance overflows to inf.
+    # The first reference must still be selected for a safe backward gather.
+    x = torch.tensor([[[1e20, 0.0, 0.0]]], device=device, requires_grad=True)
+    y = torch.tensor([[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]]], device=device, requires_grad=True)
+    if device == "mps":
+        distances, indices = chamfer_module._nearest_mps(
+            x, y, torch.tensor([1], device=device), torch.tensor([2], device=device)
+        )
+        torch.mps.synchronize()
+        assert torch.isinf(distances).all().item()
+        torch.testing.assert_close(indices.cpu(), torch.tensor([[0]]), rtol=0, atol=0)
+    loss, _ = chamfer_distance(x, y, single_directional=True)
+    assert torch.isinf(loss).item()
+    loss.backward()
+    torch.testing.assert_close(x.grad.cpu(), torch.tensor([[[2e20, 0.0, 0.0]]]))
+    torch.testing.assert_close(y.grad.cpu(), torch.tensor([[[-2e20, 0.0, 0.0], [0.0, 0.0, 0.0]]]))
+
+
 def test_double_precision_gradcheck_away_from_ties():
     x = torch.tensor([[[0.1, 0.2, 0.3], [2.1, 0.4, 0.5]]], dtype=torch.double, requires_grad=True)
     y = torch.tensor([[[1.0, 0.1, 0.2], [4.0, 0.8, 0.7]]], dtype=torch.double, requires_grad=True)

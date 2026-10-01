@@ -55,7 +55,10 @@ kernel void chamfer_nearest_f32(
         float distance = dx * dx;
         distance = distance + dy * dy;
         distance = distance + dz * dz;
-        if (distance < best_distance ||
+        // Finite coordinates can still overflow squared distance to +inf.
+        // Select the first valid candidate even then, so the saved index is
+        // always safe for gather in the backward pass.
+        if (best_index == UINT_MAX || distance < best_distance ||
             (distance == best_distance && j < ulong(best_index))) {
             best_distance = distance;
             best_index = uint(j);
