@@ -246,6 +246,24 @@ def main() -> None:
             cpu[name], mps[name], args.gradient_atol, args.gradient_rtol,
             args.gradient_relative_l2_limit,
         )
+    zero_gradient_counterexample = {}
+    for name in ("coordinate_gradient", "feature_gradient", "first_weight_gradient"):
+        zeros = torch.zeros_like(cpu[name])
+        old_rule = _comparison(
+            cpu[name], zeros, args.logit_atol, args.logit_rtol,
+        )
+        new_rule = _comparison(
+            cpu[name], zeros, args.gradient_atol, args.gradient_rtol,
+            args.gradient_relative_l2_limit,
+        )
+        zero_gradient_counterexample[name] = {
+            "old_logit_scale_rule_accepts_zero": old_rule["passed"],
+            "new_gradient_rule_rejects_zero": not new_rule["passed"],
+            "cpu_l2_norm": new_rule["cpu_l2_norm"],
+            "relative_l2_error_if_zero": new_rule["relative_l2_error"],
+        }
+        if not old_rule["passed"] or new_rule["passed"]:
+            raise AssertionError(f"zero-gradient counterexample changed for {name}")
     result = {
         "date_utc": datetime.now(timezone.utc).isoformat(),
         "pointcept_commit": POINTCEPT_COMMIT,
@@ -279,6 +297,7 @@ def main() -> None:
         "cpu_loss": cpu["loss"],
         "mps_loss": mps["loss"],
         "comparisons": comparisons,
+        "zero_gradient_counterexample": zero_gradient_counterexample,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n")

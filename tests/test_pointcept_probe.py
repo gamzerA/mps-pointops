@@ -9,7 +9,9 @@ from bench.probe_pointcept_ptv1 import _comparison
 @pytest.mark.parametrize("scale", [2e-5, 6e-4])
 def test_zero_mps_gradient_fails_despite_small_absolute_scale(scale):
     cpu = torch.tensor([scale, -scale / 2, 0.0])
+    old_rule = _comparison(cpu, torch.zeros_like(cpu), 2e-3, 5e-3)
     result = _comparison(cpu, torch.zeros_like(cpu), 1e-7, 5e-3, 1e-2)
+    assert old_rule["passed"]
     assert not result["passed"]
     assert not result["nonzero_gradient"]
     assert result["relative_l2_error"] == pytest.approx(1.0)
