@@ -1,9 +1,12 @@
-# Phase 3 pinned operator, model, and runtime results, 2026-10-01
+# Phase 3 pinned operator, model, and runtime results, 2026-10-01 to 2026-10-02
 
-The local operator tests and synthetic timings below ran on a **physical Apple
-M5 Pro** with macOS 26.5.2. A separate pure-PyTorch runtime diagnostic also
-ran on a **hosted Apple M1 (Virtual)** with macOS 26.6.2; this is functional
-CI evidence, not a physical M1 benchmark. MPS runs used
+The original local operator tests and synthetic timings below ran on a
+**physical Apple M5 Pro** with macOS 26.5.2. A separate pure-PyTorch runtime
+diagnostic ran on a **hosted Apple M1 (Virtual)** with macOS 26.6.2; that is
+functional CI evidence, not a physical M1 benchmark. A later
+[physical Apple M1 report](phase3-physical-m1-2026-10-02.md) uses a separate
+8 GiB MacBook Pro with macOS 26.5.2 and is summarized in the final two rows.
+MPS runs used
 `PYTORCH_ENABLE_MPS_FALLBACK=0` before importing PyTorch. Safe and Fast Math
 ran in separate processes where both logs or raw JSON files are linked; the
 GCN/GraphSAGE/GAT survey was a single run per model. Each passing parity row
@@ -28,6 +31,8 @@ every `torch_cluster` input is supported. The
 | Legacy `torch_cluster.nearest` | Original 1.6.3 SciPy CPU path; finite well-separated D=1, 3, 64, 128 float32 features and ragged batches | 408 CPU/MPS indices match in Safe and Fast. A documented 1024-lane tie differs from SciPy CPU; CUDA binary was not run. | [Nearest contract](nearest-contract.md), [CPU](parity/nearest-upstream-cpu-2026-10-01.json) / [MPS Safe](parity/nearest-upstream-mps-safe-2026-10-01.json) / [MPS Fast](parity/nearest-upstream-mps-fast-2026-10-01.json) comparisons. |
 | Legacy `torch_cluster.graclus_cluster` | Original 1.6.3 CPU C++ extension; documented finite-weight subset | 40/40 exact CPU label arrays across eight cases and five seeds. MPS Safe/Fast focused suites: 20 passed each, with structural checks for stochastic cases. CUDA matching is a different algorithm. | [Graclus contract](graclus-contract.md), [direct CPU JSON](parity/graclus-163-cpu.json), full [Safe](parity/graclus-full-safe.log) **331 passed / 22 skipped** and [Fast](parity/graclus-full-fast.log) **330 passed / 23 skipped** on main `61a4a076a38147e237d1dec36283ec720d811d6e`. |
 | Legacy `torch_cluster.random_walk` | Original 1.6.3 CPU extension and this CPU/MPS int64 COO subset; positive finite `p,q` with documented weight bounds | Uniform nodes and edge IDs match the original CPU extension for 20 random seeds and sorted input fixtures under equal CPU RNG state and float32 default. Biased transitions match the stated distribution within tolerance; CUDA biased bit parity is not claimed. MPS Safe/Fast check edge validity, isolated nodes, and the float32 categorical boundary. | [Stochastic contract](random-walk-contract.md); full PyTorch 2.14.1 + real upstream [Safe](pytest-random-walk-torch214-safe-2026-10-01.log) **353 passed / 28 skipped**, [Fast](pytest-random-walk-torch214-fast-2026-10-01.log) **352 passed / 29 skipped**; full pinned PyTorch 2.12.0 + PyG 2.8 [Safe](pytest-random-walk-pyg28-safe-2026-10-01.log) **370 passed / 11 skipped**, [Fast](pytest-random-walk-pyg28-fast-2026-10-01.log) **369 passed / 12 skipped**. Tested code source `8ccf921834e3fdee43824bf6c8bd2058e90c062b` on main `ad7d703377fcfd34bf743967a0c8e532cab344b8`. |
+| Physical M1 operator and PyG regression | MacBookPro17,1 Apple M1 8 GiB, macOS 26.5.2, Python 3.10.6; source `f4a886a08938a8a3c9785ecaec962300efd298e0`; PyTorch 2.12.0, PyG 2.8.0, pyg-lib 0.7.0+pt212 | Full suite Safe **394 passed / 11 skipped**, Fast **393 / 12**. Dense Ball Query prior-vs-SIMD output bits matched in 48 Safe and 40 Fast cases; B=1 FPS 500k/1M single/multigroup indices matched. Graph `avg_pool` passed but was slower than CPU in the 65,536-node synthetic case. Pure PyTorch fixed-bias `Linear` did not reproduce the hosted M1 Virtual omission. | [Physical M1 report and raw evidence](phase3-physical-m1-2026-10-02.md), full [Safe](pytest-physical-m1-torch212-safe-2026-10-02.log) / [Fast](pytest-physical-m1-torch212-fast-2026-10-02.log) logs. CPU fallback disabled; Safe/Fast separate processes. |
+| Physical M1 Phase 4 and scatter stress | Same M1 and source commit; PyTorch 2.12.0 for bidirectional Chamfer and feature kNN; separate PyTorch 2.14.1 without PyG for native scatter microbenchmarks | Random bidirectional Chamfer loss and both gradients matched the package CPU reference within `1e-5`; at N=4,096 its MPS forward was faster, while backward was slower. Dense feature kNN at Q=N=2,048,D=128 was slower than package CPU and differed in four `cdist`-rank slots; the Metal output matched an independent direct float32 oracle in **all** slots, with two-ULP candidate gaps. Concentrated M1 `scatter_add_` was much slower than uniform, including an actual N=2,048 single-directional Chamfer backward case. This does not identify Metal atomic behavior. | [Physical M1 report](phase3-physical-m1-2026-10-02.md) with linked Safe/Fast raw samples, [new Chamfer benchmark](../bench/bench_chamfer_cpu_mps.py), and [feature-kNN ranking diagnostic](../bench/probe_feature_knn_tie.py). |
 
 These rows use different source revisions. A whole-suite count is the sum of
 tests available in that revision and is not a benchmark or a count of supported
@@ -50,15 +55,17 @@ provenance.
   and real point-labeled datasets remain untested. Its inverse maps do not
   change PyG's raw `voxel_grid` output.
 - The native-PyTorch fan-in probes show a call-level penalty for their
-  all-to-one fixtures on the physical M5 Pro. They do not identify the GPU
+  all-to-one fixtures on the physical M5 Pro and a much larger penalty on the
+  physical M1 in its separate fixture. They do not identify the GPU
   primitive, establish Metal-atomic contention, measure a full Chamfer or PyG
   model backward pass, or justify a custom Metal replacement without an
   end-to-end ablation. The hosted PyTorch 2.12 `Linear` bias discrepancy is
   environment dependent; its internal cause and broader model impact remain
   unverified.
 - The graph survey does not cover all models, aggregation variants, PyTorch
-  versions, or dtypes. Hosted Apple M1 (Virtual) CI is functional coverage,
-  while **physical M1, M2, M3, and M4 Safe/Fast measurements remain missing**.
+  versions, or dtypes. Hosted Apple M1 (Virtual) CI is functional coverage;
+  physical M1 now has bounded Safe/Fast evidence, while **physical M2, M3,
+  and M4 measurements remain missing**.
   No custom Metal scatter speedup has been established.
 
 Track the wider evidence and release decision in the

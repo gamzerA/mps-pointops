@@ -1,0 +1,44 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.10.6, pytest-9.1.1, pluggy-1.6.0
+rootdir: <physical-m1-checkout>
+configfile: pyproject.toml
+collected 405 items
+
+tests/test_ball_query_api.py ......................                      [  5%]
+tests/test_ball_query_mps.py ........................................... [ 16%]
+..                                                                       [ 16%]
+tests/test_chamfer.py ......................................             [ 25%]
+tests/test_compat.py ............                                        [ 28%]
+tests/test_feature_knn.py ..................s.....                       [ 34%]
+tests/test_flat.py .................................                     [ 42%]
+tests/test_flat_graph.py ...                                             [ 43%]
+tests/test_flat_ragged_mps.py ....                                       [ 44%]
+tests/test_fps.py ................................                       [ 52%]
+tests/test_graclus.py .................                                  [ 56%]
+tests/test_grid_cluster.py .......ss                                     [ 59%]
+tests/test_knn.py ......s.....ss....ssss................                 [ 68%]
+tests/test_nearest.py ...................                                [ 73%]
+tests/test_pointnet2.py .....................                            [ 78%]
+tests/test_pointnet2_e2e.py ..                                           [ 78%]
+tests/test_pyg28.py ......                                               [ 80%]
+tests/test_pyg28_avg_pool_graph.py ....                                  [ 81%]
+tests/test_pyg28_grid.py .........                                       [ 83%]
+tests/test_pyg28_voxel_avg_pool.py ........                              [ 85%]
+tests/test_pytorch3d_adapter.py ....................                     [ 90%]
+tests/test_random_walk.py ................ss.                            [ 95%]
+tests/test_voxel.py ....................                                 [100%]
+
+=============================== warnings summary ===============================
+tests/test_pyg28.py::test_register_real_pyg_schemas_and_pool_functions
+tests/test_pyg28.py::test_register_real_pyg_schemas_and_pool_functions
+  <physical-m1-checkout>/.venv/lib/python3.10/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_feature_knn.py:121: non-finite Safe Math policy only
+SKIPPED [2] tests/test_grid_cluster.py:84: real torch_cluster is not installed
+SKIPPED [7] tests/test_knn.py:40: k > n
+SKIPPED [1] tests/test_random_walk.py:126: real torch_cluster is not installed
+SKIPPED [1] tests/test_random_walk.py:168: real torch_cluster is not installed
+================= 393 passed, 12 skipped, 2 warnings in 10.74s =================

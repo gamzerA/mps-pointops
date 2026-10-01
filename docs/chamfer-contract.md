@@ -92,7 +92,7 @@ boundaries is not promised. Repeated point ties use the lowest reference
 index, including when finite coordinates make every float32 squared distance
 overflow to infinity. Many-to-one nearest selections can contend during
 scatter accumulation. The first measurement below tests this effect on one
-M5 Pro, while larger clouds and other devices remain open. Floating-point
+M5 Pro; a later physical M1 measurement is linked below. Floating-point
 scatter accumulation can
 also change its last bits with execution order; bitwise repeatability of MPS
 gradients is not promised. The implementation and equations here were
@@ -112,3 +112,15 @@ were 0.79–1.08 in Safe Math and 0.94–1.08 in Fast Math. A direct
 this range. These results support retaining PyTorch's native accumulation for
 the current implementation. They do not establish its behavior on larger
 clouds, other Apple GPUs, or different gradient distributions.
+
+The later [physical M1 report](phase3-physical-m1-2026-10-02.md) found a
+different distribution response on an 8 GiB M1. For B=1,N=2,048,
+concentrated selection increased single-directional Chamfer backward from
+0.968 to 3.814 ms (Safe) or 0.860 to 3.669 ms (Fast); indices and analytic
+gradients still passed. On separate random finite bidirectional inputs,
+the MPS forward was faster than the **package's CPU reference** at N=1,024
+and 4,096, but its backward was slower. These are different fixtures, so
+they do not conflict. The M1 report links the raw Safe/Fast samples and a
+native scatter stress test. None of these timings identifies Metal atomics
+as the cause, compares an optimized CPU nearest-neighbor library, or proves
+an end-to-end model speedup.

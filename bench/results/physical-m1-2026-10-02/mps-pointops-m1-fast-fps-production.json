@@ -1,0 +1,74 @@
+{
+  "date_utc": "2026-10-01T15:12:03.554218+00:00",
+  "environment": {
+    "chip": "Apple M1",
+    "memory_gib": 8.0,
+    "macos": "26.5.2",
+    "python": "3.10.6",
+    "torch": "2.12.0",
+    "pytorch_mps_fast_math": "1",
+    "commit": "f4a886a08938a8a3c9785ecaec962300efd298e0",
+    "dirty": false,
+    "script_sha256": "d87cfa2e717791b756a3139cd437cb4cfc29d3930c90626b6c8956a010a1d39c",
+    "ops_sha256": "0cf93b76d49665f32751ace699dc6df350e6149bbbe97fa3cfd6fcda9ab7fe4a",
+    "single_shader_sha256": "c02ac7472eb5e27548824b34dc0996c361cbd2084989ceae9b715284ae59d44a",
+    "multigroup_shader_sha256": "90ed78bbd50786495b60a04cae084a5829b7ae48add3758b2490d4a604fb92c3"
+  },
+  "method": {
+    "input": "float32 standard-normal point cloud, seed 42 unless overridden",
+    "shape": "(1, N, 3)",
+    "timing": "wall-clock ms, Python launch included, torch.mps.synchronize immediately before and after",
+    "measurement_order": "single/multigroup and multigroup/single alternate",
+    "warmup": 3,
+    "repeat": 5,
+    "seed": 42
+  },
+  "results": [
+    {
+      "N": 500000,
+      "B": 1,
+      "npoint": 1024,
+      "single_ms": [
+        320.3794999863021,
+        340.21979197859764,
+        330.058875028044,
+        345.89062503073364,
+        342.7774580195546
+      ],
+      "multigroup_ms": [
+        103.50950004067272,
+        131.15295895840973,
+        104.2020830209367,
+        111.5032919915393,
+        132.80016597127542
+      ],
+      "single_median_ms": 340.21979197859764,
+      "multigroup_median_ms": 111.5032919915393,
+      "speedup": 3.0512084970945343,
+      "index_mismatches": 0
+    },
+    {
+      "N": 1000000,
+      "B": 1,
+      "npoint": 1024,
+      "single_ms": [
+        814.5009580184706,
+        811.1730419914238,
+        805.6852910085581,
+        814.195542014204,
+        806.8556670332327
+      ],
+      "multigroup_ms": [
+        395.75858297757804,
+        396.9168330077082,
+        414.62966700783,
+        384.17770800879225,
+        390.7679580152035
+      ],
+      "single_median_ms": 811.1730419914238,
+      "multigroup_median_ms": 395.75858297757804,
+      "speedup": 2.049666329125151,
+      "index_mismatches": 0
+    }
+  ]
+}
