@@ -3,6 +3,8 @@
 <p align="center">
   <a href="https://github.com/gamzerA/mps-pointops/actions/workflows/ci.yml"><img src="https://github.com/gamzerA/mps-pointops/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://doi.org/10.5281/zenodo.23076057"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.23076057.svg" alt="Zenodo DOI for all versions"></a>
+  <a href="https://pypi.org/project/mps-pointops/"><img src="https://img.shields.io/pypi/v/mps-pointops.svg" alt="Latest PyPI version"></a>
+  <a href="https://pypistats.com/packages/mps-pointops"><img src="https://pypistats.com/api/badges/mps-pointops" alt="PyPI downloads per month"></a>
   <a href="#quick-start"><img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&amp;logoColor=white" alt="Python 3.10 or later"></a>
   <a href="#quick-start"><img src="https://img.shields.io/badge/PyTorch-2.7%2B-EE4C2C?logo=pytorch&amp;logoColor=white" alt="PyTorch 2.7 or later"></a>
   <a href="#license"><img src="https://img.shields.io/badge/License-Apache--2.0%20AND%20MIT-4B5563" alt="Apache-2.0 AND MIT license"></a>
@@ -26,9 +28,13 @@ Compatibility stand-ins cover supported `pointnet2_ops`, `knn_cuda`, and
 Requires an Apple Silicon Mac, Python 3.10 or later, and PyTorch 2.7 or later
 with MPS. The Metal kernels compile on first use.
 
+### Install
+
 ```bash
 python -m pip install mps-pointops
 ```
+
+### Minimal example
 
 ```python
 import torch
@@ -544,12 +550,14 @@ Ball Query is specified separately in the numerical contract.
 
 ## Roadmap
 
-1. ~~Metal kernel for FPS~~
+1. ~~Metal kernel for FPS~~ — benchmark a tiled, multi-threadgroup reduction
+   for very large single-cloud inputs against the current single-kernel path
 2. ~~Metal kernel for kNN~~
 3. ~~Drop-in stand-ins for `pointnet2_ops` and `knn_cuda`, checked on real
    MulSen-AD data~~
-4. ~~Metal kernel for ball query~~ — improve performance on spatially sorted
-   inputs and finish the PyTorch3D API compatibility surface
+4. ~~Metal kernel for ball query~~ — compare the existing dense scan with an
+   order-preserving simdgroup prefix scan on spatially sorted inputs, and
+   finish the PyTorch3D API compatibility surface
 5. ~~MulSen-AD Point-MAE 3D detector on MPS, matching the CUDA runs~~ — the
    full TripleAD pipeline (RGB + IR + 3D) is next
 6. `torch_cluster`-style flat/ragged `radius`, `knn` and `fps` — the 3D

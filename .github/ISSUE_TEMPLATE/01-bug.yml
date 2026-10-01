@@ -1,0 +1,108 @@
+name: Bug report
+description: Report a reproducible bug or performance regression on a specific setup.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please use a small reproducer and remove private data or credentials from logs.
+        For performance reports, include warmup, synchronization, and whether transfers or CPU index construction were timed.
+  - type: input
+    id: chip
+    attributes:
+      label: Apple silicon chip
+      description: Give the exact chip model, including Pro/Max/Ultra when applicable.
+      placeholder: M5 Pro
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: macOS 26.0
+    validations:
+      required: true
+  - type: input
+    id: pytorch
+    attributes:
+      label: PyTorch version
+      placeholder: 2.12.0
+    validations:
+      required: true
+  - type: input
+    id: package
+    attributes:
+      label: mps-pointops version
+      placeholder: 0.3.0
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: 3.12.7
+    validations:
+      required: true
+  - type: input
+    id: pyg
+    attributes:
+      label: PyG and pyg-lib versions, if relevant
+      placeholder: torch-geometric 2.8.0; pyg-lib 0.7.0
+  - type: dropdown
+    id: operation
+    attributes:
+      label: Affected operation or integration
+      options:
+        - FPS
+        - kNN
+        - Ball Query
+        - Flat radius
+        - PyG or torch_cluster compatibility
+        - Installation or packaging
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: math_mode
+    attributes:
+      label: Execution mode
+      options:
+        - Metal Safe Math
+        - Metal Fast Math
+        - Both Metal modes
+        - CPU reference
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Include the expected indices, values, timing, or error behavior when possible.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Describe the mismatch or regression, including whether MPS was available.
+    validations:
+      required: true
+  - type: textarea
+    id: reproducer
+    attributes:
+      label: Minimal reproduction
+      description: Provide runnable code or exact commands. Include shape, dtype, batch layout, and point order where relevant.
+      placeholder: |
+        import torch
+        import mps_pointops
+        # Minimal input and call
+      render: python
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Traceback, benchmark output, or additional context
+      description: Paste the relevant output after removing private data and credentials.

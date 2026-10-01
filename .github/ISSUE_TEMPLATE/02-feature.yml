@@ -1,0 +1,54 @@
+name: Feature request
+description: Propose an operator, API, compatibility, or performance improvement.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe a concrete workload and the behavior you need. The environment fields help us judge MPS support and hardware tradeoffs. If a field does not apply, write "N/A" and explain why.
+  - type: input
+    id: chip
+    attributes:
+      label: Apple silicon chip
+      placeholder: M5 Pro
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: macOS 26.0
+    validations:
+      required: true
+  - type: input
+    id: pytorch
+    attributes:
+      label: PyTorch version
+      placeholder: 2.12.0
+    validations:
+      required: true
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case and current limitation
+      description: Explain what you are trying to run and what blocks or slows it today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Desired behavior
+      description: Specify the operator or API, expected inputs and outputs, and any ordering or numerical requirements.
+    validations:
+      required: true
+  - type: textarea
+    id: workload
+    attributes:
+      label: Workload and evidence
+      description: Include point and query counts, batch layout, dtype, point order, benchmark command, or upstream API reference when available.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or related implementations
+      description: Link existing libraries or issues that help explain the request.
