@@ -9,8 +9,8 @@
 
 **Point-cloud operators for PyTorch on Apple Silicon.** Native Metal kernels
 run farthest point sampling, k nearest neighbors, and Ball Query on MPS.
-Compatibility stand-ins cover the supported `pointnet2_ops` and `knn_cuda`
-call sites; CPU tensors use PyTorch reference implementations.
+Compatibility stand-ins cover supported `pointnet2_ops`, `knn_cuda`, and
+`torch_cluster` call sites; CPU tensors use PyTorch reference implementations.
 
 <p align="center">
   <img src="docs/assets/pointops-hero.svg" width="1200" alt="Three operator diagrams: FPS chooses spread-out centers; kNN ranks neighbors by distance; Ball Query retains the first K points inside a radius.">
@@ -26,7 +26,7 @@ Requires an Apple Silicon Mac, Python 3.10 or later, and PyTorch 2.7 or later
 with MPS. The Metal kernels compile on first use.
 
 ```bash
-python -m pip install "git+https://github.com/gamzerA/mps-pointops.git@v0.1.1"
+python -m pip install "git+https://github.com/gamzerA/mps-pointops.git@v0.2.0"
 ```
 
 ```python
@@ -59,7 +59,7 @@ CPU library for each operation. Ball Query is slower on spatially sorted input
 [benchmark](#benchmark) states the setup and links the raw results.
 
 For existing CUDA-oriented imports, call `mps_pointops.compat.install()`
-*before* importing `pointnet2_ops` or `knn_cuda`:
+*before* importing `pointnet2_ops`, `knn_cuda`, or `torch_cluster`:
 
 ```python
 import mps_pointops.compat
@@ -67,11 +67,13 @@ mps_pointops.compat.install()
 
 from pointnet2_ops import pointnet2_utils
 from knn_cuda import KNN
+from torch_cluster import fps, knn as flat_knn, radius
 ```
 
-The native API is dense and batched. A flat `torch_cluster`/PyG API is
-[planned](#roadmap). See [Compatibility](#compatibility) for the stand-ins'
-behavior and [License](#license) for component notices.
+The native API is dense and batched. The flat API in `mps_pointops.flat`
+supports sorted batch vectors and global indices. See
+[Compatibility](#compatibility) for the stand-ins' behavior and
+[License](#license) for component notices.
 
 ## Why
 
@@ -210,10 +212,15 @@ On the listed synthetic inputs, the Metal kernels had 0 index mismatches.
 Ball Query's maximum squared-distance error against the separate-operation
 CPU reference was 1.9e-9; the FPS and kNN checks reported no distance error.
 These are observations on one M5 Pro, not a guarantee for every input, GPU or
-compiler. On this v0.1.1-based branch with PyTorch 2.7.0 and MPS available, the
-Safe and Fast Math test processes each reported **105 passed, 7 skipped**
+compiler. Before the flat API was added, the v0.1.1 baseline with PyTorch 2.7.0
+and MPS available reported **105 passed, 7 skipped** in each of the Safe and
+Fast Math test processes
 ([Safe log](docs/pytest-safe-torch27-2026-10-01.log),
 [Fast log](docs/pytest-fast-torch27-2026-10-01.log)).
+For the flat API implementation at commit `8b060f743b84ad6947daad591948855bcc9cedcb`,
+PyTorch 2.7.0 on the same M5 Pro reported **147 passed, 7 skipped** in each
+separate process ([Safe log](docs/pytest-flat-safe-torch27-2026-10-01.log),
+[Fast log](docs/pytest-flat-fast-torch27-2026-10-01.log)).
 
 ### Run it
 
@@ -233,8 +240,10 @@ Results from other Apple Silicon chips are welcome as pull requests.
 ## Compatibility
 
 `mps_pointops.compat.install()` registers `pointnet2_ops`,
-`pointnet2_ops.pointnet2_utils` and `knn_cuda` in `sys.modules`, unless a real
-package with that name is importable.
+`pointnet2_ops.pointnet2_utils`, `knn_cuda` and `torch_cluster` in
+`sys.modules`, unless a real package with that name is already importable.
+Call it before importing code that uses those names. `force=True` replaces an
+already loaded or importable package; the default preserves it.
 
 | stand-in | behavior |
 |---|---|
@@ -243,15 +252,84 @@ package with that name is importable.
 | `pointnet2_utils.ball_query(radius, nsample, xyz, new_xyz)` | Metal on MPS. int32, empty slots repeat the first neighbor, no neighbor gives all zeros |
 | `knn_cuda.KNN(k, transpose_mode)` | Metal kernel. Same layouts as knn_cuda, Euclidean distances, no gradients |
 
+### Flat `torch_cluster` subset
+
+`mps_pointops.flat` exposes `fps`, `knn`, and `radius` for flat `(N, 3)` point
+coordinates. Batch vectors must be sorted, such as `[0, 0, 1, 1, 1]`; missing
+batch IDs represent empty clouds. A separate offset array is built for the
+reference and query sets, which may have different sizes. All returned indices
+are global indices into the corresponding flat input.
+
+```python
+import torch
+from mps_pointops import flat
+
+x = torch.tensor([[0., 0, 0], [2., 0, 0], [10., 0, 0]], device="mps")
+batch_x = torch.tensor([0, 0, 1], device="mps")
+y = torch.tensor([[1., 0, 0], [11., 0, 0]], device="mps")
+batch_y = torch.tensor([0, 1], device="mps")
+
+centers = flat.fps(x, batch_x, ratio=0.5, random_start=False)
+knn_edges = flat.knn(x, y, 2, batch_x, batch_y)
+radius_edges = flat.radius(x, y, 1.1, batch_x, batch_y, max_num_neighbors=32)
+```
+
+`fps` returns `int64` sampled point indices (`ratio=None` means `0.5`;
+`random_start=True` by default). A Python ratio is converted to the dtype of
+`x`; a tensor ratio keeps its dtype and shape. The count follows
+`torch_cluster` 1.6.3's device-specific arithmetic: CPU computes
+`ceil(float32(N_b) * ratio)`, while MPS follows the CUDA path
+`ceil(cast(N_b, ratio.dtype) * ratio)`. In float32, 25 points at ratio 0.6
+give 16 samples, not 15. A scalar tensor and a length-one tensor can also
+promote the CPU product differently when the ratio is float64.
+It also accepts an explicit `ptr` offset array. `knn` and `radius` return
+`int64` `edge_index` tensors of shape `[2, E]`: row 0 is a query index into
+`y` and row 1 is a reference index into `x`. kNN is ordered by squared distance,
+then reference index; if a batch has fewer than `k` references, it emits only
+the available edges. For float32 coordinates, radius search uses strict
+`distance² < fl32(r * r)`, with `r * r` computed in double precision as
+`torch_cluster` does (the dense Ball Query uses the PyTorch3D threshold
+`fl32(fl32(r) * fl32(r))` instead; the two can differ by one float32 ULP).
+For very small radii, MPS uses the native Ball Query's normalized comparison,
+so near-boundary bits may differ. It takes up to `max_num_neighbors` matches in
+reference input order, like `torch_cluster`'s CUDA kernel; `torch_cluster` on
+CPU keeps an arbitrary subset when there are more matches. Padded internal slots
+are removed before returning the edge tensor. CPU inputs use PyTorch; MPS
+inputs use Metal for supported sizes, with a PyTorch fallback for kNN `k > 256`.
+On MPS, FPS and kNN require float32; radius accepts float32 or float16 and
+the same positive-radius lower bound as the native Ball Query contract. The
+float16 radius path computes distances and the threshold in float32; it does
+not promise bitwise parity with `torch_cluster`'s half-precision CUDA kernel.
+Flat FPS uses one threadgroup per cloud and scans only that cloud's
+offset range. Very uneven batch sizes can still leave a long-running group;
+splitting one FPS sequence across groups would need synchronization after each
+selected point and remains a performance task.
+
+This follows the `fps`, `knn`, and `radius` call signatures of
+[`torch_cluster` 1.6.3](https://github.com/rusty1s/pytorch_cluster/tree/1.6.3/torch_cluster)
+for three-dimensional coordinates. Cosine kNN and `ignore_same_index=True` are
+unsupported and raise an error. The shim also provides `knn_graph` and
+`radius_graph` using these searches, including `loop` and `flow`. It exposes
+explicitly unsupported `grid_cluster`, `graclus_cluster`, `random_walk`, and
+`nearest` placeholders so that importing PyG 2.7.0 succeeds; calling those
+placeholders raises `NotImplementedError`.
+
+[PyG 2.7.0](https://github.com/pyg-team/pytorch_geometric/blob/2.7.0/torch_geometric/nn/pool/__init__.py)
+calls these `torch_cluster` functions directly. Its `fps`, `knn`, `radius`,
+`knn_graph`, and `radius_graph` entry points were exercised with MPS tensors
+on an M5 Pro. In contrast,
+[PyG 2.8.0](https://github.com/pyg-team/pytorch_geometric/blob/2.8.0/torch_geometric/nn/pool/__init__.py)
+calls separate `torch.ops.pyg` operators. The shim does not replace the latter
+path or provide the rest of `torch_cluster`.
+
 Near ties can resolve differently from the CUDA packages. FPS and kNN round
 their squared distances without FMA; Ball Query uses explicit FMA. The CUDA
 kernels use their own arithmetic and reduction order.
 
 The native API (`mps_pointops.furthest_point_sample`, `mps_pointops.knn`,
 `mps_pointops.ball_query`) returns int64 indices; native FPS does not skip
-points near the origin. It is not a
-`torch_cluster` replacement either: its inputs are dense, batched (B, N, 3)
-tensors, not flat point lists with batch vectors.
+points near the origin. It uses dense, batched `(B, N, 3)` tensors, while the
+flat API above uses `(N, 3)` tensors and optional batch vectors.
 
 ## The operators in equations
 
@@ -435,8 +513,9 @@ Ball Query is specified separately in the numerical contract.
    inputs and finish the PyTorch3D API compatibility surface
 5. ~~MulSen-AD Point-MAE 3D detector on MPS, matching the CUDA runs~~ — the
    full TripleAD pipeline (RGB + IR + 3D) is next
-6. `torch_cluster`-style `radius`, `knn` and `fps` (flat inputs with batch
-   vectors) for PyG point cloud models
+6. `torch_cluster`-style flat/ragged `radius`, `knn` and `fps` — the 3D
+   subset and PyG 2.7.0 direct-import path are implemented; operator
+   registration for PyG 2.8.0 and wider coordinate dimensions remain
 
 ## License
 

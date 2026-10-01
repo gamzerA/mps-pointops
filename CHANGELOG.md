@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.2.0 — 2026-10-01
+
+### Added
+
+- Flat, variable-length 3D point-cloud `fps`, `knn`, and `radius` operations
+  with sorted batch vectors, separate reference/query sets, global indices,
+  and compact `[query, reference]` edge tensors. Metal kernels handle MPS
+  inputs; CPU inputs use PyTorch implementations.
+- A `torch_cluster` 1.6.3-style compatibility shim, including `knn_graph` and
+  `radius_graph`. The five point-cloud entry points were exercised through
+  PyG 2.7.0 on MPS. PyG 2.8.0 uses a separate `torch.ops.pyg` path and is
+  outside this shim's scope.
+
+### Fixed
+
+- FPS sample counts now follow the original device-specific degree conversion
+  and preserve scalar versus length-one tensor ratio semantics.
+- The flat float32 radius search uses `fl32(r * r)` after double-precision
+  multiplication, matching the torch-cluster threshold. Dense Ball Query
+  retains its PyTorch3D threshold contract.
+
+The M5 Pro PyTorch 2.7.0 MPS Safe and Fast Math runs each passed 147 tests
+with 7 expected skips; the raw logs are under `docs/`. CI checks the package
+and macOS/Linux configurations.
+
 ## 0.1.1 — 2026-10-01
 
 ### Fixed

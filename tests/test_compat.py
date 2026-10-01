@@ -7,7 +7,7 @@ import torch
 from mps_pointops import compat, knn, reference
 
 mps = pytest.mark.skipif(not torch.backends.mps.is_available(), reason="MPS not available")
-NAMES = ["pointnet2_ops", "pointnet2_ops.pointnet2_utils", "knn_cuda"]
+NAMES = ["pointnet2_ops", "pointnet2_ops.pointnet2_utils", "knn_cuda", "torch_cluster"]
 
 
 @pytest.fixture
@@ -28,12 +28,17 @@ def cloud(b, n, seed=0):
 def test_install_serves_imports(installed):
     from knn_cuda import KNN
     from pointnet2_ops import pointnet2_utils
+    from torch_cluster import fps, knn as flat_knn, radius
 
     import pointnet2_ops.pointnet2_utils as direct
 
     assert direct is pointnet2_utils
     assert pointnet2_utils.furthest_point_sample is compat.furthest_point_sample
     assert KNN is compat.KNN
+    assert fps is compat.flat.fps
+    assert flat_knn is compat.flat.knn
+    assert radius is compat.flat.radius
+    assert compat.importlib.util.find_spec("torch_cluster") is not None
 
 
 def test_install_leaves_existing_modules_alone(installed):
@@ -41,6 +46,38 @@ def test_install_leaves_existing_modules_alone(installed):
     sys.modules["knn_cuda"] = marker
     assert "knn_cuda" not in compat.install()
     assert sys.modules["knn_cuda"] is marker
+
+    sys.modules["torch_cluster"] = marker
+    assert "torch_cluster" not in compat.install()
+    assert sys.modules["torch_cluster"] is marker
+
+
+def test_install_preserves_importable_torch_cluster(monkeypatch, installed):
+    sys.modules.pop("torch_cluster", None)
+    original = compat.importlib.util.find_spec
+    monkeypatch.setattr(
+        compat.importlib.util,
+        "find_spec",
+        lambda name: object() if name == "torch_cluster" else original(name),
+    )
+    assert "torch_cluster" not in compat.install()
+    assert "torch_cluster" not in sys.modules
+    assert compat.install(force=True) == NAMES
+    assert sys.modules["torch_cluster"].fps is compat.flat.fps
+
+
+def test_torch_cluster_positional_pool_signatures(installed):
+    from torch_cluster import fps, knn, radius
+
+    x = torch.tensor([[0., 0, 0], [1., 0, 0], [10., 0, 0]])
+    y = torch.tensor([[0.1, 0, 0], [10.1, 0, 0]])
+    batch_x = torch.tensor([0, 0, 1])
+    batch_y = torch.tensor([0, 1])
+    assert fps(x, batch_x, 0.5, False, 2).tolist() == [0, 2]
+    assert knn(x, y, 1, batch_x, batch_y, False, 1, 2).tolist() == [[0, 1], [0, 2]]
+    assert radius(x, y, 0.5, batch_x, batch_y, 32, 1, 2).tolist() == [
+        [0, 1], [0, 2]
+    ]
 
 
 @mps
