@@ -521,8 +521,10 @@ CPU/MPS path. The
 into `y` for each `x` row. It accepts one-dimensional or `(N, D)` float32 MPS
 inputs, including ragged batches with empty ID gaps. Its source-level CUDA
 threshold, error choices, and cross-backend limits are in the
-[nearest contract](docs/nearest-contract.md). `graclus_cluster` and
-`random_walk` remain explicit placeholders that raise `NotImplementedError`.
+[nearest contract](docs/nearest-contract.md). The experimental
+`graclus_cluster` CPU/MPS path follows the
+[legacy matching contract](docs/graclus-contract.md). `random_walk` remains
+an explicit placeholder that raises `NotImplementedError`.
 
 [PyG 2.7.0](https://github.com/pyg-team/pytorch_geometric/blob/2.7.0/torch_geometric/nn/pool/__init__.py)
 calls these `torch_cluster` functions directly. Its `fps`, `knn`, `radius`,

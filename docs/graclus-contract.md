@@ -85,10 +85,10 @@ focused [Safe](parity/graclus-pytest-safe.log) and
 [Fast](parity/graclus-pytest-fast.log) suites: **20/20** in each separate
 process. These include a native Metal test that passes fixed CSR data and
 node order to verify weighted last-tie selection independently of random
-permutation. On the branch merged with main `c3c7cc73bab1b2181815ba38a7d16bf6c0332601`,
+permutation. On the branch rebased onto main `61a4a076a38147e237d1dec36283ec720d811d6e`,
 the complete suite also passed: [Safe](parity/graclus-full-safe.log)
-**329 passed, 15 skipped**, and [Fast](parity/graclus-full-fast.log)
-**328 passed, 16 skipped**. The test code is
+**331 passed, 22 skipped**, and [Fast](parity/graclus-full-fast.log)
+**330 passed, 23 skipped**. The test code is
 [`tests/test_graclus.py`](../tests/test_graclus.py).
 
 The MPS path first uses native PyTorch masking, permutation, sorting, and CSR

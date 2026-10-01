@@ -24,8 +24,9 @@ Covered: ``furthest_point_sample``, ``gather_operation``,
 - ``ball_query`` uses the Metal kernel for MPS inputs and pads in the
   ``pointnet2_ops`` convention.
 - The ``torch_cluster`` shim exposes ``fps``, ``knn``, ``radius``, ``nearest``,
-  ``graclus_cluster``, and kNN/radius graph wrappers. FPS and radius use three-dimensional point
-  coordinates; kNN also accepts float32 feature vectors on MPS. Experimental
+  ``graclus_cluster``, and kNN/radius graph wrappers. FPS and radius use
+  three-dimensional point coordinates; kNN also accepts float32 feature
+  vectors on MPS. Experimental
   ``grid_cluster`` accepts float32 3D coordinates. Graclus has the documented
   CPU/Metal greedy matching subset. Other names needed for PyG 2.7 package
   import raise ``NotImplementedError`` when called. It does not
