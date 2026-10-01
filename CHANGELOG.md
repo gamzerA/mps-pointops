@@ -46,6 +46,13 @@ kNN and PointNet++ segmentation validation remain open.
   cases and 1,080 output/gradient checks per port device on CPU, MPS Safe,
   and MPS Fast. The MPS maximum absolute loss difference was `9.5367e-7`;
   this result does not cover normals, `norm=1`, ties, or PyTorch3D CUDA.
+- [Direct PointNet++ CUDA comparison](docs/parity/pointnet2-upstream.md)
+  on an RTX 2080 passed two deterministic propagation fixtures against MPS
+  Safe and Fast. The 243 selected indices matched exactly; Safe Math had zero
+  observed difference in the compared arrays, while Fast Math differed only
+  in Euclidean distances by at most `2.3842e-7`. The original CUDA kernel
+  source was unchanged; two `setup.py` build settings were adapted for the
+  available Windows toolchain.
 
 ### Verified
 

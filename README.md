@@ -45,6 +45,10 @@ adapter, and the large-cloud FPS path for a single cloud. It adds experimental
 supported inputs and differences from upstream are specified in the
 [PointNet++ propagation](docs/pointnet2-propagation.md) and
 [Chamfer](docs/chamfer-contract.md) contracts.
+Direct comparisons against the
+[original PointNet++ CUDA extension](docs/parity/pointnet2-upstream.md) and
+[PyTorch3D Chamfer](docs/chamfer-upstream-parity-0.5.0.md) record the tested
+inputs, output and gradient errors, build adjustments, and source hashes.
 
 ### Minimal example
 
