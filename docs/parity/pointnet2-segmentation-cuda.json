@@ -1,0 +1,55 @@
+{
+  "backend": "upstream",
+  "device": "cuda",
+  "extension_path": "C:\\Users\\yeyoung1\\anaconda3\\envs\\research\\Lib\\site-packages\\pointnet2_ops\\_ext.cp311-win_amd64.pyd",
+  "extension_sha256": "7db4927b3358c4ca5c212b582889588225cc4b6392f3a3939ca371ae237da86e",
+  "fixture_id": "pointnet2-ssg-segmentation-synthetic-v1",
+  "fixture_sha256": "e3998b2eb58c9b9a410ef2a081b539e65aca5d15fcdb72a203849ade0be511f1",
+  "gpu_name": "NVIDIA GeForce RTX 2080",
+  "harness_sha256": "8a2ad5dc0bdc9bcc08d998a0580f3ff14dab85d2b96d4ca55bc4c5b6e7a81fb0",
+  "logits": [
+    1,
+    13,
+    1152
+  ],
+  "model_mode": "eval, with cross-entropy backward",
+  "mps_fallback": null,
+  "mps_fast_math": null,
+  "num_parameter_gradients": 68,
+  "numpy": "2.4.6",
+  "platform": "Windows-10-10.0.19045-SP0",
+  "points": [
+    1,
+    1152,
+    9
+  ],
+  "project_source_sha256": null,
+  "result_sha256": "05de08ca103596eec35f6b0397a5b418fb39d73b3aa2c850f4a7194e04a2ed08",
+  "selection_kinds": [
+    "furthest_point_sample",
+    "ball_query",
+    "furthest_point_sample",
+    "ball_query",
+    "furthest_point_sample",
+    "ball_query",
+    "furthest_point_sample",
+    "ball_query",
+    "three_nn",
+    "three_nn",
+    "three_nn",
+    "three_nn"
+  ],
+  "torch": "2.14.0+cu132",
+  "upstream": {
+    "build_only_setup_diff": "diff --git a/pointnet2_ops_lib/setup.py b/pointnet2_ops_lib/setup.py\nindex faf7154..23b3b43 100644\n--- a/pointnet2_ops_lib/setup.py\n+++ b/pointnet2_ops_lib/setup.py\n@@ -16,7 +16,7 @@ requirements = [\"torch>=1.4\"]\n \n exec(open(osp.join(\"pointnet2_ops\", \"_version.py\")).read())\n \n-os.environ[\"TORCH_CUDA_ARCH_LIST\"] = \"3.7+PTX;5.0;6.0;6.1;6.2;7.0;7.5\"\n+os.environ[\"TORCH_CUDA_ARCH_LIST\"] = \"7.5\"\n setup(\n     name=\"pointnet2_ops\",\n     version=__version__,\n@@ -29,7 +29,7 @@ setup(\n             sources=_ext_sources,\n             extra_compile_args={\n                 \"cxx\": [\"-O3\"],\n-                \"nvcc\": [\"-O3\", \"-Xfatbin\", \"-compress-all\"],\n+                \"nvcc\": [\"-O3\", \"-Xfatbin\", \"-compress-all\", \"-Xcompiler\", \"/Zc:preprocessor\"],\n             },\n             include_dirs=[osp.join(this_dir, _ext_src_root, \"include\")],\n         )\n",
+    "commit": "b5ceb6d9ca0467ea34beb81023f96ee82228f626",
+    "source_sha256": {
+      "pointnet2/models/pointnet2_ssg_sem.py": "07b5dc906d165e613e0e7def195542e827f4462a010c1c6d2cbd08290f786fae",
+      "pointnet2_ops_lib/pointnet2_ops/_ext-src/src/ball_query_gpu.cu": "e87083d0037c4aacea2cc43231b48e49903ba8d328d3f60c0376643f05f0be7e",
+      "pointnet2_ops_lib/pointnet2_ops/_ext-src/src/interpolate_gpu.cu": "5a9201853124b2878d1ea8d2f732499df61eb7689959ac88d6fb86a6c8026d35",
+      "pointnet2_ops_lib/pointnet2_ops/_ext-src/src/sampling_gpu.cu": "07e2cacb7fd8fc5da7111b2dc8bd6ff3f6d2d1882eafb2fcce838c1b4c7460b0",
+      "pointnet2_ops_lib/pointnet2_ops/pointnet2_modules.py": "9a8a9ac988b373d2f691eb764d8286fa4aea2e017bc031ec4c80f4bfffdcd1a6",
+      "pointnet2_ops_lib/pointnet2_ops/pointnet2_utils.py": "32dced7ce30daf3af52b16f73e95d22a477cb968a1f05af15b455e2635eef135"
+    }
+  }
+}
