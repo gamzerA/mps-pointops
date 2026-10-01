@@ -104,7 +104,8 @@ def _choose_biased(previous: Tensor, current: Tensor, rowptr: Tensor,
     weight = weight * valid
     cumulative = weight.cumsum(dim=1)
     total = cumulative[:, -1]
-    random_values = torch.rand(current.shape, device=current.device) * total
+    random_values = torch.rand(current.shape, device=current.device,
+                               dtype=torch.float32) * total
     selected = (cumulative <= random_values.unsqueeze(1)).sum(dim=1)
     selected = selected.clamp(max=width - 1)
     chosen_edge = edge.gather(1, selected.unsqueeze(1)).squeeze(1)
@@ -156,13 +157,17 @@ def random_walk(
     nodes = [start]
     edges = []
     if start.numel() and walk_length:
-        random_values = torch.rand((start.numel(), walk_length), device=start.device)
+        uniform = p == 1 and q == 1
+        random_shape = (start.numel(), walk_length) if uniform else (start.numel(),)
+        random_values = torch.rand(random_shape, device=start.device,
+                                   dtype=torch.float32)
         sorted_keys = torch.sort(row * num_nodes + col).values if row.numel() else row
         for step in range(walk_length):
             current = nodes[-1]
-            if step == 0 or (p == 1 and q == 1):
+            if step == 0 or uniform:
                 next_node, edge = _choose_uniform(
-                    current, rowptr, col, random_values[:, step])
+                    current, rowptr, col,
+                    random_values[:, step] if uniform else random_values)
             else:
                 next_node, edge = _choose_biased(
                     nodes[-2], current, rowptr, col, sorted_keys, num_nodes, p, q)

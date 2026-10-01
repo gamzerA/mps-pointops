@@ -83,6 +83,26 @@ def test_empty_graph_and_empty_starts(device):
     assert empty_edges.shape == (0, 4)
 
 
+def test_random_precision_is_independent_of_default_dtype(device):
+    row, col = _graph(device)
+    starts = torch.tensor([0, 1, 2], device=device)
+    previous = torch.get_default_dtype()
+    try:
+        torch.set_default_dtype(torch.float64)
+        uniform_nodes, uniform_edges = random_walk(
+            row, col, starts, 3, num_nodes=6, return_edge_indices=True)
+        biased_nodes, biased_edges = random_walk(
+            row, col, starts, 3, p=2, q=4, num_nodes=6,
+            return_edge_indices=True)
+    finally:
+        torch.set_default_dtype(previous)
+    for nodes, edges in ((uniform_nodes, uniform_edges),
+                         (biased_nodes, biased_edges)):
+        assert nodes.shape == (3, 4)
+        assert edges.shape == (3, 3)
+        assert nodes.dtype == edges.dtype == torch.int64
+
+
 def test_upstream_163_cpu_uniform_exact_if_available():
     spec = importlib.util.find_spec("torch_cluster")
     if spec is None or spec.origin is None:

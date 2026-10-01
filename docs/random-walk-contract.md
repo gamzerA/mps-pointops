@@ -24,6 +24,9 @@ in the pinned Python wrapper. With `coalesced=False`, the caller must have
 already grouped edges by source row. `num_nodes` is inferred from all three
 index tensors when none is supplied. It must be explicit if any are empty.
 The output is integer valued; gradients are not defined.
+For `walk_length=0`, this implementation returns the start nodes and an
+empty edge tensor. The pinned CPU extension has an unconditional first-hop
+write in its biased branch, so that case is a deliberate safe deviation.
 The ratio between the smallest and largest of `1/p`, `1`, and `1/q` must
 remain in the float32 normal range; otherwise the implementation raises to
 avoid flush-to-zero in the stored weights. This check does not eliminate
@@ -36,7 +39,12 @@ For `p = q = 1`, each outgoing edge is selected with equal probability. The
 implementation generates one float32 `torch.rand((W, L))` matrix, then uses
 `trunc(rand[w, step] * outdegree)` to choose an edge. This mirrors the
 [upstream CPU sampler](https://github.com/rusty1s/pytorch_cluster/blob/1.6.3/csrc/cpu/rw_cpu.cpp)
-for the same CPU PyTorch RNG state and duplicate-free inputs. MPS and CUDA
+for the same CPU PyTorch RNG state, default float32 dtype, and duplicate-free
+inputs. The dtype is explicit here, so changing the process-wide PyTorch
+default dtype does not change this implementation's random precision. The
+pinned extension creates its random matrix without an explicit dtype and
+then accesses it as float32; parity is therefore scoped to the normal
+float32 default. MPS and CUDA
 have different RNG streams; exact sampled-walk equality across devices is
 not a meaningful general requirement.
 
@@ -82,7 +90,8 @@ current-vertex proposal rule and does **not** claim biased CUDA parity.
 
 The biased implementation currently allocates temporary tensors proportional
 to `W * d_max` per step, where `d_max` is the largest outdegree visited in
-that step. It is an experimental correctness path, not a performance claim.
+that step. Its first-hop random vector is `O(W)`; the result itself is
+`O(W * L)`. It is an experimental correctness path, not a performance claim.
 PyTorch's MPS random generator is seeded with `torch.manual_seed`, but its
 draws need not match the CPU generator. Safe and Fast Math can differ at the
 cumulative-sum boundary; tests check walk validity and distribution rather
