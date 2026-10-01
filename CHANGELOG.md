@@ -17,8 +17,7 @@ kNN and PointNet++ segmentation validation remain open.
   nearest indices and distances, while PyTorch `scatter_add_` accumulates the
   bidirectional first-order gradient. Supported lengths mask padding in both
   passes; point/batch reductions and weights scale the gradient as specified
-  in the [contract](docs/chamfer-contract.md). Direct PyTorch3D parity testing
-  is part of the release validation record.
+  in the [contract](docs/chamfer-contract.md).
 
 ### Fixed
 
@@ -26,6 +25,8 @@ kNN and PointNet++ segmentation validation remain open.
   finite float32 coordinates overflow every squared distance to infinity;
   the saved index remains safe for backward gathering (#20). CI also checks
   that both new Python modules and Metal shaders are present in the wheel.
+- Match PyTorch3D's all-zero-weight Chamfer output shapes, normal-result slot,
+  and gradient connectivity for the supported API subset (#22).
 
 ### Survey and measurements
 
@@ -40,6 +41,11 @@ kNN and PointNet++ segmentation validation remain open.
   batch 4 and 256–16,384 points per cloud. Neither backward timings nor a
   direct `scatter_add_` control showed a consistent contention slowdown in
   this range; larger clouds, other GPUs, and bidirectional losses are untested.
+- [Direct PyTorch3D Chamfer comparison](docs/chamfer-upstream-parity-0.5.0.md)
+  against a pinned, compiled upstream CPU extension passed 160 finite-input
+  cases and 1,080 output/gradient checks per port device on CPU, MPS Safe,
+  and MPS Fast. The MPS maximum absolute loss difference was `9.5367e-7`;
+  this result does not cover normals, `norm=1`, ties, or PyTorch3D CUDA.
 
 ### Verified
 
