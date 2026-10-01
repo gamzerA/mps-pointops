@@ -44,13 +44,14 @@ physical hardware. M2–M4 remain untested.
 
 The paired [Ball Query Safe](../bench/results/physical-m1-2026-10-02/mps-pointops-m1-safe-ball-ablation.json)
 and [Fast](../bench/results/physical-m1-2026-10-02/mps-pointops-m1-fast-ball-ablation.json)
-kernel-only samples used the same sorted and random sphere-shell inputs.
+samples used the same preallocated buffers and sorted or random sphere-shell
+inputs. Each timed call includes host Metal dispatch and synchronization.
 At 100,000 sorted points, 1,024 queries, and K=64, the prior dense kernel
 versus SIMD medians were **45.276 → 10.349 ms** (Safe) and
 **30.025 → 6.842 ms** (Fast); indices and squared-distance bits matched.
 At 100,000 random points the SIMD medians were 5.394 ms (Safe) and
-3.504 ms (Fast). These are kernel timings with preallocated buffers, not
-public API latency or SciPy comparisons.
+3.504 ms (Fast). Allocation, transfers, and shader compilation are excluded;
+these are neither GPU shader-only timings nor public API or SciPy comparisons.
 
 The public FPS strategy comparison at B=1 and 1,024 selected points used
 standard-normal coordinates. [Safe](../bench/results/physical-m1-2026-10-02/mps-pointops-m1-safe-fps-production.json)
