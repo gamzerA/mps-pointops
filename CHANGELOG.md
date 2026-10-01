@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Added
+
+- A production B=1 multi-threadgroup FPS path for large clouds. On the measured
+  M5 Pro, `strategy="auto"` selects it from 500,000 points with at least two
+  samples; other Apple GPUs and batches use the original path by default.
+  Explicit `single` and `multigroup` strategies allow direct comparisons.
+- `mps_pointops.pytorch3d.ball_query` provides PyTorch3D's Ball Query argument
+  order and defaults, lengths, optional gathered neighbor coordinates, and
+  `KNN(dists, idx, knn)` result for three-dimensional float32 inputs.
+  `skip_points_outside_cube` is accepted as a result-preserving hint; the
+  adapter does not apply the cube prefilter.
+
 ### Changed
 
 - Dense Ball Query now scans consecutive 32-point blocks with a SIMD prefix
@@ -15,6 +27,10 @@
 
 ### Verified
 
+- With the large-cloud FPS path and PyTorch3D-style adapter, M5 Pro Safe and
+  Fast Math each passed 201 tests with 12 expected skips. Paired public-API
+  FPS measurements at 1,024 samples gave 191.68 to 29.13 ms for 500,000
+  points and 417.06 to 48.97 ms for 1,000,000 points, with identical indices.
 - Safe and Fast Math each passed 168 tests with 12 expected skips on M5 Pro.
   A separate sentinel-buffer checker passed 48 Safe and 40 Fast differential
   cases: complete output writes, byte-identical indices and squared distances

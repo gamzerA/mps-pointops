@@ -79,10 +79,12 @@ jobs:
           names = set(zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist())
           required = {
               "mps_pointops/kernels/fps.metal",
+              "mps_pointops/kernels/fps_multigroup.metal",
               "mps_pointops/kernels/knn.metal",
               "mps_pointops/kernels/ball_query.metal",
               "mps_pointops/kernels/fps_flat.metal",
               "mps_pointops/kernels/flat_search.metal",
+              "mps_pointops/pytorch3d.py",
           }
           missing = required - names
           licenses = [n for n in names if "/licenses/" in n]
