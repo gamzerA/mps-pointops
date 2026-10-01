@@ -889,7 +889,10 @@ listed versions, devices, models, and inputs that have passing logs.
       instead of inferring it from the MSL version. Use a reproducible segmented
       reduction as the safe baseline; add device-specific atomic paths only
       where supported and measured. A `torch_scatter` stand-in follows demand.
-- [ ] Voxelization, voxel downsampling and `grid_cluster`.
+- [~] Experimental float32 3D `grid_cluster` CPU/MPS shim (#30). Its
+      [contract and parity tests](docs/grid-cluster-contract.md) cover finite
+      points; it is not a full PyG voxelization path.
+- [ ] Voxelization and voxel downsampling.
 - [ ] Remaining `torch_cluster` operators: `nearest`, `graclus`, `random_walk`.
       Done when: no function in the stand-in raises `NotImplementedError`.
 
