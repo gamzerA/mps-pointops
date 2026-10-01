@@ -60,10 +60,12 @@ native-path enforcement, PyG wrapper/graph calls, and EdgeConv forward and
 gradient checks. A four-stage self-contained dynamic-graph classifier checks
 neighbor indices, logits, and gradients through a complete graph-rebuilding
 path. On M5 Pro/macOS 26.5.2/PyTorch 2.14.1 with fallback disabled, the full
-project suite passed [283 tests in Safe Math](pytest-feature-knn-safe-torch214-2026-10-01.log)
-with 13 skips, and [282 in Fast Math](pytest-feature-knn-fast-torch214-2026-10-01.log)
+project suite passed [284 tests in Safe Math](pytest-feature-knn-safe-torch214-2026-10-01.log)
+with 13 skips, and [283 in Fast Math](pytest-feature-knn-fast-torch214-2026-10-01.log)
 with 14 skips. Seven skips are `k > n` parametrizations, six require optional
 PyG packages, and the Fast process skips the Safe-only NaN/overflow case.
+Both modes exercise the actual `k=256` threadgroup-list boundary against the
+scalar oracle with 300 references and late candidate replacements.
 Safe and Fast were separate processes.
 
 For upstream model validation, [the verifier](../tools/dgcnn_upstream_parity.py)
@@ -120,6 +122,10 @@ and CPU/MPS index mismatch counts are in the
 [Safe DGCNN 64-point](../bench/results/2026-10-01-apple-m5-pro-feature-knn-dgcnn64-safe.json),
 and [Fast DGCNN 64-point](../bench/results/2026-10-01-apple-m5-pro-feature-knn-dgcnn64-fast.json)
 JSON files. Each case had zero CPU/MPS index mismatches on its seeded fixture.
+The later `k=256` test addition changes only `tests/test_feature_knn.py` from
+that benchmark commit. The five measured Python/Metal implementation files
+still match their recorded SHA-256 values. The raw JSON keeps the older test
+SHA and immutable source commit so the timing provenance stays exact.
 
 | Public dense kNN shape | Safe Metal | Safe MPS `cdist+topk` | Fast Metal | Fast MPS `cdist+topk` |
 |:--|--:|--:|--:|--:|

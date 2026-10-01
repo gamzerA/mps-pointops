@@ -767,7 +767,11 @@ Ball Query is specified separately in the numerical contract.
   0.770 ms and 0.782 ms respectively. The
   [raw Safe/Fast samples](docs/feature-knn.md) have substantial timing spread;
   no general speedup is claimed, and the direct D=128 path remains a
-  performance follow-up.
+  performance follow-up. The final M5 Pro full suite recorded
+  [284 passed, 13 skipped in Safe Math](docs/pytest-feature-knn-safe-torch214-2026-10-01.log)
+  and [283 passed, 14 skipped in Fast Math](docs/pytest-feature-knn-fast-torch214-2026-10-01.log);
+  PyG packages were unavailable in that local environment and are covered by
+  the separate pinned PyG CI job.
 - `ball_query(query, ref, radius, K)`: PyTorch3D-style first-K contract. It
   returns the first `K` points in input order satisfying strict radius
   membership, with index `-1` and distance `0` padding. The threshold is

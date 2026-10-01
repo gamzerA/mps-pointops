@@ -11,6 +11,10 @@
   synthetic 64-point fixture, including four rounds of dynamic-neighbor
   selection and full forward/backward comparison with its CPU implementation.
   Dataset accuracy, full training, and original CUDA parity remain untested.
+- M5 Pro full-suite checks after this change: Safe Math 284 passed / 13 skipped;
+  Fast Math 283 passed / 14 skipped. The Safe-only non-finite test explains
+  the one-case difference. Raw logs are linked from the
+  [feature-kNN contract](docs/feature-knn.md).
 
 ## 0.5.0 — 2026-10-01
 

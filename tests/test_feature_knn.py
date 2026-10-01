@@ -59,6 +59,21 @@ def test_dense_feature_knn_matches_scalar_oracle(dim: int, k: int) -> None:
 
 
 @MPS
+def test_feature_knn_exact_maximum_k_256_and_replacement() -> None:
+    """Fill every lane slot, then replace entries beyond the first 256 refs."""
+    gen = torch.Generator().manual_seed(2026)
+    ref = torch.randn((1, 300, 64), generator=gen)
+    query = torch.randn((1, 4, 64), generator=gen)
+    ref[0, 1] = ref[0, 0]
+    query[0, 0] = ref[0, 0]
+    distance, index = knn(query.to("mps"), ref.to("mps"), 256)
+    expected_distance, expected_index = _oracle(query[0], ref[0], 256)
+    assert index.shape == distance.shape == (1, 4, 256)
+    np.testing.assert_array_equal(index[0].cpu().numpy(), expected_index)
+    np.testing.assert_allclose(distance[0].cpu().numpy(), expected_distance, rtol=3e-6, atol=2e-6)
+
+
+@MPS
 def test_flat_feature_knn_ragged_batches_and_empty_slots(monkeypatch: pytest.MonkeyPatch) -> None:
     gen = torch.Generator().manual_seed(551)
     x = torch.randn((15, 128), generator=gen)
