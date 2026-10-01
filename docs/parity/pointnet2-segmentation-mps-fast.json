@@ -1,0 +1,62 @@
+{
+  "backend": "project",
+  "device": "mps",
+  "extension_path": null,
+  "extension_sha256": null,
+  "fixture_id": "pointnet2-ssg-segmentation-synthetic-v1",
+  "fixture_sha256": "e3998b2eb58c9b9a410ef2a081b539e65aca5d15fcdb72a203849ade0be511f1",
+  "gpu_name": "Apple M5 Pro",
+  "harness_sha256": "9970b84f3b12d06af1691eed9aa39a78681b0c0bbe8b7bcfb7141e0f173ccdd2",
+  "logits": [
+    1,
+    13,
+    1152
+  ],
+  "model_mode": "eval, with cross-entropy backward",
+  "mps_fallback": "0",
+  "mps_fast_math": "1",
+  "num_parameter_gradients": 68,
+  "numpy": "2.5.3",
+  "platform": "macOS-26.5.2-arm64-arm-64bit",
+  "points": [
+    1,
+    1152,
+    9
+  ],
+  "project_source_sha256": {
+    "mps_pointops/compat.py": "44d9d4a7079e0df999b77585583189c1488f8293a0b11cd0f298c2f980f05b21",
+    "mps_pointops/kernels/ball_query.metal": "2856fa046cbbafb71ec0cd688f071c7dc5d2280e9f04d00471241e24d6f85ba3",
+    "mps_pointops/kernels/fps.metal": "c02ac7472eb5e27548824b34dc0996c361cbd2084989ceae9b715284ae59d44a",
+    "mps_pointops/kernels/pointnet2.metal": "c46238511f5d36a0d3dea3bbdbe8efe571f692a5f82350ee92425ea57b6569c1",
+    "mps_pointops/ops.py": "fbd5218ab0323558fc2733abc1bf47fc0074b568df8927d48d5033f8e42b796a",
+    "mps_pointops/pointnet2.py": "55d946e1c4bfe32755566ecf51f643b0a08df3f94317f8ee6f1e07adf685a2e7"
+  },
+  "result_sha256": "dad2f016f99b93c55b56ebc59f610c7febb958b4fb6b8973d7cabcdff19eb712",
+  "selection_kinds": [
+    "furthest_point_sample",
+    "ball_query",
+    "furthest_point_sample",
+    "ball_query",
+    "furthest_point_sample",
+    "ball_query",
+    "furthest_point_sample",
+    "ball_query",
+    "three_nn",
+    "three_nn",
+    "three_nn",
+    "three_nn"
+  ],
+  "torch": "2.14.1",
+  "upstream": {
+    "build_only_setup_diff": "",
+    "commit": "b5ceb6d9ca0467ea34beb81023f96ee82228f626",
+    "source_sha256": {
+      "pointnet2/models/pointnet2_ssg_sem.py": "7d4e21fac5c53f9cb7dc57354b79ab0118e3158e61cdf26e14af4ffe4f3991d2",
+      "pointnet2_ops_lib/pointnet2_ops/_ext-src/src/ball_query_gpu.cu": "7253c10da9db4b02d25e43b7a713ee956dae27b4ec25220f1b2abbaccc79530f",
+      "pointnet2_ops_lib/pointnet2_ops/_ext-src/src/interpolate_gpu.cu": "e4a327f15d49bcefe62bd72adc407157f97039c3b34037f8fc767b9a15936173",
+      "pointnet2_ops_lib/pointnet2_ops/_ext-src/src/sampling_gpu.cu": "a1ec92aabdb6e4ab3ad0b982ebb28fa79b1b1fc95e3accbfaa511ef9bc317fe4",
+      "pointnet2_ops_lib/pointnet2_ops/pointnet2_modules.py": "3c8e6570ce7dcf56e25870fc2888fc13bbc0a592ea25bf66382ecd3256e633e4",
+      "pointnet2_ops_lib/pointnet2_ops/pointnet2_utils.py": "8558f8c958551ad7eb46990d08b563a095a8cd4038b4527f1c63609ee6c9bc6d"
+    }
+  }
+}
