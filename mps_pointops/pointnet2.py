@@ -133,13 +133,18 @@ def _validate_interpolate(features: Tensor, indices: Tensor, weights: Tensor) ->
 
 
 def _three_interpolate_reference(features: Tensor, indices: Tensor, weights: Tensor) -> Tensor:
-    """PyTorch gather reference; only source features receive gradients."""
+    """PyTorch gather reference with upstream's zero weight gradient."""
     batch, channels, _ = features.shape
     queries = indices.shape[1]
     selected = features.gather(
         2, indices.to(torch.long).reshape(batch, 1, queries * 3).expand(-1, channels, -1)
     ).reshape(batch, channels, queries, 3)
-    return (selected * weights.detach().unsqueeze(1)).sum(dim=-1)
+    output = (selected * weights.detach().unsqueeze(1)).sum(dim=-1)
+    # The original ThreeInterpolate.backward returns zeros_like(weight), not
+    # None. Preserve that observable autograd contract on the CPU path too.
+    if weights.requires_grad:
+        output = output + weights.sum() * 0
+    return output
 
 
 class _ThreeInterpolate(torch.autograd.Function):
@@ -163,21 +168,24 @@ class _ThreeInterpolate(torch.autograd.Function):
     @staticmethod
     @once_differentiable
     def backward(ctx, grad_output: Tensor | None):
-        if grad_output is None or not ctx.needs_input_grad[0]:
+        if grad_output is None:
             return None, None, None
         indices, weights = ctx.saved_tensors
         batch, queries, _ = indices.shape
         channels = ctx.channels
         points = ctx.points
-        grad_features = torch.zeros((batch, channels, points), device=indices.device, dtype=torch.float32)
-        count = batch * channels * queries
-        if count:
-            _library().three_interpolate_backward_f32(
-                grad_output.contiguous(), indices, weights, grad_features,
-                channels, points, queries,
-                threads=count, group_size=min(count, _GROUP_SIZE),
-            )
-        return grad_features, None, None
+        grad_features = None
+        if ctx.needs_input_grad[0]:
+            grad_features = torch.zeros((batch, channels, points), device=indices.device, dtype=torch.float32)
+            count = batch * channels * queries
+            if count:
+                _library().three_interpolate_backward_f32(
+                    grad_output.contiguous(), indices, weights, grad_features,
+                    channels, points, queries,
+                    threads=count, group_size=min(count, _GROUP_SIZE),
+                )
+        grad_weights = torch.zeros_like(weights) if ctx.needs_input_grad[2] else None
+        return grad_features, None, grad_weights
 
 
 def three_interpolate(features: Tensor, indices: Tensor, weights: Tensor) -> Tensor:
@@ -189,8 +197,9 @@ def three_interpolate(features: Tensor, indices: Tensor, weights: Tensor) -> Ten
     ``out[b,c,n] = sum(t=0..2, features[b,c,indices[b,n,t]] * weights[b,n,t])``.
 
     Backward accumulates ``grad_out[b,c,n] * weights[b,n,t]`` at the selected
-    source feature positions, including repeated indices. Indices and weights
-    are not differentiated, matching the original PointNet++ operation. The
+    source feature positions, including repeated indices. The weight gradient
+    is a zero tensor when requested, matching the original PointNet++ autograd
+    wrapper; integer indices are not differentiable. The
     MPS accumulation uses integer CAS on float32 bits; floating-point addition
     order (and therefore low bits) can vary across runs. Index validation
     requires one device-to-host scalar synchronization on MPS.
