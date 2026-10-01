@@ -106,7 +106,10 @@ def environment() -> dict:
         for path in (
             ROOT / "bench" / "bench_pointops.py",
             ROOT / "mps_pointops" / "ops.py",
+            ROOT / "mps_pointops" / "reference.py",
             ROOT / "mps_pointops" / "_ball_query_mps.py",
+            ROOT / "mps_pointops" / "kernels" / "fps.metal",
+            ROOT / "mps_pointops" / "kernels" / "knn.metal",
             ROOT / "mps_pointops" / "kernels" / "ball_query.metal",
         )
     }
@@ -120,6 +123,7 @@ def environment() -> dict:
         "scipy": getattr(scipy, "__version__", None),
         "fpsample": getattr(fpsample, "__version__", "installed" if fpsample else None),
         "mps_fallback": os.environ.get("PYTORCH_ENABLE_MPS_FALLBACK", "unset"),
+        "mps_fast_math": os.environ.get("PYTORCH_MPS_FAST_MATH", "unset"),
         "source_sha256": source_hashes,
     }
 

@@ -7,12 +7,12 @@ third-party fonts are used; run with Python from any working directory.
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "docs" / "assets"
-BASELINE = ROOT / "bench" / "results" / "2026-10-01-apple-m5-pro.json"
-BALL = ROOT / "bench" / "results" / "2026-10-01-apple-m5-pro-ball-query-port.json"
+CURRENT = ROOT / "bench" / "results" / "2026-10-01-source-sync" / "2026-10-01-apple-m5-pro.json"
 
 
 def benchmark_ms(path: Path, op: str, implementation: str) -> float:
@@ -123,28 +123,32 @@ def render_hero() -> None:
 
 def render_speedups() -> None:
     rows = [
-        ("FPS", "1,024 samples", benchmark_ms(BASELINE, "fps", "mps-pointops Metal (MPS)"),
-         benchmark_ms(BASELINE, "fps", "fpsample vanilla (CPU)"), "#61d6c2"),
-        ("kNN", "1,024 queries · k=128", benchmark_ms(BASELINE, "knn", "mps-pointops Metal (MPS)"),
-         benchmark_ms(BASELINE, "knn", "scipy cKDTree build+query (CPU)"), "#80aaff"),
-        ("Ball Query", "1,024 queries · K=64", benchmark_ms(BALL, "ball_query", "mps-pointops Metal (MPS)"),
-         benchmark_ms(BALL, "ball_query", "scipy cKDTree build+query (CPU)"), "#f2ba73"),
+        ("FPS", "1,024 samples", benchmark_ms(CURRENT, "fps", "mps-pointops Metal (MPS)"),
+         benchmark_ms(CURRENT, "fps", "fpsample vanilla (CPU)"), "#61d6c2"),
+        ("kNN", "1,024 queries · k=128", benchmark_ms(CURRENT, "knn", "mps-pointops Metal (MPS)"),
+         benchmark_ms(CURRENT, "knn", "scipy cKDTree build+query (CPU)"), "#80aaff"),
+        ("Ball Query", "1,024 queries · K=64", benchmark_ms(CURRENT, "ball_query", "mps-pointops Metal (MPS)"),
+         benchmark_ms(CURRENT, "ball_query", "scipy cKDTree build+query (CPU)"), "#f2ba73"),
     ]
+    speedups = [cpu / metal for _, _, metal, cpu, _ in rows]
+    axis_max = max(5, math.ceil(max(speedups) / 5) * 5)
     lines = svg_open(
         "M5 Pro speedups against tested CPU libraries",
-        "At 100,000 randomly ordered reference points: FPS 5.2 times, kNN 2.9 times, and Ball Query 1.6 times faster than the fastest tested CPU implementations.",
+        "At 100,000 randomly ordered reference points: "
+        + ", ".join(f"{name} {speedup:.1f} times" for (name, *_), speedup in zip(rows, speedups))
+        + " faster than the tested CPU libraries.",
         1200,
         375,
     )
     lines.extend([
         '<text x="54" y="55" fill="#f4f8ff" font-family="system-ui,-apple-system,sans-serif" font-size="35" font-weight="750">Measured speedup on M5 Pro</text>',
-        '<text x="56" y="83" fill="#b5c5d7" font-family="system-ui,-apple-system,sans-serif" font-size="21">100k reference points · random order · median of 5 · vs tested CPU library</text>',
+        f'<text x="56" y="83" fill="#b5c5d7" font-family="system-ui,-apple-system,sans-serif" font-size="21">100k reference points · random order · median of 5 · 0–{axis_max}× linear scale</text>',
         '<path d="M56 101H1144" stroke="#5d7693" stroke-opacity=".45"/>',
     ])
     for number, (name, setup, metal, cpu, color) in enumerate(rows):
         top = 118 + number * 82
         speedup = cpu / metal
-        width = 105 * speedup
+        width = 630 * speedup / axis_max
         lines.extend([
             f'<text x="56" y="{top+22}" fill="#f4f8ff" font-family="system-ui,-apple-system,sans-serif" font-size="29" font-weight="700">{name}</text>',
             f'<text x="56" y="{top+46}" fill="#a9bed3" font-family="system-ui,-apple-system,sans-serif" font-size="19">{setup}</text>',

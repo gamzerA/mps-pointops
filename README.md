@@ -37,6 +37,14 @@ kernels compile on first use.
 python -m pip install mps-pointops
 ```
 
+The published PyPI v0.3.0 predates the dense SIMD kernel, large-cloud FPS path,
+and PyTorch3D-style adapter described below. Until the next release, install
+the current source for those features:
+
+```bash
+python -m pip install "git+https://github.com/gamzerA/mps-pointops.git@main"
+```
+
 ### Minimal example
 
 ```python
@@ -73,12 +81,13 @@ different rule. [The equations](#the-operators-in-equations) give the full
 selection and gradient formulas. On MPS, Ball Query supports coordinate
 gradients for its squared distances; FPS and kNN do not implement backward.
 
-**v0.3.0 measured on one M5 Pro, with 100k randomly ordered reference points:** FPS
-**5.2×**, kNN **2.9×**, and Ball Query **1.6×** faster than the fastest tested
-CPU library for each operation. Its dense Ball Query was slower on spatially
-sorted input (32.5 ms versus SciPy's 23.2 ms at 100k points). A newer SIMD
-Ball Query experiment is reported [below](#dense-ball-query-simd-experiment). The
-[benchmark](#benchmark) states the setup and links the raw results.
+**Current source measured on one M5 Pro, with 100k randomly ordered reference points:**
+FPS **6.5×**, kNN **4.2×**, and dense Ball Query **13.7×** faster than the
+fastest tested CPU library for each operation. With spatially sorted points,
+dense Ball Query measured **2.9 ms** versus SciPy's **20.6 ms**. The
+[benchmark](#benchmark) states the setup and links the raw results and source
+hashes. The [PyTorch3D-style adapter](#pytorch3d-style-ball-query) is available
+separately from the timed dense API.
 
 For existing CUDA-oriented imports, call `mps_pointops.compat.install()`
 *before* importing `pointnet2_ops`, `knn_cuda`, or `torch_cluster`:
@@ -139,6 +148,10 @@ group_size=128)`, unmodified, on MPS with `compat.install()`.
 30 clouds, 2 from each of the 15 classes, 21,168 to 117,259 points, Apple M5
 Pro:
 
+These are earlier real-data measurements, separate from the current-source
+synthetic benchmark below. None of these clouds reaches the new 500,000-point
+FPS automatic-switch threshold.
+
 | | min | median | max |
 |---|---:|---:|---:|
 | MulSen `Group` on MPS with mps-pointops (FPS + gather + kNN + indexing) | 10.5 ms | 36.0 ms | 49.1 ms |
@@ -159,58 +172,59 @@ weights and has not been run yet.
 
 ## Benchmark
 
-![M5 Pro v0.3.0 measured speedups at 100,000 randomly ordered reference points: FPS 5.2 times, kNN 2.9 times, Ball Query 1.6 times faster than the fastest tested CPU libraries](docs/assets/m5-pro-speedup.svg)
+![M5 Pro current-source speedups at 100,000 randomly ordered reference points: FPS 6.5 times, kNN 4.2 times, Ball Query 13.7 times faster than the tested CPU libraries](docs/assets/m5-pro-speedup.svg)
 
-The v0.3.0 figure compares each Metal kernel with the fastest tested CPU library for
-that operation on the **same M5 Pro**. It uses batch 1, 100,000 reference
-points, 1,024 samples or queries, random input order, and the median of five
-runs. SciPy times include KD-tree construction; device transfer is excluded.
-**Sorted-input exception:** Ball Query takes 32.5 ms on Metal versus 23.2 ms
-with SciPy. The chart is generated directly from the committed
-[benchmark JSON](bench/results/2026-10-01-apple-m5-pro.json) and
-[Ball Query JSON](bench/results/2026-10-01-apple-m5-pro-ball-query-port.json)
-using [this script](tools/render_readme_assets.py).
+The chart compares each current Metal kernel with the fastest tested CPU
+library for that operation on the **same M5 Pro**. It uses batch 1, 100,000
+reference points, 1,024 samples or queries, random input order, and the median
+of five runs, with MPS fallback disabled and Fast Math unset. SciPy times
+include KD-tree construction; device transfer is excluded. The chart is
+generated from the committed
+[random-order JSON](bench/results/2026-10-01-source-sync/2026-10-01-apple-m5-pro.json)
+by [this script](tools/render_readme_assets.py). The JSON records SHA-256 for
+the benchmark, operator dispatch, reference code, and all three timed kernels;
+the hashes match the current files. The Ball Query row times the dense
+`mps_pointops.ball_query` API, without the optional PyTorch3D adapter's
+neighbor gathering. Displayed times are rounded to 0.1 ms; the speedups use
+unrounded medians in the JSON.
 
 The synthetic points lie near a unit sphere and use MulSen-AD scale. Full
-result tables: [FPS/kNN random order](bench/results/2026-10-01-apple-m5-pro.md),
-[FPS/kNN sorted order](bench/results/2026-10-01-apple-m5-pro-sorted.md),
-[Ball Query random order](bench/results/2026-10-01-apple-m5-pro-ball-query-port.md),
-and [Ball Query sorted order](bench/results/2026-10-01-apple-m5-pro-ball-query-port-sorted.md).
+result tables: [current random order](bench/results/2026-10-01-source-sync/2026-10-01-apple-m5-pro.md)
+and [current x-sorted Ball Query](bench/results/2026-10-01-source-sync/ball-sorted-only/2026-10-01-apple-m5-pro-sorted.md).
+The [v0.3.0 Ball Query results](bench/results/2026-10-01-apple-m5-pro-ball-query-port.md)
+remain archived as a separate release baseline.
 
-v0.3.0, Apple M5 Pro, 48 GB, macOS 26.5.2, torch 2.14.1, random point order:
+Current source, Apple M5 Pro, 48 GB, macOS 26.5.2, torch 2.14.1, random point order:
 
 | op | points | **mps-pointops (Metal)** | torch on MPS | torch on CPU | best CPU library |
 |---|---:|---:|---:|---:|---:|
-| FPS (1024 samples) | 20,000 | **6.1 ms** | 112.4 ms | 95.2 ms | 35.0 ms (fpsample) |
-| | 100,000 | **33.3 ms** | 247.5 ms | 578.2 ms | 174.0 ms (fpsample) |
-| kNN (1024 queries, k=128) | 20,000 | **3.8 ms** | 15.1 ms | 10.9 ms | 5.2 ms (scipy cKDTree) |
-| | 100,000 | **6.1 ms** | 120.9 ms | 40.2 ms | 17.6 ms (scipy cKDTree) |
-| Ball query (1024 queries, K=64, r=0.1) | 20,000 | **6.5 ms** | 57.2 ms | 35.9 ms | 5.6 ms (scipy cKDTree) |
-| | 100,000 | **13.2 ms** | 286.4 ms | 169.8 ms | 21.3 ms (scipy cKDTree) |
+| FPS (1024 samples) | 20,000 | **5.6 ms** | 43.1 ms | 102.0 ms | 33.1 ms (fpsample) |
+| | 100,000 | **25.2 ms** | 84.7 ms | 270.6 ms | 163.7 ms (fpsample) |
+| kNN (1024 queries, k=128) | 20,000 | **2.1 ms** | 9.5 ms | 10.2 ms | 4.8 ms (scipy cKDTree) |
+| | 100,000 | **4.1 ms** | 70.9 ms | 38.8 ms | 17.3 ms (scipy cKDTree) |
+| Ball query (1024 queries, K=64, r=0.1) | 20,000 | **1.1 ms** | 25.6 ms | 30.7 ms | 4.8 ms (scipy cKDTree) |
+| | 100,000 | **1.5 ms** | 157.2 ms | 155.0 ms | 19.9 ms (scipy cKDTree) |
 
 What this shows:
 
-- **The FPS and kNN Metal kernels beat the tested CPU libraries**: FPS is 5.2x to 5.8x
-  faster than fpsample and kNN is 1.4x to 2.9x faster than scipy's KD-tree
-  (including its build). Against plain PyTorch on MPS, FPS is 7x to 18x
-  faster and kNN 4x to 20x faster.
+- **The Metal kernels beat the tested CPU libraries on these inputs**: FPS is
+  5.9× to 6.5× faster than fpsample, kNN is 2.2× to 4.2× faster than SciPy's
+  KD-tree, and Ball Query is 4.5× to 13.7× faster than SciPy including its
+  tree build. Against plain PyTorch on MPS, FPS is 3.4× to 7.7× faster and
+  kNN is 4.5× to 17.3× faster.
 - **Plain PyTorch FPS on MPS grows much slower than the work.** 5x the points
-  took it from 112 ms to 248 ms. Our hypothesis is a fixed cost per step (1024
+  took it from 43.1 ms to 84.7 ms. Our hypothesis is a fixed cost per step (1024
   sequential steps of several small kernels each: dispatch, scheduling,
   synchronization). This has not been profiled. The Metal kernel runs all 1024
   steps in one dispatch.
 - **Plain PyTorch kNN is not exact.** `cdist` uses a matrix multiply here, so
-  distances are off by up to 4.9e-4 and 40 to 313 neighbors land in the wrong
-  position; at 100k points 1 to 4 of the 131,072 true neighbors are missing.
-- **Point order matters for kNN, and the kernel handles it.** Real scans store
-  points in spatial order. With points sorted by x, the Metal kNN takes 2.6 to
-  5.4 ms, about the same as random order. Without the scrambled scan order
-  described below it took 32 to 36 ms at 100k points.
-- **Ball Query is faster at 100k with random point order:** 13.2 ms versus
-  scipy's 21.3 ms including tree construction. At 20k, scipy is faster
-  (5.6 ms versus 6.5 ms). With points sorted by x, the 100k Metal time is
-  32.5 ms versus scipy's 23.2 ms. Each query scans points in input order and
-  stops after K hits, so storage order affects runtime.
+  distances are off by up to 4.9e-4 and 40 to 242 neighbors land in the wrong
+  position; at 100k points 1 to 2 of the 131,072 true neighbors are missing.
+- **Ball Query keeps input order while scanning in SIMD blocks.** At 100k
+  random points it measured 1.5 ms versus SciPy's 19.9 ms including tree
+  construction. With points sorted by x, the separate current-source run
+  measured 2.9 ms versus SciPy's 20.6 ms. Input order still affects its
+  runtime because each query stops after its first `K` hits.
 
 Timings move by a few ms, sometimes more, between runs. Inputs are already
 resident on each implementation's device; transfer time is outside the timer.
@@ -218,7 +232,7 @@ The scipy times include building the KD-tree. fpsample's QuickFPS
 (`bucket_fps_kdline_sampling`) is absent because in fpsample 1.0.2 it ignores
 `start_idx` and returns a different, sorted sample set.
 
-### Dense Ball Query SIMD experiment
+### Dense Ball Query SIMD ablation
 
 The current source assigns one SIMD group to each dense Ball Query and ranks
 matches with an exclusive prefix scan, retaining the first `K` point indices
@@ -242,19 +256,19 @@ observed baseline-to-SIMD result, not a general promise of bitwise agreement
 with a CPU implementation near floating-point boundaries. The
 [paired benchmark](bench/bench_ball_query_simd_ablation.py) and
 [raw results](bench/results/2026-10-01-apple-m5-pro-ball-query-simd-ablation.json)
-record the source hashes, inputs, and individual timings. The old chart and
-table above remain the v0.3.0 release baseline; this paired experiment does
-not measure SciPy.
+record the source hashes, inputs, and individual timings. The chart and table
+above use a new full-benchmark run of the current source. This paired ablation
+isolates the old and new shader dispatches, so its timings have a different
+scope and do not measure SciPy.
 
-A separate run of the existing full benchmark measured the current SIMD
-kernel against SciPy cKDTree build plus query: **2.9 versus 19.5 ms** on
-x-sorted 100k points and **1.4 versus 20.0 ms** on randomly ordered 100k
-points. Both runs had **0 mismatched indices out of 65,536** against the CPU
-first-K reference; the largest reported squared-distance difference was
-`1.9e-9`. These SciPy numbers are from separate runs and are not the paired
-old-versus-new speedup above. See the [sorted](bench/results/dense-simd/2026-10-01-apple-m5-pro-sorted.md)
-and [random](bench/results/dense-simd/2026-10-01-apple-m5-pro.md)
-reports and their adjacent JSON files.
+The new full benchmark measured the current SIMD kernel against SciPy cKDTree
+build plus query: **2.9 versus 20.6 ms** on x-sorted 100k points and **1.5
+versus 19.9 ms** on randomly ordered 100k points. Both runs had **0 mismatched
+indices out of 65,536** against the CPU first-K reference; the largest reported
+squared-distance difference was `1.9e-9`. These SciPy numbers come from the
+separate [sorted](bench/results/2026-10-01-source-sync/ball-sorted-only/2026-10-01-apple-m5-pro-sorted.json)
+and [random](bench/results/2026-10-01-source-sync/2026-10-01-apple-m5-pro.json)
+JSON runs, not the paired old-versus-new ablation above.
 
 For output completeness, a separate [differential checker](bench/verify_ball_query_simd_contract.py)
 passed 48 Safe and 40 Fast Math cases using output buffers prefilled with
@@ -280,11 +294,19 @@ The earlier [size sweep](bench/results/2026-10-01-apple-m5-pro-fps-multigroup.md
 found a crossover between 32,768 and 65,536 points on this M5 Pro. The 500,000
 point automatic cutoff is deliberately above that measured crossover. A
 [production-kernel spot check](bench/results/2026-10-01-apple-m5-pro-fps-production.json)
-at 1,024 samples measured 193.08 → 29.37 ms for 500,000 points and 421.69 →
-49.39 ms for 1,000,000 points, with identical output indices in every paired
-iteration. These figures
-include host dispatch overhead and are bracketed by `torch.mps.synchronize()`;
-they do not establish a crossover on other Apple GPUs.
+at 1,024 samples measured:
+
+- 500,000 points: **193.08 → 29.37 ms** (6.57× faster).
+- 1,000,000 points: **421.69 → 49.39 ms** (8.54× faster).
+
+Output indices matched in every paired iteration. The recorded script,
+dispatch, and FPS shader SHA-256 values match the current files. The JSON
+retains the commit and dirty-tree status observed when it was measured; those
+provenance fields were not rewritten after the merge. These timings include
+host dispatch overhead and are bracketed by `torch.mps.synchronize()`; they
+do not establish a crossover on other Apple GPUs. This FPS spot check uses
+standard-normal points, while the 20k–100k chart uses synthetic sphere-shell
+points, so the two timing sets should be read separately.
 
 ### Correctness checks
 
@@ -300,35 +322,32 @@ visible:
 
 On the listed synthetic inputs, the Metal kernels had 0 index mismatches.
 Ball Query's maximum squared-distance error against the separate-operation
-CPU reference was 1.9e-9; the FPS and kNN checks reported no distance error.
+CPU reference was 1.9e-9; FPS indices matched and kNN reported no distance
+error.
 These are observations on one M5 Pro, not a guarantee for every input, GPU or
-compiler. Before the flat API was added, the v0.1.1 baseline with PyTorch 2.7.0
-and MPS available reported **105 passed, 7 skipped** in each of the Safe and
-Fast Math test processes
-([Safe log](docs/pytest-safe-torch27-2026-10-01.log),
-[Fast log](docs/pytest-fast-torch27-2026-10-01.log)).
-For the flat API implementation at commit `8b060f743b84ad6947daad591948855bcc9cedcb`,
-PyTorch 2.7.0 on the same M5 Pro reported **147 passed, 7 skipped** in each
-separate process ([Safe log](docs/pytest-flat-safe-torch27-2026-10-01.log),
-[Fast log](docs/pytest-flat-fast-torch27-2026-10-01.log)).
-The dense SIMD merge at commit `90338fd395d385194b3bc56c6b0d441de76e90b9`
-with PyTorch 2.14.1 reported **168 passed,
-12 skipped** in separate [Safe](docs/pytest-dense-simd-safe-torch214-2026-10-01.log)
-and [Fast](docs/pytest-dense-simd-fast-torch214-2026-10-01.log) processes.
-Seven skips are the existing kNN `k > n` cases and five are PyG 2.8 tests
-whose optional `pyg-lib` dependency is absent from this environment.
-With the large-cloud FPS path and PyTorch3D-style adapter, the M5 Pro suite
-reported **201 passed, 12 skipped** in separate
+compiler. The current source, including the large-cloud FPS path and
+PyTorch3D-style adapter, reported **201 passed, 12 skipped** in separate
 [Safe](docs/pytest-fps-p3d-safe-torch214-2026-10-01.log) and
 [Fast](docs/pytest-fps-p3d-fast-torch214-2026-10-01.log) processes under
-PyTorch 2.14.1.
+PyTorch 2.14.1 with MPS fallback disabled. Seven skips are existing kNN
+`k > n` cases and five are PyG 2.8 tests whose optional `pyg-lib` dependency
+is absent from this local environment. The PyTorch3D adapter tests are
+included in the 201 passes. Earlier test logs remain under `docs/` as
+historical evidence for their respective commits.
 
 ### Run it
 
 ```bash
 uv venv --python 3.12 && uv pip install torch numpy scipy fpsample pytest
-.venv/bin/python bench/bench_pointops.py                 # random point order
-.venv/bin/python bench/bench_pointops.py --order sorted  # spatially sorted
+PYTORCH_ENABLE_MPS_FALLBACK=0 .venv/bin/python bench/bench_pointops.py \
+  --sizes 20000 100000 --ops fps knn ball_query --warmup 2 --repeat 5 \
+  --order random --out bench/results/local
+PYTORCH_ENABLE_MPS_FALLBACK=0 .venv/bin/python bench/bench_pointops.py \
+  --sizes 100000 --ops ball_query --warmup 2 --repeat 5 \
+  --order sorted --out bench/results/local
+PYTORCH_ENABLE_MPS_FALLBACK=0 .venv/bin/python bench/bench_fps_production.py \
+  --sizes 500000 1000000 --samples 1024 \
+  --output bench/results/local/fps-production.json
 .venv/bin/python -m pytest tests
 
 # MulSen-AD grouping on real data (needs open3d and timm too)
@@ -674,21 +693,106 @@ Ball Query is specified separately in the numerical contract.
   distance bits can differ from the separate-operation CPU reference. See
   [the numerical contract](docs/ball-query-math.md).
 
-## Roadmap
+## Roadmap: Standard 3D, Point-Cloud and Graph Operators for Apple Silicon
 
-1. ~~Metal kernel for FPS~~ — large B=1 inputs have a multi-threadgroup path;
-   tune selection on other Apple GPUs and variable-size batches
-2. ~~Metal kernel for kNN~~
-3. ~~Drop-in stand-ins for `pointnet2_ops` and `knn_cuda`, checked on real
-   MulSen-AD data~~
-4. ~~Metal kernel for ball query~~ — dense order-preserving SIMD prefix scan,
-   paired sorted-input ablation, and a 3D float32 PyTorch3D-style adapter are
-   implemented; general D and numerical parity remain future work
-5. ~~MulSen-AD Point-MAE 3D detector on MPS, matching the CUDA runs~~ — the
-   full TripleAD pipeline (RGB + IR + 3D) is next
-6. `torch_cluster`-style flat/ragged `radius`, `knn` and `fps` — the 3D
-   subset, PyG 2.7.0 direct-import path, and PyG 2.8.0 MPS operator
-   registration are implemented; wider coordinate dimensions remain
+This project aims to be the standard operator library for 3D, point-cloud and
+graph deep learning on Apple Silicon: code written for CUDA-only extensions
+should run on PyTorch MPS without changes and give the same results.
+
+Every operator ships with four things:
+
+1. **Contract**: ordering, padding, tie-breaking and floating-point boundary
+   behavior, written down.
+2. **PyTorch reference**: a plain implementation that defines the contract.
+3. **Upstream parity tests**: checked against the original implementation. CI
+   compares with the upstream CPU build; CUDA results are compared where they
+   are available. Near ties and float boundaries can differ as documented.
+4. **Reproducible benchmarks**: raw results, environment and counterexamples.
+
+Status marks: `[x]` released, `[~]` merged on `main` and not yet released,
+`[ ]` planned. Version numbers are targets, not promises.
+
+### Verified models
+
+Each phase adds models that run end to end on MPS and are compared with the
+original implementation.
+
+- [x] Point-MAE grouping on MulSen-AD point clouds (FPS + kNN): 30 clouds, no mismatches
+- [x] MulSen-AD 3D-only anomaly detector: 45 runs, same metrics as the CUDA runs
+- [ ] DGCNN (Phase 2)
+- [ ] PointNet++ segmentation (Phase 2)
+- [ ] PyG example models (Phase 3)
+- [ ] Point Transformer family (Phase 4)
+- [ ] A sparse-convolution model (Phase 5)
+
+### Phase 1: Core precision and parity (target 0.4.0)
+
+- [~] Dense Ball Query with an order-preserving SIMD prefix scan (#7).
+      Done when: faster than the best CPU library on sorted and random input.
+- [~] PyTorch3D signature adapter: `lengths1/2`, `return_nn`,
+      `skip_points_outside_cube` (#8).
+      Done when: matches PyTorch3D's CPU `ball_query` on the parity suite.
+- [~] Large-cloud FPS for a single cloud (batch 1): a multi-threadgroup kernel,
+      chosen automatically from 500,000 points on a validated GPU or with
+      `strategy="multigroup"` (#8). On an M5 Pro, 1,024 samples from 1,000,000
+      points went from 421.69 ms to 49.39 ms with identical indices.
+- [ ] Multi-threadgroup FPS for multi-cloud batches, including uneven cloud
+      sizes, and validation of the automatic switch on other Apple GPUs.
+      Done when: uneven batches no longer leave one long-running threadgroup.
+- [ ] kNN with `k > 256` on Metal, and a faster CPU fallback. Unsupported
+      inputs warn or fail clearly instead of slowing down silently.
+- [ ] Flat API benchmarks in the published results.
+- [ ] Benchmarks from other Apple Silicon chips (M1 to M4), on real hardware.
+
+### Phase 2: Feature-space and propagation operators (target 0.5.0)
+
+- [ ] kNN in arbitrary dimension (D > 3) for feature-space neighbor search.
+      Done when: DGCNN's EdgeConv runs on MPS with the same neighbors as CPU.
+- [ ] `three_nn` and `three_interpolate` for PointNet++ feature propagation.
+      Done when: a PointNet++ segmentation model runs end to end with matching accuracy.
+- [ ] Open issues upstream (`pyg-lib`, `torch_cluster`, `PyTorch3D`) to ask
+      whether MPS support would be accepted and in what form.
+
+### Phase 3: Graph and grid infrastructure (target 0.6.0 to 0.7.0)
+
+- [ ] Survey first: run PyG example models on MPS with CPU fallback disabled
+      and list the operators that fail. Recent PyG uses native PyTorch ops
+      rather than `torch_scatter`, so the gaps may be PyTorch ops missing on
+      MPS. The items below are adjusted to that list.
+- [ ] Core scatter reductions on Metal: sum, mean, max, min, with argmax and
+      argmin. A `torch_scatter` stand-in covers these first; the rest of its
+      surface follows demand.
+- [ ] Voxelization, voxel downsampling and `grid_cluster`.
+- [ ] Remaining `torch_cluster` operators: `nearest`, `graclus`, `random_walk`.
+      Done when: no function in the stand-in raises `NotImplementedError`.
+
+### Phase 4: Geometry losses and large-scale search (target 0.8.0 to 0.9.0)
+
+- [ ] Chamfer distance with a backward path.
+      Done when: values and gradients match PyTorch3D's `chamfer_distance`.
+- [ ] Pointcept `pointops` compatibility for the Point Transformer family.
+- [ ] Spatial acceleration structures (uniform grid or BVH) for clouds of
+      1M+ points. Done when: faster than a CPU KD-tree at 1M points.
+- [ ] Stretch: Earth Mover's Distance. Exact EMD is expensive, so this needs a
+      choice of approximation and its own contract.
+
+### Phase 5: Sparse 3D and upstream convergence (target 1.0)
+
+- [ ] Sparse convolution with an `spconv`-compatible interface, in order:
+      sparse tensor structure and submanifold convolution, then strided
+      convolution, then inverse convolution.
+      Done when: outputs match `spconv` and one real model runs inference.
+- [ ] Pull requests upstream, following the Phase 2 discussions.
+- [ ] API freeze, versioning policy and 1.0.
+
+### Across all phases
+
+- Upstream parity checks run in CI, not only by hand.
+- Release benchmarks are recorded on real hardware; hosted runners are
+  virtualized and too noisy for timing.
+- A documentation site with the API reference and per-operator contracts.
+- A stated policy for supported PyTorch and macOS versions.
+- One release per phase step, so development history stays continuous.
 
 ## Contributing
 
