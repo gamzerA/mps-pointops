@@ -7,6 +7,8 @@ mixed-radix identifiers of PyG ``voxel_grid`` or ``torch_cluster.grid_cluster``.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import cache
+from importlib import resources
 from typing import Sequence
 
 import torch
@@ -37,6 +39,70 @@ class VoxelDownsample:
     voxels: Voxelization
     pos: Tensor  # (V, D), float32
     features: Tensor | None  # (V, C), float32, when supplied
+
+
+@cache
+def _metal_pool_library():
+    from ._ball_query_mps import _require_compile_shader
+
+    _require_compile_shader()
+    source = resources.files(__package__).joinpath("kernels", "voxel_pool.metal").read_text()
+    return torch.mps.compile_shader(source)
+
+
+class _FusedVoxelPool(torch.autograd.Function):
+    @staticmethod
+    def forward(
+        ctx, pos: Tensor, features: Tensor | None, point_order: Tensor,
+        ptr: Tensor, inverse: Tensor, counts: Tensor, mean_features: bool,
+    ) -> tuple[Tensor, Tensor | None]:
+        rows = counts.numel()
+        dimensions = pos.shape[1]
+        channels = 0 if features is None else features.shape[1]
+        work = rows * (dimensions + channels)
+        if work >= 2**32:
+            raise ValueError("voxel output size exceeds the Metal 1-D dispatch limit")
+        out_pos = torch.empty((rows, dimensions), dtype=pos.dtype, device=pos.device)
+        out_features = (
+            None if features is None else
+            torch.empty((rows, channels), dtype=pos.dtype, device=pos.device)
+        )
+        # A missing feature tensor has no feature-channel work. Reusing valid
+        # buffers avoids passing a zero-byte tensor to the shader launcher.
+        _metal_pool_library().voxel_pool_f32(
+            pos.contiguous(),
+            pos if features is None else features.contiguous(),
+            point_order.contiguous(), ptr.contiguous(), out_pos,
+            out_pos if out_features is None else out_features,
+            rows, dimensions, channels, int(mean_features),
+            threads=work, group_size=min(work, 256),
+        )
+        ctx.save_for_backward(inverse, counts)
+        ctx.has_features = features is not None
+        ctx.mean_features = mean_features
+        return out_pos, out_features
+
+    @staticmethod
+    def backward(ctx, grad_pos: Tensor | None, grad_features: Tensor | None):
+        inverse, counts = ctx.saved_tensors
+        needs_pos, needs_features = ctx.needs_input_grad[:2]
+        point_counts = None
+        if (needs_pos and grad_pos is not None) or (
+            needs_features and ctx.has_features and ctx.mean_features
+            and grad_features is not None
+        ):
+            point_counts = counts.index_select(0, inverse).to(torch.float32).unsqueeze(1)
+        pos_grad = (
+            grad_pos.index_select(0, inverse) / point_counts
+            if needs_pos and grad_pos is not None else None
+        )
+        features_grad = (
+            grad_features.index_select(0, inverse)
+            if needs_features and ctx.has_features and grad_features is not None else None
+        )
+        if features_grad is not None and ctx.mean_features:
+            features_grad = features_grad / point_counts
+        return pos_grad, features_grad, None, None, None, None, None
 
 
 def _vector(value: float | Sequence[float] | Tensor, name: str, pos: Tensor) -> Tensor:
@@ -164,6 +230,7 @@ def voxel_downsample(
     start: float | Sequence[float] | Tensor | None = None,
     end: float | Sequence[float] | Tensor | None = None,
     feature_reduce: str = "mean",
+    pool_backend: str = "index_add",
 ) -> VoxelDownsample:
     """Aggregate mean positions and optional mean/sum float32 features.
 
@@ -171,12 +238,19 @@ def voxel_downsample(
     output tensors. Differentiation treats the integer cell assignment as
     fixed: each position gets ``grad_pos[v]/counts[v]`` and each feature gets
     ``grad_features[v]/counts[v]`` for mean (or ``grad_features[v]`` for sum).
-    Floating-point sum order on MPS is not promised to be bitwise identical
-    to CPU; integer maps, counts and output row order are exact.
+    ``pool_backend="fused_csr"`` opts into the experimental MPS Metal
+    reduction; the default ``"index_add"`` preserves the existing path.
+    Floating-point accumulation order on the fused path is not promised to
+    be bitwise identical to PyTorch ``index_add_``. Integer maps and output
+    row order are exact for both backends.
     """
     if feature_reduce not in ("mean", "sum"):
         raise ValueError("feature_reduce must be 'mean' or 'sum'")
+    if pool_backend not in ("index_add", "fused_csr"):
+        raise ValueError("pool_backend must be 'index_add' or 'fused_csr'")
     voxels = voxelize(pos, size, batch, start=start, end=end)
+    if pool_backend == "fused_csr" and pos.device.type != "mps":
+        raise ValueError("pool_backend='fused_csr' requires MPS tensors")
     if features is not None:
         if not isinstance(features, Tensor):
             raise TypeError("features must be a torch.Tensor")
@@ -189,14 +263,20 @@ def voxel_downsample(
     rows = voxels.counts.numel()
     if pos.shape[0] == 0:
         return VoxelDownsample(voxels, pos[:0], None if features is None else features[:0])
-    means = pos.new_zeros((rows, pos.shape[1])).index_add_(0, voxels.inverse, pos)
-    means = means / voxels.counts.to(pos.dtype).unsqueeze(1)
-    if features is None:
-        pooled = None
-    else:
-        pooled = features.new_zeros((rows, features.shape[1])).index_add_(
-            0, voxels.inverse, features,
+    if pool_backend == "fused_csr":
+        means, pooled = _FusedVoxelPool.apply(
+            pos, features, voxels.point_order, voxels.ptr, voxels.inverse,
+            voxels.counts, feature_reduce == "mean",
         )
-        if feature_reduce == "mean":
-            pooled = pooled / voxels.counts.to(features.dtype).unsqueeze(1)
+    else:
+        means = pos.new_zeros((rows, pos.shape[1])).index_add_(0, voxels.inverse, pos)
+        means = means / voxels.counts.to(pos.dtype).unsqueeze(1)
+        if features is None:
+            pooled = None
+        else:
+            pooled = features.new_zeros((rows, features.shape[1])).index_add_(
+                0, voxels.inverse, features,
+            )
+            if feature_reduce == "mean":
+                pooled = pooled / voxels.counts.to(features.dtype).unsqueeze(1)
     return VoxelDownsample(voxels, means, pooled)
