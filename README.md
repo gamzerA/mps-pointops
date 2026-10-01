@@ -797,10 +797,12 @@ An operator counts as complete for a release after these four checks:
    Near ties and float boundaries can differ as documented.
 4. **Reproducible benchmarks**: raw results, environment and counterexamples.
 
-Status marks: `[x]` released and complete for the stated scope, `[~]` merged but still
-experimental or otherwise incomplete, `[ ]` planned. A `[~]` item may appear
-in a release without completing its phase. Version numbers are targets, not
-promises.
+Status marks: `[x]` complete or verified on `main` for the stated scope,
+`[~]` merged but still experimental or otherwise incomplete, `[ ]` planned.
+In Verified models, `[x]` means the stated fixture was validated, regardless
+of package release status; it does not imply dataset accuracy. A `[~]` item
+may appear in a release without completing its phase. Version numbers are
+targets, not promises.
 
 ### Verified models
 
