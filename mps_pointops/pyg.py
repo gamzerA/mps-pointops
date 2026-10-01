@@ -55,9 +55,10 @@ def _install_pyg28_ptr_bridge() -> None:
 
 
 def _ptrs(
-    x: Tensor, y: Tensor, ptr_x: Tensor | None, ptr_y: Tensor | None
+    x: Tensor, y: Tensor, ptr_x: Tensor | None, ptr_y: Tensor | None,
+    *, feature_space: bool = False,
 ) -> tuple[Tensor, Tensor]:
-    flat._search_inputs(x, y)
+    flat._search_inputs(x, y, feature_space=feature_space)
     if ptr_x is None:
         # pyg-lib treats an unbatched x as the full reference set even when
         # y has a batch pointer. Its ptr_y is ignored in this case.
@@ -80,8 +81,8 @@ def _knn_mps(
     """Return pyg-lib's query-major ``[query, reference]`` edge index."""
     from ._flat_search_mps import _check_inputs, knn_indices
 
-    ptr_x, ptr_y = _ptrs(x, y, ptr_x, ptr_y)
-    _check_inputs(x, y, ptr_x, ptr_y)
+    ptr_x, ptr_y = _ptrs(x, y, ptr_x, ptr_y, feature_space=True)
+    _check_inputs(x, y, ptr_x, ptr_y, feature_space=True)
     k = flat._nonnegative_int(k, "k")
     flat._nonnegative_int(num_workers, "num_workers")
     if cosine:
@@ -91,6 +92,8 @@ def _knn_mps(
     if k == 0 or len(x) == 0 or len(y) == 0:
         return torch.empty((2, 0), dtype=torch.long, device=x.device)
     width = min(k, len(x))
+    if x.shape[1] != 3 and width > 256:
+        raise ValueError("feature-space kNN supports at most 256 neighbors on MPS")
     if width <= 256:
         indices = knn_indices(x.contiguous(), y.contiguous(), ptr_x, ptr_y, width)
     else:

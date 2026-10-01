@@ -1,9 +1,10 @@
 """Flat point-cloud operators with the ``torch_cluster`` index convention.
 
 ``x`` contains reference points, ``y`` contains query points, and batch vectors
-are sorted. Indices in the results refer to the original flat tensors. These
-functions support three-dimensional point coordinates; they are also exposed
-by the optional ``torch_cluster`` shim in :mod:`mps_pointops.compat`.
+are sorted. Indices in the results refer to the original flat tensors. FPS and
+radius use three-dimensional coordinates; kNN also accepts feature vectors of
+any positive dimension. These functions are exposed by the optional
+``torch_cluster`` shim in :mod:`mps_pointops.compat`.
 """
 
 from __future__ import annotations
@@ -22,6 +23,15 @@ def _points(value: Tensor, name: str) -> None:
         raise TypeError(f"{name} must be a torch.Tensor")
     if value.ndim != 2 or value.shape[1] != 3:
         raise ValueError(f"{name} must have shape (N, 3), got {tuple(value.shape)}")
+    if not value.is_floating_point():
+        raise TypeError(f"{name} must have a floating-point dtype")
+
+
+def _features(value: Tensor, name: str) -> None:
+    if not isinstance(value, Tensor):
+        raise TypeError(f"{name} must be a torch.Tensor")
+    if value.ndim != 2 or value.shape[1] < 1:
+        raise ValueError(f"{name} must have shape (N, D) with D >= 1, got {tuple(value.shape)}")
     if not value.is_floating_point():
         raise TypeError(f"{name} must have a floating-point dtype")
 
@@ -205,9 +215,12 @@ def fps(
     return torch.cat(samples) if samples else torch.empty(0, dtype=torch.long, device=x.device)
 
 
-def _search_inputs(x: Tensor, y: Tensor) -> None:
-    _points(x, "x")
-    _points(y, "y")
+def _search_inputs(x: Tensor, y: Tensor, *, feature_space: bool = False) -> None:
+    validate = _features if feature_space else _points
+    validate(x, "x")
+    validate(y, "y")
+    if x.shape[1] != y.shape[1]:
+        raise ValueError(f"x and y feature dimensions differ: {x.shape[1]} and {y.shape[1]}")
     if x.device != y.device:
         raise ValueError(f"x and y must be on the same device, got {x.device} and {y.device}")
     if x.dtype != y.dtype:
@@ -231,7 +244,10 @@ def _edges(indices: Tensor) -> Tensor:
 
 def _sqdist(query: Tensor, refs: Tensor) -> Tensor:
     d = refs - query
-    return (d[:, 0] * d[:, 0] + d[:, 1] * d[:, 1]) + d[:, 2] * d[:, 2]
+    result = d[:, 0] * d[:, 0]
+    for dim in range(1, d.shape[1]):
+        result = result + d[:, dim] * d[:, dim]
+    return result
 
 
 def _reference_search(
@@ -274,11 +290,12 @@ def knn(
     """Return global ``[query, reference]`` edges for the nearest points.
 
     The ``batch_size`` argument sets the number of batch slots, including
-    empty ones. ``cosine=True`` is not implemented for 3D point coordinates.
+    empty ones. x and y can be coordinate or feature vectors with D >= 1.
+    ``cosine=True`` is not implemented.
     ``num_workers`` is accepted for call-site compatibility and has no effect
     for MPS tensors or batched inputs.
     """
-    _search_inputs(x, y)
+    _search_inputs(x, y, feature_space=True)
     k = _nonnegative_int(k, "k")
     if cosine:
         raise NotImplementedError("cosine kNN is not supported")
@@ -289,6 +306,8 @@ def knn(
         return torch.empty((2, 0), dtype=torch.long, device=x.device)
     ptr_x, ptr_y = _pair_ptrs(x, y, batch_x, batch_y, batch_size)
     width = min(k, len(x))
+    if x.device.type == "mps" and x.shape[1] != 3 and width > 256:
+        raise ValueError("feature-space kNN supports at most 256 neighbors on MPS")
     if x.device.type == "mps" and width <= 256:
         from ._flat_search_mps import knn_indices
 

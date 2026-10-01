@@ -24,7 +24,8 @@ Covered: ``furthest_point_sample``, ``gather_operation``,
 - ``ball_query`` uses the Metal kernel for MPS inputs and pads in the
   ``pointnet2_ops`` convention.
 - The ``torch_cluster`` shim exposes ``fps``, ``knn``, ``radius`` and their
-  same-set graph wrappers for flat three-dimensional point coordinates.
+  same-set graph wrappers. FPS and radius use three-dimensional point
+  coordinates; kNN also accepts float32 feature vectors on MPS.
   Other names needed for PyG 2.7 package import raise ``NotImplementedError``
   when called. It does not register PyG's separate ``torch.ops.pyg`` operators.
 """
@@ -86,9 +87,9 @@ def ball_query(radius: float, nsample: int, xyz: Tensor, new_xyz: Tensor) -> Ten
 class KNN(torch.nn.Module):
     """Like ``knn_cuda.KNN``.
 
-    With ``transpose_mode=True``, ``ref`` is (B, N, 3) and ``query`` is
-    (B, M, 3), and ``dist`` and ``idx`` are (B, M, k). Otherwise ``ref`` is
-    (B, 3, N), ``query`` is (B, 3, M), and the outputs are (B, k, M). ``dist``
+    With ``transpose_mode=True``, ``ref`` is (B, N, D) and ``query`` is
+    (B, M, D), and ``dist`` and ``idx`` are (B, M, k). Otherwise ``ref`` is
+    (B, D, N), ``query`` is (B, D, M), and the outputs are (B, k, M). ``dist``
     is Euclidean. No gradients flow, as in knn_cuda.
     """
 

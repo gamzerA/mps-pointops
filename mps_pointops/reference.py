@@ -59,7 +59,7 @@ def furthest_point_sample(
 
 
 def knn(query: Tensor, ref: Tensor, k: int) -> tuple[Tensor, Tensor]:
-    """Brute-force k nearest neighbors, like ``knn_cuda.KNN(k, transpose_mode=True)``.
+    """PyTorch cdist/topk kNN for coordinate or feature vectors.
 
     This is the plain PyTorch approach (``cdist`` then ``topk``), used as the
     benchmark baseline. ``cdist`` may use a matrix multiply, so distances and
@@ -67,8 +67,8 @@ def knn(query: Tensor, ref: Tensor, k: int) -> tuple[Tensor, Tensor]:
     kernel against an exact oracle instead.
 
     Args:
-        query: (B, M, 3) query points.
-        ref: (B, N, 3) reference points.
+        query: (B, M, D) query points or features.
+        ref: (B, N, D) reference points or features.
         k: number of neighbors.
 
     Returns:

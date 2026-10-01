@@ -73,6 +73,17 @@ def test_direct_pyg_operators_accept_schema_defaults():
     assert torch.ops.pyg.radius(x, y).cpu().tolist() == [[0], [0]]
 
 
+def test_feature_space_knn_uses_registered_pyg_operator():
+    pyg.register_mps()
+    x = torch.zeros((4, 64), device="mps")
+    x[:, 0] = torch.tensor([0.0, 1.0, 10.0, 11.0], device="mps")
+    y = x[[0, 2]] + 0.1
+    ptr_x = torch.tensor([0, 2, 4], device="mps")
+    ptr_y = torch.tensor([0, 1, 2], device="mps")
+    edges = torch.ops.pyg.knn(x, y, ptr_x, ptr_y, 2)
+    assert edges.cpu().tolist() == [[0, 0, 1, 1], [0, 1, 2, 3]]
+
+
 def test_query_batch_without_reference_batch_uses_all_references():
     pyg.register_mps()
     x = torch.tensor([[0.0, 0, 0], [10.0, 0, 0]], device="mps")

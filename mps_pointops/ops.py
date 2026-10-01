@@ -142,29 +142,31 @@ def furthest_point_sample(
 
 
 def knn(query: Tensor, ref: Tensor, k: int) -> tuple[Tensor, Tensor]:
-    """Brute-force k nearest neighbors, like ``knn_cuda.KNN(k, transpose_mode=True)``.
+    """Brute-force k nearest neighbors in coordinate or feature space.
 
     Neighbors are sorted by squared distance, then by index, so ties are
-    deterministic. On MPS, ``k`` can be at most 256.
+    deterministic. The three-dimensional path retains the original kernel;
+    other dimensions use direct per-dimension float32 accumulation. On MPS,
+    ``k`` can be at most 256. Selection has no coordinate gradients.
 
     Args:
-        query: (B, M, 3) float32 query points.
-        ref: (B, N, 3) float32 reference points.
+        query: (B, M, D) float32 query points or features, D >= 1.
+        ref: (B, N, D) float32 reference points or features.
         k: number of neighbors, at most N.
 
     Returns:
         dist: (B, M, k) Euclidean distances, ascending.
         idx: (B, M, k) int64 indices into ``ref``.
     """
-    if query.dim() != 3 or query.shape[-1] != 3:
-        raise ValueError(f"query must have shape (B, M, 3), got {tuple(query.shape)}")
-    if ref.dim() != 3 or ref.shape[-1] != 3:
-        raise ValueError(f"ref must have shape (B, N, 3), got {tuple(ref.shape)}")
+    if query.dim() != 3 or query.shape[-1] < 1:
+        raise ValueError(f"query must have shape (B, M, D) with D >= 1, got {tuple(query.shape)}")
+    if ref.dim() != 3 or ref.shape[-1] != query.shape[-1]:
+        raise ValueError(f"ref must have shape (B, N, {query.shape[-1]}), got {tuple(ref.shape)}")
     if query.device != ref.device:
         raise ValueError(f"query and ref are on different devices: {query.device} and {ref.device}")
     if query.shape[0] != ref.shape[0]:
         raise ValueError(f"batch sizes differ: {query.shape[0]} and {ref.shape[0]}")
-    B, M, _ = query.shape
+    B, M, D = query.shape
     N = ref.shape[1]
     if not 0 <= k <= N:
         raise ValueError(f"k must be in [0, {N}], got {k}")
@@ -174,6 +176,8 @@ def knn(query: Tensor, ref: Tensor, k: int) -> tuple[Tensor, Tensor]:
         raise TypeError(f"query and ref must be float32 on MPS, got {query.dtype} and {ref.dtype}")
     if k > _KNN_MAX_K:
         raise ValueError(f"k must be at most {_KNN_MAX_K} on MPS, got {k}")
+    if M >= 2**32 or N >= 2**32 or D >= 2**32:
+        raise ValueError("M, N, and D must each be below 2**32 for the Metal kNN kernel")
 
     dist = torch.empty(B, M, k, dtype=torch.float32, device=query.device)
     idx = torch.empty(B, M, k, dtype=torch.long, device=query.device)
@@ -185,10 +189,16 @@ def knn(query: Tensor, ref: Tensor, k: int) -> tuple[Tensor, Tensor]:
     while math.gcd(stride, chunks) != 1:
         stride += 1
     group = 32 * _KNN_QUERIES_PER_GROUP
-    _library("knn").knn(
-        query.contiguous(), ref.contiguous(), dist, idx, M, N, k, stride,
-        threads=(groups * group, B), group_size=(group, 1),
-    )
+    if D == 3:
+        _library("knn").knn(
+            query.contiguous(), ref.contiguous(), dist, idx, M, N, k, stride,
+            threads=(groups * group, B), group_size=(group, 1),
+        )
+    else:
+        _library("feature_knn").feature_knn_dense(
+            query.contiguous(), ref.contiguous(), dist, idx, M, N, k, D,
+            threads=(groups * group, B), group_size=(group, 1),
+        )
     return dist, idx
 
 
