@@ -147,7 +147,8 @@ contains all `4 × 3` output values and elementwise differences. This
 independently locates the observed behavior in the hosted PyTorch/MPS execution
 path rather than the point-operations package or PyG pooling. The observations
 do not identify an internal PyTorch cause, and the local M5 Pro result shows
-that the symptom is environment dependent.
+that the symptom is environment dependent. This evidence addresses the
+runtime-isolation item in the [Phase 3 release gate](https://github.com/gamzerA/mps-pointops/issues/41).
 
 The following independent snippet reproduces the projection comparison.
 It passed on the M5 Pro with pinned Torch 2.12.0; the hosted job's full probe
