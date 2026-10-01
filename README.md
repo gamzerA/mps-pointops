@@ -674,21 +674,106 @@ Ball Query is specified separately in the numerical contract.
   distance bits can differ from the separate-operation CPU reference. See
   [the numerical contract](docs/ball-query-math.md).
 
-## Roadmap
+## Roadmap: Standard 3D, Point-Cloud and Graph Operators for Apple Silicon
 
-1. ~~Metal kernel for FPS~~ — large B=1 inputs have a multi-threadgroup path;
-   tune selection on other Apple GPUs and variable-size batches
-2. ~~Metal kernel for kNN~~
-3. ~~Drop-in stand-ins for `pointnet2_ops` and `knn_cuda`, checked on real
-   MulSen-AD data~~
-4. ~~Metal kernel for ball query~~ — dense order-preserving SIMD prefix scan,
-   paired sorted-input ablation, and a 3D float32 PyTorch3D-style adapter are
-   implemented; general D and numerical parity remain future work
-5. ~~MulSen-AD Point-MAE 3D detector on MPS, matching the CUDA runs~~ — the
-   full TripleAD pipeline (RGB + IR + 3D) is next
-6. `torch_cluster`-style flat/ragged `radius`, `knn` and `fps` — the 3D
-   subset, PyG 2.7.0 direct-import path, and PyG 2.8.0 MPS operator
-   registration are implemented; wider coordinate dimensions remain
+This project aims to be the standard operator library for 3D, point-cloud and
+graph deep learning on Apple Silicon: code written for CUDA-only extensions
+should run on PyTorch MPS without changes and give the same results.
+
+Every operator ships with four things:
+
+1. **Contract**: ordering, padding, tie-breaking and floating-point boundary
+   behavior, written down.
+2. **PyTorch reference**: a plain implementation that defines the contract.
+3. **Upstream parity tests**: checked against the original implementation. CI
+   compares with the upstream CPU build; CUDA results are compared where they
+   are available. Near ties and float boundaries can differ as documented.
+4. **Reproducible benchmarks**: raw results, environment and counterexamples.
+
+Status marks: `[x]` released, `[~]` merged on `main` and not yet released,
+`[ ]` planned. Version numbers are targets, not promises.
+
+### Verified models
+
+Each phase adds models that run end to end on MPS and are compared with the
+original implementation.
+
+- [x] Point-MAE grouping on MulSen-AD point clouds (FPS + kNN): 30 clouds, no mismatches
+- [x] MulSen-AD 3D-only anomaly detector: 45 runs, same metrics as the CUDA runs
+- [ ] DGCNN (Phase 2)
+- [ ] PointNet++ segmentation (Phase 2)
+- [ ] PyG example models (Phase 3)
+- [ ] Point Transformer family (Phase 4)
+- [ ] A sparse-convolution model (Phase 5)
+
+### Phase 1: Core precision and parity (target 0.4.0)
+
+- [~] Dense Ball Query with an order-preserving SIMD prefix scan (#7).
+      Done when: faster than the best CPU library on sorted and random input.
+- [~] PyTorch3D signature adapter: `lengths1/2`, `return_nn`,
+      `skip_points_outside_cube` (#8).
+      Done when: matches PyTorch3D's CPU `ball_query` on the parity suite.
+- [~] Large-cloud FPS for a single cloud (batch 1): a multi-threadgroup kernel,
+      chosen automatically from 500,000 points on a validated GPU or with
+      `strategy="multigroup"` (#8). On an M5 Pro, 1,024 samples from 1,000,000
+      points went from 421.69 ms to 49.39 ms with identical indices.
+- [ ] Multi-threadgroup FPS for multi-cloud batches, including uneven cloud
+      sizes, and validation of the automatic switch on other Apple GPUs.
+      Done when: uneven batches no longer leave one long-running threadgroup.
+- [ ] kNN with `k > 256` on Metal, and a faster CPU fallback. Unsupported
+      inputs warn or fail clearly instead of slowing down silently.
+- [ ] Flat API benchmarks in the published results.
+- [ ] Benchmarks from other Apple Silicon chips (M1 to M4), on real hardware.
+
+### Phase 2: Feature-space and propagation operators (target 0.5.0)
+
+- [ ] kNN in arbitrary dimension (D > 3) for feature-space neighbor search.
+      Done when: DGCNN's EdgeConv runs on MPS with the same neighbors as CPU.
+- [ ] `three_nn` and `three_interpolate` for PointNet++ feature propagation.
+      Done when: a PointNet++ segmentation model runs end to end with matching accuracy.
+- [ ] Open issues upstream (`pyg-lib`, `torch_cluster`, `PyTorch3D`) to ask
+      whether MPS support would be accepted and in what form.
+
+### Phase 3: Graph and grid infrastructure (target 0.6.0 to 0.7.0)
+
+- [ ] Survey first: run PyG example models on MPS with CPU fallback disabled
+      and list the operators that fail. Recent PyG uses native PyTorch ops
+      rather than `torch_scatter`, so the gaps may be PyTorch ops missing on
+      MPS. The items below are adjusted to that list.
+- [ ] Core scatter reductions on Metal: sum, mean, max, min, with argmax and
+      argmin. A `torch_scatter` stand-in covers these first; the rest of its
+      surface follows demand.
+- [ ] Voxelization, voxel downsampling and `grid_cluster`.
+- [ ] Remaining `torch_cluster` operators: `nearest`, `graclus`, `random_walk`.
+      Done when: no function in the stand-in raises `NotImplementedError`.
+
+### Phase 4: Geometry losses and large-scale search (target 0.8.0 to 0.9.0)
+
+- [ ] Chamfer distance with a backward path.
+      Done when: values and gradients match PyTorch3D's `chamfer_distance`.
+- [ ] Pointcept `pointops` compatibility for the Point Transformer family.
+- [ ] Spatial acceleration structures (uniform grid or BVH) for clouds of
+      1M+ points. Done when: faster than a CPU KD-tree at 1M points.
+- [ ] Stretch: Earth Mover's Distance. Exact EMD is expensive, so this needs a
+      choice of approximation and its own contract.
+
+### Phase 5: Sparse 3D and upstream convergence (target 1.0)
+
+- [ ] Sparse convolution with an `spconv`-compatible interface, in order:
+      sparse tensor structure and submanifold convolution, then strided
+      convolution, then inverse convolution.
+      Done when: outputs match `spconv` and one real model runs inference.
+- [ ] Pull requests upstream, following the Phase 2 discussions.
+- [ ] API freeze, versioning policy and 1.0.
+
+### Across all phases
+
+- Upstream parity checks run in CI, not only by hand.
+- Release benchmarks are recorded on real hardware; hosted runners are
+  virtualized and too noisy for timing.
+- A documentation site with the API reference and per-operator contracts.
+- A stated policy for supported PyTorch and macOS versions.
+- One release per phase step, so development history stays continuous.
 
 ## Contributing
 
