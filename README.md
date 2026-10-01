@@ -217,8 +217,8 @@ and MPS available reported **105 passed, 7 skipped** in each of the Safe and
 Fast Math test processes
 ([Safe log](docs/pytest-safe-torch27-2026-10-01.log),
 [Fast log](docs/pytest-fast-torch27-2026-10-01.log)).
-For the flat API implementation at commit `fe4a683f33ca0ad9599f1c884a356c46df5e4213`,
-PyTorch 2.7.0 on the same M5 Pro reported **127 passed, 7 skipped** in each
+For the flat API implementation at commit `8b060f743b84ad6947daad591948855bcc9cedcb`,
+PyTorch 2.7.0 on the same M5 Pro reported **147 passed, 7 skipped** in each
 separate process ([Safe log](docs/pytest-flat-safe-torch27-2026-10-01.log),
 [Fast log](docs/pytest-flat-fast-torch27-2026-10-01.log)).
 
