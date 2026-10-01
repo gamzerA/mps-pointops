@@ -176,6 +176,7 @@ static inline void flat_radius_impl(
     constant long& K,
     constant float& radius_sq,
     constant float& radius,
+    constant long& ignore_same_index,
     uint q,
     uint lane)
 {
@@ -192,7 +193,7 @@ static inline void flat_radius_impl(
             for (ulong base = x_begin; base < x_end; base += SIMD) {
                 const ulong j = base + ulong(lane);
                 bool within = false;
-                if (j < x_end) {
+                if (j < x_end && !(ignore_same_index && j == ulong(q))) {
                     const float3 xp = load_xyz(ref, j);
                     if (all(isfinite(xp))) {
                         const float3 delta = qp - xp;
@@ -233,6 +234,7 @@ kernel void flat_radius_indices_f32(
     constant long& K [[buffer(7)]],
     constant float& radius_sq [[buffer(8)]],
     constant float& radius [[buffer(9)]],
+    constant long& ignore_same_index [[buffer(10)]],
     uint3 group [[threadgroup_position_in_grid]],
     uint lane [[thread_index_in_simdgroup]],
     uint sg [[simdgroup_index_in_threadgroup]])
@@ -242,7 +244,7 @@ kernel void flat_radius_indices_f32(
     if (query_index >= ulong(query_count)) return;
     const uint q = uint(query_index);
     flat_radius_impl(query, ref, ptr_y, ptr_x, out_idx, query_count,
-                     batch_count, K, radius_sq, radius, q, lane);
+                     batch_count, K, radius_sq, radius, ignore_same_index, q, lane);
 }
 
 kernel void flat_radius_indices_f16(
@@ -256,6 +258,7 @@ kernel void flat_radius_indices_f16(
     constant long& K [[buffer(7)]],
     constant float& radius_sq [[buffer(8)]],
     constant float& radius [[buffer(9)]],
+    constant long& ignore_same_index [[buffer(10)]],
     uint3 group [[threadgroup_position_in_grid]],
     uint lane [[thread_index_in_simdgroup]],
     uint sg [[simdgroup_index_in_threadgroup]])
@@ -265,5 +268,5 @@ kernel void flat_radius_indices_f16(
     if (query_index >= ulong(query_count)) return;
     const uint q = uint(query_index);
     flat_radius_impl(query, ref, ptr_y, ptr_x, out_idx, query_count,
-                     batch_count, K, radius_sq, radius, q, lane);
+                     batch_count, K, radius_sq, radius, ignore_same_index, q, lane);
 }

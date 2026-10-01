@@ -4,13 +4,30 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mps-pointops"
-version = "0.2.0"
+version = "0.3.0"
 description = "Point cloud ops (FPS, kNN, ball query) for PyTorch on Apple Silicon (MPS)"
 readme = "README.md"
 license = "Apache-2.0 AND MIT"
 license-files = ["LICENSE", "LICENSES/MIT-ball-query.txt"]
 requires-python = ">=3.10"
 dependencies = ["torch>=2.7", "numpy"]
+authors = [{name = "gamzerA"}]
+keywords = ["metal", "mps", "point-cloud", "pytorch", "pytorch-geometric"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.urls]
+Homepage = "https://github.com/gamzerA/mps-pointops"
+Repository = "https://github.com/gamzerA/mps-pointops"
+Issues = "https://github.com/gamzerA/mps-pointops/issues"
 
 [project.optional-dependencies]
 bench = ["scipy", "fpsample"]
