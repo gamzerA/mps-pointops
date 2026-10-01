@@ -125,21 +125,27 @@ native scatter stress test. None of these timings identifies Metal atomics
 as the cause, compares an optimized CPU nearest-neighbor library, or proves
 an end-to-end model speedup.
 
-## Larger bidirectional M5 Pro probe
+## Larger bidirectional M5 Pro and M1 probe
 
 The [2026-10-02 large-cloud record](chamfer-large-contention-2026-10-02.md)
-extends the controlled M5 Pro study to **bidirectional** mean loss at
+extends the controlled M5 Pro and physical M1 studies to **bidirectional** mean loss at
 `B=1,N=32,768` and `65,536`. It compares in-order one-to-one, randomly
 permuted one-to-one, and both-directions all-to-one nearest maps. Both index
 maps, the loss, and analytic first-order gradients passed before timing. Safe
 and Fast used separate processes, CPU fallback was disabled, and raw
 synchronized forward, backward, full loss plus backward, and paired native
-scatter samples are retained.
+scatter samples are retained. Matched input hashes make the fixtures
+comparable, but M5 Pro used PyTorch 2.14.1 and M1 used 2.12.0.
 
 At 65,536 points, concentrated native two-scatter median was 0.489 ms Safe
 or 0.499 ms Fast, versus 0.297 and 0.292 ms for in-order one-to-one. The
 paired full-loss concentrated/uniform ratios were 1.00× and 1.03×. Backward
 alone varied much more, including a Safe paired ratio of 2.87×, so the full
 loss and raw sample spread are needed for the adoption decision. The current
-M5 Pro default remains native PyTorch scatter for these synthetic cases;
-this does not establish a result for physical M1 or a general GPU mechanism.
+default remains native PyTorch scatter for these synthetic cases. On physical
+M1 at 65,536 points, the paired full-loss concentrated/uniform ratios were
+4.19× Safe and 4.23× Fast, while the paired backward ratios were 189.98× and
+172.27×. This motivates a same-input dedicated reduction ablation that includes
+grouping, buffer creation, gradients, and full-call timing before changing the
+default. These host-wall results do not identify a general GPU mechanism or
+predict real model speedups.
