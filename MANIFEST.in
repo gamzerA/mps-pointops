@@ -1,5 +1,6 @@
 # The source distribution also carries the material the README links to.
 include CHANGELOG.md
+include CONTRIBUTING.md
 graft docs
 graft bench
 graft examples

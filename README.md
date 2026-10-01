@@ -555,6 +555,11 @@ Ball Query is specified separately in the numerical contract.
    subset, PyG 2.7.0 direct-import path, and PyG 2.8.0 MPS operator
    registration are implemented; wider coordinate dimensions remain
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for issue and pull request guidance,
+local Safe/Fast Math tests, and the six required CI checks for `main`.
+
 ## License
 
 Apache-2.0 for the repository. The Ball Query kernel, Python implementation,
