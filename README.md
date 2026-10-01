@@ -706,6 +706,31 @@ points near the origin. FPS and Ball Query use dense `(B, N, 3)` tensors;
 native kNN also accepts `(B, N, D)` for any positive `D`. The flat API uses
 `(N, 3)` for FPS/radius and `(N, D)` for kNN, plus optional batch vectors.
 
+### Pointcept PTv1 subset (experimental)
+
+An opt-in [`pointops` shim](docs/pointcept-ptv1-subset.md) covers the five
+calls used by Pointcept **v1.2.1 Point Transformer V1 Seg26**. Register it
+before importing the model:
+
+```python
+from mps_pointops.compat import install
+
+install(pointcept=True)
+import pointops
+```
+
+This accepts flat float32 3D coordinates with cumulative int32/int64 batch
+offsets. Call `install` before importing Pointcept; if an existing importable
+`pointops` package must deliberately be replaced, use
+`install(force=True, pointcept=True)`. The force flag also installs stand-ins
+over existing `pointnet2_ops`, `knn_cuda`, and `torch_cluster` modules. This
+shim does not provide Pointcept's other model families or full CUDA
+`pointops` compatibility. The pinned Seg26 model still contains one hardcoded
+`torch.cuda.IntTensor` construction; the [M5 Pro forward/backward probe](docs/pointcept-ptv1-subset.md)
+uses one explicit temporary device-aware substitution and leaves the official
+checkout unchanged. The probe records source hashes, output and gradient
+tolerances, and a zero-gradient counterexample that the current gate rejects.
+
 ## The operators in equations
 
 For batch `b`, let `q[b, i]` be query `i`, where `0 ≤ i < Q`, and let
@@ -951,7 +976,10 @@ original implementation.
       FPS ties change some intermediate local indices; real labeled dataset
       accuracy is untested ([scope and raw evidence](docs/parity/pointnet2-segmentation.md)).
 - [ ] PyG example models on representative graphs and data (Phase 3)
-- [ ] Point Transformer family (Phase 4)
+- [~] Pointcept v1.2.1 PTv1 Seg26, fixed synthetic two-cloud eval fixture:
+      M5 Pro Safe/Fast forward and first-order backward compared with CPU
+      after [one documented CUDA constructor substitution](docs/pointcept-ptv1-subset.md).
+      Other Point Transformer models and training-mode convergence are open.
 - [ ] A sparse-convolution model (Phase 5)
 
 ### Phase 1: Core precision and parity (0.4.0)
@@ -1132,7 +1160,11 @@ correctness and timing evidence without extending claims to M2–M4.
       now cover up to 65,536 points with synchronized full-loss and native
       scatter controls. Other Apple GPUs, real workloads, GPU tracing, and a
       dedicated Metal reduction ablation remain open.
-- [ ] Pointcept `pointops` compatibility for the Point Transformer family.
+- [~] Opt-in [Pointcept PTv1 Seg26 `pointops` subset](docs/pointcept-ptv1-subset.md):
+      FPS, kNN query, grouping, query-and-group, and interpolation on CPU/MPS.
+      Pinned synthetic model forward/backward passed on M5 Pro with one
+      temporary CUDA-constructor substitution; broader Pointcept signatures,
+      unchanged upstream imports, and CUDA binary parity remain open.
 - [ ] Spatial acceleration structures (uniform grid or BVH) for clouds of
       1M+ points. Done when: faster than a CPU KD-tree at 1M points.
 - [ ] Stretch: approximate optimal transport via entropic regularization

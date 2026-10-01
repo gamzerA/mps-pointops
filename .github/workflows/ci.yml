@@ -93,6 +93,7 @@ jobs:
               "mps_pointops/pytorch3d.py",
               "mps_pointops/pointnet2.py",
               "mps_pointops/chamfer.py",
+              "mps_pointops/pointcept.py",
               "mps_pointops/nearest.py",
               "mps_pointops/graclus.py",
               "mps_pointops/random_walk.py",
