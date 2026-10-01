@@ -454,8 +454,9 @@ agreement at all floating-point boundaries remain outside its contract.
 
 ### Flat `torch_cluster` subset
 
-`mps_pointops.flat` exposes `fps`, `knn`, and `radius` for flat `(N, 3)` point
-coordinates. Batch vectors must be sorted, such as `[0, 0, 1, 1, 1]`; missing
+`mps_pointops.flat` exposes `fps` and `radius` for flat `(N, 3)` point
+coordinates and `knn` for `(N, D)` coordinates or features with `D >= 1`.
+Batch vectors must be sorted, such as `[0, 0, 1, 1, 1]`; missing
 batch IDs represent empty clouds. A separate offset array is built for the
 reference and query sets, which may have different sizes. All returned indices
 are global indices into the corresponding flat input.
@@ -495,7 +496,10 @@ so near-boundary bits may differ. It takes up to `max_num_neighbors` matches in
 reference input order, like `torch_cluster`'s CUDA kernel; `torch_cluster` on
 CPU keeps an arbitrary subset when there are more matches. Padded internal slots
 are removed before returning the edge tensor. CPU inputs use PyTorch; MPS
-inputs use Metal for supported sizes, with a PyTorch fallback for kNN `k > 256`.
+inputs use Metal for supported sizes. The existing 3D flat/PyG kNN path has a
+PyTorch fallback for `k > 256`; feature-space kNN (`D != 3`) raises an explicit
+error above 256 instead. The [feature-space contract and DGCNN evidence](docs/feature-knn.md)
+explain direct dimension accumulation, numerical limits, and model scope.
 On MPS, FPS and kNN require float32; radius accepts float32 or float16 and
 the same positive-radius lower bound as the native Ball Query contract. The
 float16 radius path computes distances and the threshold in float32; it does
@@ -507,7 +511,8 @@ selected point and remains a performance task.
 
 This follows the `fps`, `knn`, and `radius` call signatures of
 [`torch_cluster` 1.6.3](https://github.com/rusty1s/pytorch_cluster/tree/1.6.3/torch_cluster)
-for three-dimensional coordinates. Cosine kNN and `ignore_same_index=True` are
+for three-dimensional FPS/radius coordinates and arbitrary-dimensional kNN
+features. Cosine kNN and `ignore_same_index=True` are
 unsupported and raise an error. The shim also provides `knn_graph` and
 `radius_graph` using these searches, including `loop` and `flow`. It exposes
 explicitly unsupported `grid_cluster`, `graclus_cluster`, `random_walk`, and
@@ -549,8 +554,9 @@ from torch_geometric.nn import fps, knn, radius, knn_graph, radius_graph
 This adds MPS dispatch for pyg-lib's existing `pyg::fps`, `pyg::knn`, and
 `pyg::radius` schemas; it does not replace pyg-lib's CPU or CUDA kernels.
 PyG's graph wrappers use those same operators. The MPS path supports flat
-three-dimensional coordinates, float32 FPS/kNN, float32 or float16 radius,
-and global `[query, reference]` edges. `radius_graph(loop=False)` excludes
+three-dimensional coordinates for FPS/radius and arbitrary positive feature
+dimension for float32 kNN; radius accepts float32 or float16. It returns
+global `[query, reference]` edges. `radius_graph(loop=False)` excludes
 equal global index numbers *before* applying `max_num_neighbors`, matching
 pyg-lib. Cosine kNN is not supported. Near ties and radius boundaries may
 differ across Metal and CUDA arithmetic. The float16 radius path computes
@@ -566,18 +572,24 @@ kernels use their own arithmetic and reduction order.
 
 The native API (`mps_pointops.furthest_point_sample`, `mps_pointops.knn`,
 `mps_pointops.ball_query`) returns int64 indices; native FPS does not skip
-points near the origin. It uses dense, batched `(B, N, 3)` tensors, while the
-flat API above uses `(N, 3)` tensors and optional batch vectors.
+points near the origin. FPS and Ball Query use dense `(B, N, 3)` tensors;
+native kNN also accepts `(B, N, D)` for any positive `D`. The flat API uses
+`(N, 3)` for FPS/radius and `(N, D)` for kNN, plus optional batch vectors.
 
 ## The operators in equations
 
 For batch `b`, let `q[b, i]` be query `i`, where `0 ≤ i < Q`, and let
-`x[b, j]` be reference point `j`, where `0 ≤ j < P`. Both have three
-coordinates, indexed by `d = 0, 1, 2`. The mathematical squared distance is
+`x[b, j]` be reference point `j`, where `0 ≤ j < P`. For the geometric FPS
+and Ball Query operators both have three coordinates, indexed by
+`d = 0, 1, 2`. The mathematical squared distance is
 
 $$
 s_{bij} = \sum_{d=0}^{2}\bigl(q_{bid}-x_{bjd}\bigr)^2.
 $$
+
+Feature-space kNN uses the same sum with upper bound `D - 1` for matching
+feature dimension `D >= 1`; its float32 accumulation order is specified in
+the [feature-space contract](docs/feature-knn.md).
 
 ### Farthest point sampling
 
@@ -740,10 +752,26 @@ Ball Query is specified separately in the numerical contract.
   taken the remaining slots repeat index 0. Float32 only on MPS. `strategy`
   accepts `"auto"`, `"single"`, or `"multigroup"`; the last requires B=1
   when sampling more than one point.
-- `knn(query, ref, k)`: Euclidean distances and indices, sorted by squared
-  distance and then by index. `k <= N`, and `k <= 256` on MPS. Float32 only on
-  MPS. (The reference itself uses `cdist` and `topk`, so it is only the
-  baseline; the tests use an exact oracle.)
+- `knn(query, ref, k)`: accepts matching `(B,M,D)` and `(B,N,D)` shapes for
+  `D >= 1`; Euclidean distances and indices are sorted by squared distance
+  and then by index. `k <= N`, and `k <= 256` on MPS. Float32 only on MPS.
+  `D=3` retains the original kernel; `D != 3` uses direct per-dimension
+  accumulation. The latter discards non-finite squared distances, so too few
+  valid references leave dense slots `(inf, -1)`; overflowing float32 squares
+  can cause this even from finite features. Fast Math NaN/Inf behavior is not
+  part of the validated contract. See [feature-space kNN](docs/feature-knn.md)
+  for the rounding policy and model comparison. The CPU `cdist`/`topk`
+  reference is a baseline, not a bitwise oracle near ties. On the M5 Pro at
+  Q=N=1,024 and k=20, synchronized Safe Math native medians in one final run
+  were 0.822 ms for D=64 and 1.577 ms for D=128; MPS `cdist+topk` took
+  0.770 ms and 0.782 ms respectively. The
+  [raw Safe/Fast samples](docs/feature-knn.md) have substantial timing spread;
+  no general speedup is claimed, and the direct D=128 path remains a
+  performance follow-up. The final M5 Pro full suite recorded
+  [284 passed, 13 skipped in Safe Math](docs/pytest-feature-knn-safe-torch214-2026-10-01.log)
+  and [283 passed, 14 skipped in Fast Math](docs/pytest-feature-knn-fast-torch214-2026-10-01.log);
+  PyG packages were unavailable in that local environment and are covered by
+  the separate pinned PyG CI job.
 - `ball_query(query, ref, radius, K)`: PyTorch3D-style first-K contract. It
   returns the first `K` points in input order satisfying strict radius
   membership, with index `-1` and distance `0` padding. The threshold is
@@ -780,7 +808,10 @@ original implementation.
 
 - [x] Point-MAE grouping on MulSen-AD point clouds (FPS + kNN): 30 clouds, no mismatches
 - [x] MulSen-AD 3D-only anomaly detector: 45 runs, same metrics as the CUDA runs
-- [ ] DGCNN (Phase 2)
+- [x] DGCNN classification, synthetic 64-point fixture: pinned author PyTorch
+      model, CPU vs MPS forward/backward and 4,096 neighbor indices
+      ([scope and raw evidence](docs/feature-knn.md)); dataset accuracy and
+      original CUDA parity remain untested.
 - [ ] PointNet++ segmentation end to end (Phase 2)
 - [ ] PyG example models on representative graphs and data (Phase 3)
 - [ ] Point Transformer family (Phase 4)
@@ -817,13 +848,12 @@ original implementation.
 
 ### Phase 2: Feature-space and propagation operators (started in 0.5.0)
 
-- [ ] kNN in arbitrary dimension (D > 3) for feature-space neighbor search.
-      Use direct dimension-by-dimension distance accumulation as the numerical
-      baseline before evaluating tiled or matrix-style paths. Define tie and
-      boundary behavior; validate DGCNN EdgeConv on MPS with neighbor checks
-      outside ambiguous ties and model-output errors within a documented
-      tolerance, rather than requiring bitwise CPU/MPS index parity at every
-      boundary.
+- [~] Experimental kNN in arbitrary positive dimension for feature-space
+      neighbor search. A direct dimension-by-dimension Metal baseline covers
+      dense, flat, and PyG-compatible kNN without changing the D=3 kernel.
+      A pinned original DGCNN classification model passed one synthetic
+      forward/backward fixture on MPS; [contract and evidence](docs/feature-knn.md).
+      Dataset validation, CUDA parity, and a faster tiled path remain open.
 - [~] Experimental `three_nn` and `three_interpolate` for PointNet++ feature
       propagation (introduced in 0.5.0; #16). The first returns Euclidean
       distances and three indices. The second accepts externally computed weights and
