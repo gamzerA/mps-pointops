@@ -321,10 +321,14 @@ at 1,024 samples measured:
 - 500,000 points: **193.08 → 29.37 ms** (6.57× faster).
 - 1,000,000 points: **421.69 → 49.39 ms** (8.54× faster).
 
-Output indices matched in every paired iteration. The recorded script,
-dispatch, and FPS shader SHA-256 values match the current files. The JSON
-retains the commit and dirty-tree status observed when it was measured; those
-provenance fields were not rewritten after the merge. These timings include
+Output indices matched in every paired iteration. The JSON records capture
+commit `27cdbe9` with `dirty=true`; that commit does not resolve in this
+checkout, so the commit alone cannot reconstruct the measured tree. Its
+benchmark script and both FPS shader SHA-256 values match the current files.
+The recorded `ops.py` hash matches the merged [large-cloud FPS commit](https://github.com/gamzerA/mps-pointops/commit/c644ee8b9e0e73a3aa4c0d44778dfceacb17051b),
+but not current `main`: a later feature-space kNN change modified `ops.py`
+without changing its FPS dispatch. The JSON provenance fields were not
+rewritten after the merge. These timings include
 host dispatch overhead and are bracketed by `torch.mps.synchronize()`; they
 do not establish a crossover on other Apple GPUs. This FPS spot check uses
 standard-normal points, while the 20k–100k chart uses synthetic sphere-shell
