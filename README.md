@@ -12,8 +12,8 @@
 
 **Point-cloud operators for PyTorch on Apple Silicon.** Native Metal kernels
 run farthest point sampling, k nearest neighbors, and Ball Query on MPS.
-Version 0.5.0 also provides experimental PointNet++ feature propagation and
-squared-L2 Chamfer distance APIs.
+Version 0.6.0 also provides experimental PointNet++ feature propagation,
+squared-L2 Chamfer distance, feature-space kNN, and graph/grid interfaces.
 Compatibility stand-ins cover supported `pointnet2_ops`, `knn_cuda`, and
 `torch_cluster` call sites; CPU tensors use PyTorch reference implementations.
 
@@ -39,10 +39,12 @@ kernels compile on first use.
 python -m pip install mps-pointops
 ```
 
-Version 0.5.0 includes dense SIMD Ball Query, the PyTorch3D-style Ball Query
-adapter, and the large-cloud FPS path for a single cloud. It adds experimental
-`three_nn`, `three_interpolate`, and squared-L2 `chamfer_distance` APIs. Their
-supported inputs and differences from upstream are specified in the
+Version 0.6.0 includes dense SIMD Ball Query, the PyTorch3D-style Ball Query
+adapter, and the large-cloud FPS path for a single cloud. Experimental
+`three_nn`, `three_interpolate`, squared-L2 `chamfer_distance`, and
+feature-space kNN APIs are available; the legacy graph and voxel interfaces
+have bounded input contracts. The supported propagation and loss inputs and
+their differences from upstream are specified in the
 [PointNet++ propagation](docs/pointnet2-propagation.md) and
 [Chamfer](docs/chamfer-contract.md) contracts.
 Direct comparisons against the
@@ -74,7 +76,8 @@ assert radius_idx.tolist() == [[[0, 1], [1, 2]]]
 print("MPS point ops OK")
 ```
 
-The experimental 0.5.0 operators can be called directly:
+The PointNet++ and Chamfer operators introduced in v0.5.0 can be called
+directly:
 
 ```python
 import torch
