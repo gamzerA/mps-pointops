@@ -79,5 +79,11 @@ PYTHONPATH=. PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=0 \
 The native kernel's regression tests also exercise 1024-lane index ties, gaps, full
 threadgroup output, empty and mismatched batches, float32 threshold equality,
 nonfinite input, D=64/128 accumulation, and explicit dtype failure in both
-Safe and Fast Math. The project package-data wildcard includes the new
-`nearest.metal` source; wheel and sdist content are verified by CI.
+Safe and Fast Math. On the branch rebased onto main `8b19dc84`, the full MPS
+suite completed with [312 passed, 15 skipped in Safe Math](pytest-nearest-safe-torch214-2026-10-01.log)
+and [311 passed, 16 skipped in Fast Math](pytest-nearest-fast-torch214-2026-10-01.log).
+The PyG 2.8 optional integration tests were skipped in this environment;
+their separate CI job remains the gate for that path. Only the local pytest
+`rootdir` path was normalized in these logs. A local wheel and sdist build
+both contained `nearest.py` and `nearest.metal`; the package CI job checks
+those files explicitly.

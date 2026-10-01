@@ -1,5 +1,5 @@
 # nearest full-suite MPS regression; 2026-10-01
-# source_git_head: afdb71ff35e63b5d3d2025c3c3eb1c5445166100
+# source_git_head: fc7f8660b3219e866df6f93962ada913bd76a46e
 # base_origin_main: 8b19dc84a82772289d7b7bb8683928ee6cabb152
 # PYTORCH_ENABLE_MPS_FALLBACK=0; PYTORCH_MPS_FAST_MATH=0
 # nearest.py sha256: 9ee04b2f74a10a0c3decccdae1b4b2050df120a7e55d613c484751c0157a6364
@@ -11,22 +11,23 @@ platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
 rootdir: <repository-root>
 configfile: pyproject.toml
 plugins: platformdirs-4.12.2, dash-4.4.1, anyio-4.15.1
-collected 325 items
+collected 327 items
 
 tests/test_ball_query_api.py ......................                      [  6%]
-tests/test_ball_query_mps.py ........................................... [ 20%]
+tests/test_ball_query_mps.py ........................................... [ 19%]
 ..                                                                       [ 20%]
 tests/test_chamfer.py ......................................             [ 32%]
 tests/test_compat.py ...........                                         [ 35%]
-tests/test_feature_knn.py ........................                       [ 43%]
-tests/test_flat.py .................................                     [ 53%]
-tests/test_flat_graph.py ...                                             [ 54%]
+tests/test_feature_knn.py ........................                       [ 42%]
+tests/test_flat.py .................................                     [ 52%]
+tests/test_flat_graph.py ...                                             [ 53%]
 tests/test_flat_ragged_mps.py ....                                       [ 55%]
-tests/test_fps.py ................................                       [ 65%]
-tests/test_grid_cluster.py .......ss                                     [ 68%]
+tests/test_fps.py ................................                       [ 64%]
+tests/test_grid_cluster.py .......ss                                     [ 67%]
 tests/test_knn.py ......s.....ss....ssss................                 [ 79%]
 tests/test_nearest.py ...................                                [ 85%]
-tests/test_pointnet2.py .....................                            [ 92%]
+tests/test_pointnet2.py .....................                            [ 91%]
+tests/test_pointnet2_e2e.py ..                                           [ 92%]
 tests/test_pyg28.py ssssss                                               [ 93%]
 tests/test_pytorch3d_adapter.py ....................                     [100%]
 
@@ -39,4 +40,4 @@ SKIPPED [1] tests/test_pyg28.py:59: requires MPS, torch-geometric 2.8 and pyg-li
 SKIPPED [1] tests/test_pyg28.py:68: requires MPS, torch-geometric 2.8 and pyg-lib>=0.6
 SKIPPED [1] tests/test_pyg28.py:76: requires MPS, torch-geometric 2.8 and pyg-lib>=0.6
 SKIPPED [1] tests/test_pyg28.py:87: requires MPS, torch-geometric 2.8 and pyg-lib>=0.6
-======================= 310 passed, 15 skipped in 4.53s ========================
+======================= 312 passed, 15 skipped in 4.37s ========================
