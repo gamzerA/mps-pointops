@@ -92,13 +92,16 @@ versions and commands if they change.
 
 ## Release archival and DOI lineage
 
-This project prioritizes one Zenodo DOI lineage. The
+This project prioritizes one Zenodo DOI lineage. The current
+[v0.4.0 archive](https://zenodo.org/records/23078860) has version DOI
+`10.5281/zenodo.23078860`; the earlier
 [v0.3.0 archive](https://zenodo.org/records/23076058) has version DOI
-`10.5281/zenodo.23076058` and concept DOI `10.5281/zenodo.23076057`.
+`10.5281/zenodo.23076058`. Both share concept DOI
+`10.5281/zenodo.23076057`.
 The README badge uses the concept DOI; papers and `CITATION.cff` cite the
 specific release's version DOI.
 
-For the next release, use **New version** from the existing Zenodo record,
+For the next release, use **New version** from the latest Zenodo record,
 following [Zenodo's versioning guide](https://help.zenodo.org/docs/deposit/manage-versions/):
 
 1. Create a new version draft from the existing record and reserve its DOI.
