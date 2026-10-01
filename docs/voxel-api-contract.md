@@ -145,7 +145,8 @@ input, and feature/position backward. `uv build --offline --no-build-isolation`
 produced a wheel and source distribution; the wheel contains
 `mps_pointops/voxel.py`. Those dated focused API runs were on M5 Pro. A later
 [physical M1 run](phase3-physical-m1-2026-10-02.md) passed the 20 voxel tests
-in each mode; this does not by itself measure compact API speed. M2–M4 and
+in each mode before the opt-in fused backend was added. It does not validate
+`fused_csr` or measure compact API speed. M2–M4 and
 larger inputs remain outside the cited correctness matrix.
 
 ### Opt-in fused CSR prototype
