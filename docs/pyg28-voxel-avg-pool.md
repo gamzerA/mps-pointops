@@ -58,6 +58,9 @@ for feature sums, then a division. For a loss `L`, the feature gradient is
 dL/dx_i = (dL/dpooled[row(c_i)]) / n_(row(c_i)).
 ```
 
+This is the chain-rule formula; the implementation accumulates counts in the
+feature dtype, so very large float32 counts and sums can round. Our exact
+gradient fixture uses 256 points, for which the count is represented exactly.
 No gradient is defined for integer grid IDs, and this path does not provide
 coordinate gradients through voxel assignment. Float32 addition order can
 vary between CPU and MPS, so forward and backward parity uses `rtol=1e-5`,
@@ -90,6 +93,20 @@ The focused tests cover 1D, 2D, and 3D positions; missing batch number 1;
 input-feature and linear-weight gradients; and 256 points in one voxel. They
 also check the tagged PyG/pyg-lib CPU output. The package remains usable
 without optional PyG and pyg-lib; those differential tests then skip.
+
+On the source revision `012d9655a2dc908cfce1bbe8157ce6c7615303a2`, based
+on `main` commit `94398da77fb305039c9648380182d55747609ad1`, the pinned
+M5 Pro environment passed the full suite with **352 passed, 9 skipped** in
+Safe Math and **351 passed, 10 skipped** in Fast Math. The focused tests
+passed **8/8** in each mode. See the raw
+[Safe](pytest-pyg28-voxel-avg-safe-2026-10-01.log) and
+[Fast](pytest-pyg28-voxel-avg-fast-2026-10-01.log) pytest logs. In the
+separate Torch 2.14.1 environment without optional PyG/pyg-lib, the full
+suite passed **331 with 30 skips** in Safe Math and **330 with 31 skips** in
+Fast Math; see its [Safe](pytest-pyg28-voxel-avg-optional-safe-2026-10-01.log)
+and [Fast](pytest-pyg28-voxel-avg-optional-fast-2026-10-01.log) logs. The
+optional integration tests skipped there. All four logs contain no personal
+absolute paths and record correctness, not performance.
 
 The scope excludes nonfinite points, ambiguous float32 cell boundaries,
 float16/float64 features, higher spatial dimensions, negative or out-of-range

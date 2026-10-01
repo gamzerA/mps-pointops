@@ -588,6 +588,11 @@ cluster = voxel_grid(pos, size=1.0, batch=batch, start=0.0, end=2.0)
 pooled_x, pooled_batch = avg_pool_x(cluster, x, batch)
 ```
 
+The pinned M5 Pro full-suite [Safe](docs/pytest-pyg28-voxel-avg-safe-2026-10-01.log)
+and [Fast](docs/pytest-pyg28-voxel-avg-fast-2026-10-01.log) runs passed
+352/351 tests, with 9/10 skips, on source revision `012d9655a2dc908cfce1bbe8157ce6c7615303a2`
+based on `main` commit `94398da77fb305039c9648380182d55747609ad1`.
+
 PyG's graph wrappers use those same operators. The MPS path supports flat
 three-dimensional coordinates for FPS/radius and arbitrary positive feature
 dimension for float32 kNN; radius accepts float32 or float16. It returns
