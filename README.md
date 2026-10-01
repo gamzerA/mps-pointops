@@ -12,6 +12,8 @@
 
 **Point-cloud operators for PyTorch on Apple Silicon.** Native Metal kernels
 run farthest point sampling, k nearest neighbors, and Ball Query on MPS.
+Version 0.5.0 also provides experimental PointNet++ feature propagation and
+squared-L2 Chamfer distance APIs.
 Compatibility stand-ins cover supported `pointnet2_ops`, `knn_cuda`, and
 `torch_cluster` call sites; CPU tensors use PyTorch reference implementations.
 
@@ -37,13 +39,12 @@ kernels compile on first use.
 python -m pip install mps-pointops
 ```
 
-Version 0.4.0 includes the dense SIMD Ball Query kernel, the PyTorch3D-style
-adapter, and the large-cloud FPS path for a single cloud.
-
-The `main` source also has experimental `three_nn`, `three_interpolate`, and
-`chamfer_distance` APIs. They are **source-only and unreleased**: PyPI v0.4.0
-does not include them. See the [PointNet++ propagation](docs/pointnet2-propagation.md)
-and [Chamfer](docs/chamfer-contract.md) contracts for their supported inputs.
+Version 0.5.0 includes dense SIMD Ball Query, the PyTorch3D-style Ball Query
+adapter, and the large-cloud FPS path for a single cloud. It adds experimental
+`three_nn`, `three_interpolate`, and squared-L2 `chamfer_distance` APIs. Their
+supported inputs and differences from upstream are specified in the
+[PointNet++ propagation](docs/pointnet2-propagation.md) and
+[Chamfer](docs/chamfer-contract.md) contracts.
 
 ### Minimal example
 
@@ -67,6 +68,23 @@ assert centers_idx.tolist() == [[0, 3]]
 assert neighbor_idx.tolist() == [[[0, 1], [3, 1]]]
 assert radius_idx.tolist() == [[[0, 1], [1, 2]]]
 print("MPS point ops OK")
+```
+
+The experimental 0.5.0 operators can be called directly:
+
+```python
+import torch
+from mps_pointops import chamfer_distance, three_interpolate, three_nn
+
+xyz = torch.tensor(
+    [[[0., 0., 0.], [1., 0., 0.], [0., 1., 0.]]], device="mps"
+)
+distances, indices = three_nn(xyz[:, :2], xyz[:, :3])
+weights = torch.full_like(distances, 1.0 / 3.0)
+features = torch.ones((1, 2, 3), device="mps", requires_grad=True)
+interpolated = three_interpolate(features, indices, weights)
+loss, _ = chamfer_distance(xyz[:, :2], xyz[:, :3])
+print(interpolated.shape, loss.item())
 ```
 
 | Operator | Selection rule | Native result |
@@ -709,8 +727,10 @@ An operator counts as complete for a release after these four checks:
    Near ties and float boundaries can differ as documented.
 4. **Reproducible benchmarks**: raw results, environment and counterexamples.
 
-Status marks: `[x]` released, `[~]` merged on `main` and not yet released,
-`[ ]` planned. Version numbers are targets, not promises.
+Status marks: `[x]` released and complete for the stated scope, `[~]` merged but still
+experimental or otherwise incomplete, `[ ]` planned. A `[~]` item may appear
+in a release without completing its phase. Version numbers are targets, not
+promises.
 
 ### Verified models
 
@@ -754,7 +774,7 @@ original implementation.
 - [ ] Flat API benchmarks in the published results.
 - [ ] Benchmarks from other Apple Silicon chips (M1 to M4), on real hardware.
 
-### Phase 2: Feature-space and propagation operators (target 0.5.0)
+### Phase 2: Feature-space and propagation operators (started in 0.5.0)
 
 - [ ] kNN in arbitrary dimension (D > 3) for feature-space neighbor search.
       Use direct dimension-by-dimension distance accumulation as the numerical
@@ -763,9 +783,9 @@ original implementation.
       outside ambiguous ties and model-output errors within a documented
       tolerance, rather than requiring bitwise CPU/MPS index parity at every
       boundary.
-- [~] Experimental, source-only `three_nn` and `three_interpolate` for PointNet++
-      feature propagation (#16). The first returns Euclidean distances and
-      three indices. The second accepts externally computed weights and
+- [~] Experimental `three_nn` and `three_interpolate` for PointNet++ feature
+      propagation (introduced in 0.5.0; #16). The first returns Euclidean
+      distances and three indices. The second accepts externally computed weights and
       accumulates backward gradients into input features. See the
       [contract and differential tests](docs/pointnet2-propagation.md).
 - [ ] Validate PointNet++ segmentation end to end on MPS and compare model
@@ -794,8 +814,8 @@ original implementation.
 
 ### Phase 4: Geometry losses and large-scale search (target 0.8.0 to 0.9.0)
 
-- [~] Experimental, source-only bidirectional squared-L2 Chamfer distance
-      (#18). Metal returns nearest indices and squared distances; PyTorch's
+- [~] Experimental bidirectional squared-L2 Chamfer distance (introduced in
+      0.5.0; #18). Metal returns nearest indices and squared distances; PyTorch's
       native `scatter_add_` accumulates both backward directions. Supported
       `lengths` mask padding in forward and backward, and point/batch
       reductions scale gradients according to the [contract](docs/chamfer-contract.md).
@@ -855,7 +875,9 @@ local Safe/Fast Math tests, and the six required CI checks for `main`.
 
 ## Citation
 
-For v0.4.0, cite its archived
+For v0.5.0, cite its archived
+[version DOI (10.5281/zenodo.23080506)](https://doi.org/10.5281/zenodo.23080506).
+For results using v0.4.0, cite its archived
 [version DOI (10.5281/zenodo.23078860)](https://doi.org/10.5281/zenodo.23078860).
 For results using v0.3.0, cite its archived
 [version DOI (10.5281/zenodo.23076058)](https://doi.org/10.5281/zenodo.23076058).

@@ -1,20 +1,31 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 — 2026-10-01
+
+This release makes the new PointNet++ and Chamfer APIs available as
+**experimental operators**. It does not complete Phase 2: high-dimensional
+kNN and PointNet++ segmentation validation remain open.
 
 ### Added
 
-- Experimental, source-only `three_nn` and `three_interpolate` for PointNet++
+- Experimental `three_nn` and `three_interpolate` for PointNet++
   feature propagation on MPS, with a PyTorch CPU reference and native Metal
-  forward/interpolation backward. PyPI v0.4.0 does not include these APIs.
+  forward/interpolation backward.
   The [contract](docs/pointnet2-propagation.md) records the supported shapes,
   tie order, and gradient surface; full segmentation validation remains open.
-- Experimental, source-only squared-L2 `chamfer_distance`. Metal returns
+- Experimental squared-L2 `chamfer_distance`. Metal returns
   nearest indices and distances, while PyTorch `scatter_add_` accumulates the
   bidirectional first-order gradient. Supported lengths mask padding in both
   passes; point/batch reductions and weights scale the gradient as specified
-  in the [contract](docs/chamfer-contract.md). PyPI v0.4.0 does not include it;
-  direct PyTorch3D parity testing remains open.
+  in the [contract](docs/chamfer-contract.md). Direct PyTorch3D parity testing
+  is part of the release validation record.
+
+### Fixed
+
+- Chamfer's Metal nearest search now selects a valid first index even when
+  finite float32 coordinates overflow every squared distance to infinity;
+  the saved index remains safe for backward gathering (#20). CI also checks
+  that both new Python modules and Metal shaders are present in the wheel.
 
 ### Survey and measurements
 
