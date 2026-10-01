@@ -81,3 +81,17 @@ benchmarked. Floating-point scatter accumulation can also change its last
 bits with execution order; bitwise repeatability of MPS gradients is not
 promised. The implementation and equations here were independently written
 for this project; no PyTorch3D source was copied.
+
+## First contention measurement
+
+The [Safe](../bench/results/2026-10-01-apple-m5-pro-chamfer-contention-safe.md)
+and [Fast](../bench/results/2026-10-01-apple-m5-pro-chamfer-contention-fast.md)
+M5 Pro measurements use four clouds of 256 to 16,384 points, 20 timed repeats
+per case, and synchronized forward/backward timings. Uniform selection sends
+each query to a different reference; concentrated selection sends all queries
+to reference zero. The paired median concentrated/uniform backward ratios
+were 0.97–1.11 in Safe Math and 0.98–1.04 in Fast Math. A direct
+`scatter_add_` control also showed no consistent concentrated slowdown in
+this range. These results support retaining PyTorch's native accumulation for
+the current implementation. They do not establish its behavior on larger
+clouds, other Apple GPUs, or different gradient distributions.
