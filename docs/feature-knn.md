@@ -1,6 +1,6 @@
 # Feature-space kNN contract and DGCNN validation
 
-This development branch adds native Metal kNN for feature vectors with a
+Version 0.6.0 adds native Metal kNN for feature vectors with a
 positive dimension other than three. The existing three-dimensional dense and
 flat kernels are unchanged. FPS, radius search, Ball Query, and PointNet++
 geometry inputs still require three coordinates.
@@ -159,11 +159,13 @@ reverse that ordering. The direct path is a numerical baseline; a
 tiled/vectorized D=128 path and controlled repeated performance experiments
 remain follow-ups. No general GPU or CPU speedup is claimed.
 
-An isolated sdist and wheel build was checked against the source byte hash:
+An isolated pre-release sdist and wheel build was checked against the source
+byte hash:
 `mps_pointops/kernels/feature_knn.metal` SHA-256
 `501f3b95c132900bd0ed919306de2154e665af5293e0cad3125307543a50ae27`
-appeared byte-for-byte in both archives. This is a development-branch build,
-not a published PyPI artifact.
+appeared byte-for-byte in both archives. This result documents the tested
+pre-release source revision; the release workflow checks the final package
+artifacts separately.
 
 The later [physical M1 Safe/Fast report](phase3-physical-m1-2026-10-02.md)
 extends the size sweep to Q=N=2,048. Dense D=64/128 Metal was slower than

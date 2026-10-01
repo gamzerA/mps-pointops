@@ -2,19 +2,59 @@
 
 ## Unreleased
 
-- Add an experimental native Metal feature-space kNN path for matching
-  dimensions other than three (including D=64 and 128), with dense, flat,
-  and PyG operator entry points. The original 3D kernels remain in use.
-  [The contract](docs/feature-knn.md) specifies deterministic ties,
-  non-finite distances, and the explicit `k <= 256` feature-path limit.
-- Validate the pinned original DGCNN classification model on a fixed
-  synthetic 64-point fixture, including four rounds of dynamic-neighbor
-  selection and full forward/backward comparison with its CPU implementation.
-  Dataset accuracy, full training, and original CUDA parity remain untested.
-- M5 Pro full-suite checks after this change: Safe Math 284 passed / 13 skipped;
-  Fast Math 283 passed / 14 skipped. The Safe-only non-finite test explains
-  the one-case difference. Raw logs are linked from the
-  [feature-kNN contract](docs/feature-knn.md).
+## 0.6.0 — 2026-10-02
+
+This release adds experimental feature-space and graph/grid operations, plus
+bounded model and physical M1 validation. It does not complete Phase 3 or
+establish universal PyG compatibility or a speedup on every Apple GPU.
+
+### Added
+
+- Native Metal feature-space kNN for positive dimensions other than three,
+  including D=64 and 128, through the dense, flat, and PyG `pyg::knn` MPS
+  entry points. The existing 3D kernels remain in use. The
+  [contract](docs/feature-knn.md) specifies direct float32 accumulation,
+  deterministic ties, non-finite distances, and an explicit `k <= 256` limit
+  for the feature path.
+- Bounded legacy `torch_cluster` compatibility paths for `nearest`,
+  `grid_cluster`, `graclus_cluster`, and `random_walk` on CPU/MPS. The
+  [`random_walk` contract](docs/random-walk-contract.md) uses PyTorch tensor
+  operations, not a native Metal kernel, and does not register PyG 2.8's
+  separate `torch.ops.pyg.random_walk` operator.
+- MPS dispatch for PyG 2.8's `pyg::grid_cluster`, enabling the tested
+  `voxel_grid` → `avg_pool_x` path. A separate experimental
+  [compact voxel API](docs/voxel-api-contract.md) provides floor-based cells,
+  point/voxel maps, and mean/sum feature reduction on CPU/MPS. These APIs
+  have different raw grid IDs; no fused Metal voxel-pooling kernel is included.
+
+### Validation and measurements
+
+- The pinned original DGCNN classification model passed one synthetic
+  64-point forward/backward fixture, including four dynamic-neighbor stages
+  and 4,096 matching indices. Dataset accuracy, full training, and original
+  CUDA parity remain untested ([evidence](docs/feature-knn.md)).
+- A fixed synthetic PointNet++ SSG segmentation model passed eval forward,
+  cross-entropy loss, and input/parameter gradient comparison with the
+  original CUDA extension at `atol=rtol=1e-4`. Six of 12 raw local-index
+  arrays differed after an FPS tie; the report explains the mapped indices
+  and one order-dependent Ball Query cutoff. Labeled-data accuracy and
+  training convergence remain untested
+  ([report](docs/parity/pointnet2-segmentation.md)).
+- PyG 2.8 graph `avg_pool` and `voxel_grid` → `avg_pool_x` were checked on
+  bounded synthetic graphs and features, including topology and first-order
+  gradients. Pooling uses PyG/PyTorch reductions, not a project Metal kernel
+  ([Phase 3 matrix](docs/phase3-results-2026-10-01.md)).
+- Physical M1 Safe/Fast full-suite runs reported **394 passed / 11 skipped**
+  and **393 passed / 12 skipped**, respectively, with MPS fallback disabled.
+  The [M1 report](docs/phase3-physical-m1-2026-10-02.md) records dense Ball
+  Query and large-cloud FPS parity, synchronized Chamfer/feature-kNN timings,
+  and a severe concentrated-destination `scatter_add_` slowdown in its
+  stated fixtures. M2–M4 physical validation remains open.
+- Synchronized M5 Pro PyG GCN/GraphSAGE/GAT workloads and M1/M5 native
+  scatter probes support [retaining native PyTorch scatter](docs/pyg-survey/2026-10-02-m1-m5-scatter-decision.md)
+  for the documented graph path while testing a segmented-reduction candidate
+  for skewed destinations. These measurements do not isolate Metal atomics
+  as the cause or establish a model-level speedup from a custom reduction.
 
 ## 0.5.0 — 2026-10-01
 

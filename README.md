@@ -12,8 +12,8 @@
 
 **Point-cloud operators for PyTorch on Apple Silicon.** Native Metal kernels
 run farthest point sampling, k nearest neighbors, and Ball Query on MPS.
-Version 0.5.0 also provides experimental PointNet++ feature propagation and
-squared-L2 Chamfer distance APIs.
+Version 0.6.0 also provides experimental PointNet++ feature propagation,
+squared-L2 Chamfer distance, feature-space kNN, and graph/grid interfaces.
 Compatibility stand-ins cover supported `pointnet2_ops`, `knn_cuda`, and
 `torch_cluster` call sites; CPU tensors use PyTorch reference implementations.
 
@@ -39,10 +39,12 @@ kernels compile on first use.
 python -m pip install mps-pointops
 ```
 
-Version 0.5.0 includes dense SIMD Ball Query, the PyTorch3D-style Ball Query
-adapter, and the large-cloud FPS path for a single cloud. It adds experimental
-`three_nn`, `three_interpolate`, and squared-L2 `chamfer_distance` APIs. Their
-supported inputs and differences from upstream are specified in the
+Version 0.6.0 includes dense SIMD Ball Query, the PyTorch3D-style Ball Query
+adapter, and the large-cloud FPS path for a single cloud. Experimental
+`three_nn`, `three_interpolate`, squared-L2 `chamfer_distance`, and
+feature-space kNN APIs are available; the legacy graph and voxel interfaces
+have bounded input contracts. The supported propagation and loss inputs and
+their differences from upstream are specified in the
 [PointNet++ propagation](docs/pointnet2-propagation.md) and
 [Chamfer](docs/chamfer-contract.md) contracts.
 Direct comparisons against the
@@ -74,7 +76,8 @@ assert radius_idx.tolist() == [[[0, 1], [1, 2]]]
 print("MPS point ops OK")
 ```
 
-The experimental 0.5.0 operators can be called directly:
+The PointNet++ and Chamfer operators introduced in v0.5.0 can be called
+directly:
 
 ```python
 import torch
@@ -194,9 +197,9 @@ weights and has not been run yet.
 
 ## Benchmark
 
-![M5 Pro current-source speedups at 100,000 randomly ordered reference points: FPS 6.5 times, kNN 4.2 times, Ball Query 13.7 times faster than the tested CPU libraries](docs/assets/m5-pro-speedup.svg)
+![M5 Pro October 1 source-snapshot speedups at 100,000 randomly ordered reference points: FPS 6.5 times, kNN 4.2 times, Ball Query 13.7 times faster than the tested CPU libraries](docs/assets/m5-pro-speedup.svg)
 
-The chart compares each current Metal kernel with the fastest tested CPU
+The chart compares the October 1 measured Metal source snapshot with the fastest tested CPU
 library for that operation on the **same M5 Pro**. It uses batch 1, 100,000
 reference points, 1,024 samples or queries, random input order, and the median
 of five runs, with MPS fallback disabled and Fast Math unset. SciPy times
@@ -204,19 +207,21 @@ include KD-tree construction; device transfer is excluded. The chart is
 generated from the committed
 [random-order JSON](bench/results/2026-10-01-source-sync/2026-10-01-apple-m5-pro.json)
 by [this script](tools/render_readme_assets.py). The JSON records SHA-256 for
-the benchmark, operator dispatch, reference code, and all three timed kernels;
-the hashes match the current files. The Ball Query row times the dense
+the benchmark, operator dispatch, reference code, and all three timed kernels.
+The benchmark script and three timed Metal kernels still match those hashes;
+the shared dispatch and reference code have since changed, so these are
+snapshot timings rather than a new v0.6.0 benchmark. The Ball Query row times the dense
 `mps_pointops.ball_query` API, without the optional PyTorch3D adapter's
 neighbor gathering. Displayed times are rounded to 0.1 ms; the speedups use
 unrounded medians in the JSON.
 
 The synthetic points lie near a unit sphere and use MulSen-AD scale. Full
-result tables: [current random order](bench/results/2026-10-01-source-sync/2026-10-01-apple-m5-pro.md)
-and [current x-sorted Ball Query](bench/results/2026-10-01-source-sync/ball-sorted-only/2026-10-01-apple-m5-pro-sorted.md).
+result tables: [October 1 random order](bench/results/2026-10-01-source-sync/2026-10-01-apple-m5-pro.md)
+and [October 1 x-sorted Ball Query](bench/results/2026-10-01-source-sync/ball-sorted-only/2026-10-01-apple-m5-pro-sorted.md).
 The [v0.3.0 Ball Query results](bench/results/2026-10-01-apple-m5-pro-ball-query-port.md)
 remain archived as a separate release baseline.
 
-Current source, Apple M5 Pro, 48 GB, macOS 26.5.2, torch 2.14.1, random point order:
+October 1 source snapshot, Apple M5 Pro, 48 GB, macOS 26.5.2, torch 2.14.1, random point order:
 
 | op | points | **mps-pointops (Metal)** | torch on MPS | torch on CPU | best CPU library |
 |---|---:|---:|---:|---:|---:|
@@ -244,7 +249,7 @@ What this shows:
   position; at 100k points 1 to 2 of the 131,072 true neighbors are missing.
 - **Ball Query keeps input order while scanning in SIMD blocks.** At 100k
   random points it measured 1.5 ms versus SciPy's 19.9 ms including tree
-  construction. With points sorted by x, the separate current-source run
+  construction. With points sorted by x, the separate source-snapshot run
   measured 2.9 ms versus SciPy's 20.6 ms. Input order still affects its
   runtime because each query stops after its first `K` hits.
 
@@ -1106,7 +1111,9 @@ local Safe/Fast Math tests, and the six required CI checks for `main`.
 
 ## Citation
 
-For v0.5.0, cite its archived
+For v0.6.0, cite its archived
+[version DOI (10.5281/zenodo.23086417)](https://doi.org/10.5281/zenodo.23086417).
+For results using v0.5.0, cite its archived
 [version DOI (10.5281/zenodo.23080506)](https://doi.org/10.5281/zenodo.23080506).
 For results using v0.4.0, cite its archived
 [version DOI (10.5281/zenodo.23078860)](https://doi.org/10.5281/zenodo.23078860).
