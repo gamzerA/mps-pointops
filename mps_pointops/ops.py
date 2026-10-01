@@ -14,27 +14,13 @@ import torch
 from torch import Tensor
 
 from . import reference
-from ._ball_query_mps import _checked_radius_and_k, _require_compile_shader, ball_query as _metal_ball_query
+from ._ball_query_mps import _check_simd_width, _checked_radius_and_k, ball_query as _metal_ball_query
 
 # Threads per threadgroup. 1024 is the Apple GPU maximum.
 _THREADS = 1024
 # Must match QUERIES_PER_GROUP and MAX_K in kernels/knn.metal.
 _KNN_QUERIES_PER_GROUP = 8
 _KNN_MAX_K = 256
-
-
-@cache
-def _check_simd_width() -> None:
-    """The kernels assume 32-wide simdgroups. Check once, on first use."""
-    _require_compile_shader()
-    lib = torch.mps.compile_shader(
-        "kernel void width(device long* out, uint w [[threads_per_simdgroup]]) { out[0] = w; }"
-    )
-    out = torch.zeros(1, dtype=torch.long, device="mps")
-    lib.width(out, threads=1, group_size=1)
-    width = int(out.item())
-    if width != 32:
-        raise RuntimeError(f"mps_pointops kernels need 32-wide simdgroups, this GPU uses {width}")
 
 
 @cache

@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Dense Ball Query now scans consecutive 32-point blocks with a SIMD prefix
+  rank, preserving the first-K input order while improving sorted-input
+  performance. On an M5 Pro, a paired 100k-point Safe Math ablation measured
+  21.43 to 2.91 ms on x-sorted input and 7.66 to 1.40 ms on random input.
+- Native kernel startup checks Apple Silicon macOS, an available PyTorch MPS
+  backend, and 32-wide simdgroups before compiling the dense shader.
+- The README includes a small MPS smoke example and distinguishes the v0.3.0
+  benchmark from the current SIMD experiment.
+
+### Verified
+
+- Safe and Fast Math each passed 168 tests with 12 expected skips on M5 Pro.
+  A separate sentinel-buffer checker passed 48 Safe and 40 Fast differential
+  cases: complete output writes, byte-identical indices and squared distances
+  versus the previous Metal kernel, and first-K indices equal to an independent
+  CPU oracle on the tested inputs.
+- A benchmark-only multi-threadgroup FPS experiment measured sizes from 2,048
+  to 1,000,000 points at batch 1. It remains outside the public kernel until
+  other devices and batch sizes are tested.
+
 ## 0.3.0 — 2026-10-01
 
 ### Added
