@@ -1055,18 +1055,20 @@ correctness and timing evidence without extending claims to M2–M4.
       batched floor-based cells, exact inverse/CSR maps and counts, mean
       positions, and mean/sum features with first-order gradients on CPU/MPS.
       The physical M1 Safe/Fast full suites passed the 20 voxel tests before
-      the opt-in fused backend was added; they do not validate `fused_csr`.
-      Compact API speed on M1, M2–M4, and wider dtype coverage remain unverified.
+      the opt-in fused backend was added. Separate [Safe](docs/pytest-v070-m1-fused-safe-2026-10-02.log)
+      and [Fast](docs/pytest-v070-m1-fused-fast-2026-10-02.log) M1 focused
+      runs each passed 12 fused tests with one expected failure. M2–M4 and
+      wider dtype coverage remain unverified.
 - [~] PyG 2.8 graph `avg_pool` on finite float32 synthetic graphs: the
       [coarsening contract and synchronized measurement](docs/pyg28-graph-avg-pool.md)
       cover topology, duplicate edges, self-loops, batch labels, pooled values,
       and first-order gradients. General PyG model coverage remains open.
 - [~] Measured speed of the separate compact voxel-downsampling API on a
-      [physical M5 Pro](docs/voxel-api-benchmark.md) across 20k/100k/500k
+      [physical M5 Pro and M1](docs/voxel-api-benchmark.md) across 20k/100k/500k
       points, uniform/ragged batches, and dense/sparse cells. The report keeps
       stage timings separate from the full forward/backward call and labels
-      MPS allocator readings as current values, not memory peaks. Physical M1
-      speed remains to be measured.
+      MPS allocator readings as current values, not memory peaks. These
+      device-specific measurements do not establish a universal crossover.
 - [~] An opt-in [fused Metal CSR pooling prototype](docs/voxel-api-contract.md)
       retains the exact integer cell/inverse/CSR maps and matches bounded
       mean/sum and first-order gradient fixtures. It reduces position and
