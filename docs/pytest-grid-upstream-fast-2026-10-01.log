@@ -1,0 +1,14 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: <repository-root>
+configfile: pyproject.toml
+plugins: platformdirs-4.12.2, dash-4.4.1, anyio-4.15.1
+collected 36 items
+
+tests/test_grid_cluster.py .........                                     [ 25%]
+tests/test_flat_graph.py ...                                             [ 33%]
+tests/test_feature_knn.py ..................s.....                       [100%]
+
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_feature_knn.py:121: non-finite Safe Math policy only
+======================== 35 passed, 1 skipped in 2.13s =========================

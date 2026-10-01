@@ -25,9 +25,10 @@ Covered: ``furthest_point_sample``, ``gather_operation``,
   ``pointnet2_ops`` convention.
 - The ``torch_cluster`` shim exposes ``fps``, ``knn``, ``radius`` and their
   same-set graph wrappers. FPS and radius use three-dimensional point
-  coordinates; kNN also accepts float32 feature vectors on MPS.
-  Other names needed for PyG 2.7 package import raise ``NotImplementedError``
-  when called. It does not register PyG's separate ``torch.ops.pyg`` operators.
+  coordinates; kNN also accepts float32 feature vectors on MPS. Experimental
+  ``grid_cluster`` accepts float32 3D coordinates. Other names needed for PyG
+  2.7 package import raise ``NotImplementedError`` when called. It does not
+  register PyG's separate ``torch.ops.pyg`` operators.
 """
 
 from __future__ import annotations
@@ -40,7 +41,7 @@ import types
 import torch
 from torch import Tensor
 
-from . import flat, ops
+from . import flat, grid, ops
 
 
 # ---------------------------------------------------------------- pointnet2_ops
@@ -151,7 +152,7 @@ def install(force: bool = False) -> list[str]:
                 radius=flat.radius,
                 knn_graph=flat.knn_graph,
                 radius_graph=flat.radius_graph,
-                grid_cluster=_unsupported_torch_cluster("grid_cluster"),
+                grid_cluster=grid.grid_cluster,
                 graclus_cluster=_unsupported_torch_cluster("graclus_cluster"),
                 random_walk=_unsupported_torch_cluster("random_walk"),
                 nearest=_unsupported_torch_cluster("nearest"),
