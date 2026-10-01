@@ -59,8 +59,12 @@ $$
   [I_{bnt}=m]W_{bnt}\frac{\partial L}{\partial Y_{bcn}}.
 $$
 
-Repeated indices contribute repeatedly. The API returns no gradient for
-indices or weights, matching the upstream autograd surface. This is a
+Repeated indices contribute repeatedly. The upstream autograd wrapper returns
+an explicit zero tensor for the weight gradient. This is an API choice, not the
+mathematical derivative: when treating the weights as independent variables,
+$\partial Y_{bcn}/\partial W_{bnt}=F_{bc,I_{bnt}}$. This compatibility API
+reproduces upstream's zero tensor when weights require gradients. Integer
+indices are not differentiable. This is a
 first-order backward operation; second-order gradients are not supported on
 the native Metal path.
 

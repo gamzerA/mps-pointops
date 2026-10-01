@@ -87,7 +87,18 @@ def test_three_interpolate_forward_backward_repeated_indices(device: str) -> Non
     output.sum().backward()
     expected_grad = torch.tensor([[[0., 1., 0., 1.], [0., 1., 0., 1.]]])
     torch.testing.assert_close(features.grad.cpu(), expected_grad, rtol=0, atol=0)
-    assert weights.grad is None
+    torch.testing.assert_close(weights.grad.cpu(), torch.zeros_like(weights).cpu(), rtol=0, atol=0)
+
+
+@pytest.mark.parametrize("device", DEVICES)
+def test_three_interpolate_weight_only_gradient_is_explicit_zero(device: str) -> None:
+    features = torch.tensor([[[2., 3., 5.]]], device=device)
+    indices = torch.tensor([[[0, 1, 2]]], dtype=torch.int32, device=device)
+    weights = torch.tensor([[[0.2, 0.3, 0.5]]], device=device, requires_grad=True)
+    output = three_interpolate(features, indices, weights)
+    output.sum().backward()
+    assert weights.grad is not None
+    torch.testing.assert_close(weights.grad.cpu(), torch.zeros_like(weights).cpu(), rtol=0, atol=0)
 
 
 @pytest.mark.parametrize("device", DEVICES)
