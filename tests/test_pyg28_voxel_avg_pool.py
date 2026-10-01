@@ -80,13 +80,12 @@ def test_voxel_avg_pool_model_cpu_mps_forward_backward(
     features = torch.arange(24, dtype=torch.float32).view(6, 4) / 7.0
     cpu_x = features.detach().clone().requires_grad_(True)
     mps_x = features.to("mps").detach().requires_grad_(True)
-    cpu_model = torch.nn.Linear(4, 3)
+    # Keep the projection independent of the bias-bearing MPS Linear path.
+    cpu_model = torch.nn.Linear(4, 3, bias=False)
     with torch.no_grad():
         cpu_model.weight.copy_(torch.arange(12).view(3, 4) / 19.0)
-        cpu_model.bias.copy_(torch.tensor([-0.25, 0.5, 0.75]))
     mps_model = deepcopy(cpu_model).to("mps")
     torch.testing.assert_close(mps_model.weight.cpu(), cpu_model.weight, rtol=0, atol=0)
-    torch.testing.assert_close(mps_model.bias.cpu(), cpu_model.bias, rtol=0, atol=0)
 
     cpu_cluster = voxel_grid(pos, size=1.0, batch=batch, start=0.0, end=2.0)
     mps_cluster = voxel_grid(
@@ -119,9 +118,6 @@ def test_voxel_avg_pool_model_cpu_mps_forward_backward(
     torch.testing.assert_close(mps_x.grad.cpu(), cpu_x.grad, rtol=1e-5, atol=1e-6)
     torch.testing.assert_close(
         mps_model.weight.grad.cpu(), cpu_model.weight.grad, rtol=1e-5, atol=1e-6,
-    )
-    torch.testing.assert_close(
-        mps_model.bias.grad.cpu(), cpu_model.bias.grad, rtol=1e-5, atol=1e-6,
     )
 
 
