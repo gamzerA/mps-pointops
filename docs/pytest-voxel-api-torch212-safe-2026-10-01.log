@@ -9,4 +9,4 @@ SKIPPED [2] tests/test_grid_cluster.py:84: real torch_cluster is not installed
 SKIPPED [7] tests/test_knn.py:40: k > n
 SKIPPED [1] tests/test_random_walk.py:126: real torch_cluster is not installed
 SKIPPED [1] tests/test_random_walk.py:168: real torch_cluster is not installed
-390 passed, 11 skipped, 2 warnings in 6.44s
+390 passed, 11 skipped, 2 warnings in 6.78s

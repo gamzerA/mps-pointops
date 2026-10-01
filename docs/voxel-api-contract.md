@@ -92,13 +92,14 @@ floating-point tolerance. This implementation makes no speed claim.
 
 ## Implementation and verification scope
 
-The code uses PyTorch `torch.unique(dim=0, sorted=True)`, stable `argsort`,
-and `index_add_` on CPU/MPS. Our code does not explicitly copy input tensors
-to CPU; PyTorch's internal implementation of these operators is outside this
-claim. Finite,
-bound, and range checks read GPU scalar predicates and therefore synchronize
-MPS; `unique` also creates a data-dependent output shape. This initial
-correctness path is not a latency-optimized Metal kernel. The hosted
+The code uses stable per-column `argsort`, adjacent-key comparison,
+`cumsum`, `nonzero`, `scatter_`, and `index_add_` on CPU/MPS. It avoids
+`torch.unique(dim=0)` because PyTorch 2.7 MPS lacks `aten::unique_dim`.
+Our code does not explicitly copy input tensors to CPU; PyTorch's internal
+implementation of these operators is outside this claim. Finite, bound, and
+range checks read GPU scalar predicates and therefore synchronize MPS;
+selecting the occupied rows also creates a data-dependent output shape. This
+initial correctness path is not a latency-optimized Metal kernel. The hosted
 Torch 2.12 `nn.Linear` bias discrepancy noted in the separate
 [PyG feature-pooling record](pyg28-voxel-avg-pool.md) is not used to judge
 this API's inverse map or aggregation correctness.
@@ -113,7 +114,7 @@ PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=1 \
 ```
 
 On an Apple M5 Pro, macOS 26.5.2 (25F84), Python 3.12.13, source commit
-`62d2ca0358d6e6a226e0384c2beb2a834a4f7dbd`, all runs used
+`caf28915a56ed0ec8ba9ce75d0e9c377a2cb301d`, all runs used
 `PYTORCH_ENABLE_MPS_FALLBACK=0` and separate processes:
 
 | Environment | Safe Math | Fast Math |
