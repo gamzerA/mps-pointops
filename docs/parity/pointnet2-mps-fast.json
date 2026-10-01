@@ -3428,7 +3428,7 @@
   "mps_fast_math": "1",
   "provenance": {
     "metal_source": "mps_pointops/kernels/pointnet2.metal",
-    "project_commit": "471355bf6f341bbf9d83dfd1b1469f9159d55c68",
+    "project_commit": "88cdc23fd631fe3f116f8018d5ae847026977b61",
     "project_metal_sha256": "c46238511f5d36a0d3dea3bbdbe8efe571f692a5f82350ee92425ea57b6569c1",
     "project_python_sha256": "55d946e1c4bfe32755566ecf51f643b0a08df3f94317f8ee6f1e07adf685a2e7",
     "python_module": "mps_pointops/pointnet2.py"
