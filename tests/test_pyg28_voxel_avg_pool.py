@@ -85,6 +85,8 @@ def test_voxel_avg_pool_model_cpu_mps_forward_backward(
         cpu_model.weight.copy_(torch.arange(12).view(3, 4) / 19.0)
         cpu_model.bias.copy_(torch.tensor([-0.25, 0.5, 0.75]))
     mps_model = deepcopy(cpu_model).to("mps")
+    torch.testing.assert_close(mps_model.weight.cpu(), cpu_model.weight, rtol=0, atol=0)
+    torch.testing.assert_close(mps_model.bias.cpu(), cpu_model.bias, rtol=0, atol=0)
 
     cpu_cluster = voxel_grid(pos, size=1.0, batch=batch, start=0.0, end=2.0)
     mps_cluster = voxel_grid(
@@ -95,8 +97,12 @@ def test_voxel_avg_pool_model_cpu_mps_forward_backward(
     mps_pooled, mps_batch = avg_pool_x(
         mps_cluster, mps_x, batch.to("mps"), **kwargs,
     )
-    cpu_loss = cpu_model(cpu_pooled).square().mean()
-    mps_loss = mps_model(mps_pooled).square().mean()
+    cpu_output = cpu_model(cpu_pooled)
+    mps_output = mps_model(mps_pooled)
+    torch.testing.assert_close(mps_pooled.cpu(), cpu_pooled, rtol=1e-5, atol=1e-6)
+    torch.testing.assert_close(mps_output.cpu(), cpu_output, rtol=1e-5, atol=1e-6)
+    cpu_loss = cpu_output.square().mean()
+    mps_loss = mps_output.square().mean()
     cpu_loss.backward()
     mps_loss.backward()
     torch.mps.synchronize()
