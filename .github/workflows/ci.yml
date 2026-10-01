@@ -83,6 +83,7 @@ jobs:
               "mps_pointops/kernels/knn.metal",
               "mps_pointops/kernels/feature_knn.metal",
               "mps_pointops/kernels/nearest.metal",
+              "mps_pointops/kernels/graclus.metal",
               "mps_pointops/kernels/ball_query.metal",
               "mps_pointops/kernels/fps_flat.metal",
               "mps_pointops/kernels/flat_search.metal",
@@ -92,6 +93,7 @@ jobs:
               "mps_pointops/pointnet2.py",
               "mps_pointops/chamfer.py",
               "mps_pointops/nearest.py",
+              "mps_pointops/graclus.py",
           }
           missing = required - names
           licenses = [n for n in names if "/licenses/" in n]
