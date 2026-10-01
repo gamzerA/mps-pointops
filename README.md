@@ -603,6 +603,34 @@ The model fixture uses a bias-free projection; a hosted Torch 2.12 MPS
 [`nn.Linear` bias discrepancy](docs/pyg28-voxel-avg-pool.md) is documented
 separately with an independent reproduction probe.
 
+### Compact voxel downsampling API
+
+The experimental [voxel API](docs/voxel-api-contract.md) accepts flat
+float32 1D–3D points and optional int64 batch IDs on CPU or MPS. It returns
+compact voxel rows sorted by `(batch, cell coordinates)`, point-to-voxel
+`inverse` indices, voxel-to-point `point_order`/`ptr` maps, counts, mean
+positions, and optional mean or sum features. For example:
+
+```python
+import torch
+from mps_pointops.voxel import voxel_downsample
+
+pos = torch.tensor([[-0.5], [0.25], [0.75]], device="mps")
+batch = torch.tensor([0, 2, 2], device="mps")
+x = torch.tensor([[2.0], [4.0], [6.0]], device="mps", requires_grad=True)
+result = voxel_downsample(pos, size=1.0, batch=batch, features=x)
+assert result.voxels.inverse.tolist() == [0, 1, 1]
+assert result.voxels.ptr.tolist() == [0, 1, 3]
+assert result.features is not None
+result.features.sum().backward()
+```
+
+This API uses `floor` for negative cell coordinates and compact labels. PyG
+`voxel_grid` and legacy `torch_cluster.grid_cluster` use different raw ID
+contracts; this submodule does not replace their signatures or implement
+PyG graph `avg_pool`. Its native PyTorch tensor path has MPS validation
+synchronization and no speed claim.
+
 PyG's graph wrappers use those same operators. The MPS path supports flat
 three-dimensional coordinates for FPS/radius and arbitrary positive feature
 dimension for float32 kNN; radius accepts float32 or float16. It returns
@@ -962,6 +990,10 @@ surface to its source revision and raw logs.
       finite inputs and produce IDs; grid IDs alone do not pool features.
 - [~] Finite float32 voxel feature mean pooling through PyG 2.8 `avg_pool_x`
       after `voxel_grid`, with a pinned [forward/backward contract](docs/pyg28-voxel-avg-pool.md).
+- [~] Experimental compact [voxelization and downsampling API](docs/voxel-api-contract.md):
+      batched floor-based cells, exact inverse/CSR maps and counts, mean
+      positions, and mean/sum features with first-order gradients on CPU/MPS.
+      M1–M4, performance, and wider dtype coverage remain unverified.
 - [ ] Graph coarsening (`avg_pool`) and measured voxel-downsampling speed.
 - [~] Legacy `torch_cluster.nearest` CPU/MPS float32 shim. The
       [contract and source-pinned comparison](docs/nearest-contract.md) cover
