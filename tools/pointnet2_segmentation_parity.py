@@ -358,6 +358,14 @@ def main() -> None:
     parser.add_argument("--atol", type=float, default=1e-4)
     parser.add_argument("--rtol", type=float, default=1e-4)
     args = parser.parse_args()
+    # Windows RDP keyboard layouts can make an underscore in the checkout
+    # directory awkward to enter. A unique sibling glob is unambiguous and
+    # avoids relying on shell-specific wildcard expansion.
+    if "*" in args.upstream_checkout.name or "?" in args.upstream_checkout.name:
+        matches = [p for p in args.upstream_checkout.parent.glob(args.upstream_checkout.name) if p.is_dir()]
+        if len(matches) != 1:
+            parser.error(f"upstream checkout pattern must match one directory, got {matches}")
+        args.upstream_checkout = matches[0]
     if args.compare:
         result = compare(*args.compare, atol=args.atol, rtol=args.rtol)
         print(json.dumps(result, indent=2))
