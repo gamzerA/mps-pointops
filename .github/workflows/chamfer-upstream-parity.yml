@@ -51,6 +51,7 @@ jobs:
       - name: Chamfer parity (Metal safe math)
         env:
           PYTHONPATH: ${{ runner.temp }}/pytorch3d
+          PYTORCH_MPS_FAST_MATH: "0"
         run: |
           python tests/verify_upstream_chamfer.py \
             --upstream-root "$RUNNER_TEMP/pytorch3d" \
