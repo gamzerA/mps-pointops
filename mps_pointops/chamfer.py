@@ -186,6 +186,14 @@ def _reduce_points(dist: Tensor, lengths: Tensor, mode: PointReduction) -> Tenso
     return result / lengths.clamp(min=1) if mode == "mean" else result
 
 
+def _zero_weight_anchor(points: Tensor, lengths: Tensor, weights: Tensor) -> Tensor:
+    """Graph-connected zeros with upstream's observed (B, B) broadcast shape."""
+    valid = torch.arange(points.shape[1], device=points.device)[None] < lengths[:, None]
+    selected = torch.where(valid.unsqueeze(-1), points, torch.zeros_like(points))
+    per_cloud = selected.sum(dim=(1, 2))
+    return (weights[:, None] * per_cloud[None, :]) * 0
+
+
 def chamfer_distance(
     x: Tensor,
     y: Tensor,
@@ -202,7 +210,10 @@ def chamfer_distance(
 ) -> tuple[Tensor | tuple[Tensor, Tensor], None]:
     """Squared-L2 Chamfer loss with the PyTorch3D reduction conventions.
 
-    Returns ``(loss, None)``. Normals and L1 are not implemented. With
+    Returns ``(loss, None)`` for ordinary inputs. For all-zero batch weights,
+    the observed PyTorch3D special case instead returns zero normal output
+    except for bidirectional ``point_reduction="max"``. Normals and L1 are not
+    implemented. With
     ``point_reduction=None``, ``loss`` is a pair of padded per-point distance
     tensors (one tensor if ``single_directional=True``) and batch reduction
     must also be None. A valid cloud must have at least one point. MPS supports
@@ -228,11 +239,34 @@ def chamfer_distance(
             raise ValueError("weights must match the batch size, input device, and input dtype")
         if bool((~torch.isfinite(weights) | (weights < 0)).any().item()):
             raise ValueError("weights must be finite and nonnegative")
-        # PyTorch3D's all-zero-weight case has zero gradient with respect to
-        # the weights as well as both point sets. Retain the graph but give
-        # every effective weight an identically zero derivative.
+        # PyTorch3D's all-zero-weight branch broadcasts a per-cloud zero to
+        # (B, B) before applying reductions, including a zero normal result
+        # when normals were absent. Preserve that observed API shape and
+        # autograd connectivity, while excluding padded coordinates from the
+        # zero anchor.
         if bool((weights == 0).all().item()):
-            weights = weights * 0
+            zero_x = _zero_weight_anchor(x, lx, weights)
+            if single_directional:
+                zero_loss: Tensor | tuple[Tensor, Tensor] = zero_x
+                zero_normals: Tensor | tuple[Tensor, Tensor] | None = zero_x
+            else:
+                zero_y = _zero_weight_anchor(y, ly, weights)
+                if point_reduction == "max":
+                    zero_loss = torch.maximum(zero_x, zero_y)
+                    zero_normals = None
+                elif point_reduction is None:
+                    zero_loss = (zero_x, zero_y)
+                    zero_normals = (zero_x, zero_y)
+                else:
+                    zero_loss = zero_x + zero_y
+                    zero_normals = zero_x + zero_y
+            if batch_reduction is not None:
+                assert isinstance(zero_loss, Tensor)
+                zero_loss = zero_loss.sum()
+                if zero_normals is not None:
+                    assert isinstance(zero_normals, Tensor)
+                    zero_normals = zero_normals.sum()
+            return zero_loss, zero_normals
 
     if x.device.type == "mps":
         dx = _MetalNearestSquared.apply(x, y, lx, ly)

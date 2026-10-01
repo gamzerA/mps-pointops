@@ -30,7 +30,8 @@ returns both padded per-point tensors and requires `batch_reduction=None`.
 nonnegative finite batch weights multiply each directional point distance;
 `batch_reduction="mean"` divides the batch sum by the sum of weights (or by
 the batch size when no weights are supplied). With all-zero weights the result
-and gradients are zero.
+and numerical gradients are zero. This case has the upstream special return
+shape described below.
 
 For the un-reduced squared-L2 sum, the selected-index gradient includes both
 the point's own search and every reverse search that selected it:
@@ -57,7 +58,7 @@ $w_b/(L^x_b\sum_c w_c)$ under weighted batch mean, where $L^x_b$ is the
 valid query length. The reverse direction uses $L^y_b$ in its own mean.
 Without batch weights, the batch denominator is $\max(B,1)$; batch sum has
 no batch denominator; point sum has no point denominator. With all-zero
-weights, the loss and first-order gradients are zero. These scales are
+weights, the loss and first-order gradient values are zero. These scales are
 applied before the native scatter, through the upstream `grad_distances`.
 
 Inputs must have dense shapes `(B, P, 3)` and `(B, Q, 3)`, matching devices
@@ -68,9 +69,21 @@ coordinates must be finite. Padded distances and gradients are zero, even if
 padded coordinates are nonfinite. Validation reads a few device scalars and
 therefore synchronizes MPS with the host.
 
-The return shape follows PyTorch3D's loss tuple `(loss, None)`; normals and
-`norm=1` are not implemented and raise explicitly. `abs_cosine` is accepted
-but has no effect when normals are absent. This is a subset of the
+The ordinary return shape follows PyTorch3D's loss tuple `(loss, None)`;
+normals and `norm=1` are not implemented and raise explicitly. `abs_cosine`
+is accepted but has no effect when normals are absent. At **all-zero batch
+weights**, pinned upstream PyTorch3D 0.7.9 (commit
+`88e182f989c80836f4bd744e0d9cb1852762ce01`) takes an early exit before
+nearest-neighbor search. Its broadcast produces `(B, B)` zeros before batch
+reduction even when `point_reduction=None`; it also returns a zero tensor for
+the normal-loss slot although normals were absent. The only exception is
+bidirectional `point_reduction="max"`, whose normal-loss slot stays `None`.
+The port mirrors these observed API signatures for finite valid points and
+all-zero weights. In single-directional mode, upstream disconnects `y` from
+the graph (`y.grad is None`), while `x` and `weights` have present zero
+gradients; the port does likewise. The port masks padded coordinates in this
+zero path, so nonfinite padding cannot contaminate the anchor. Such padding
+is outside the direct upstream parity matrix. This is a subset of the
 [PyTorch3D Chamfer API](https://github.com/facebookresearch/pytorch3d/blob/main/pytorch3d/loss/chamfer.py).
 The Metal search accumulates squared coordinate differences in x, y, z order
 with FMA contraction disabled in source. Safe and Fast Math modes can still
