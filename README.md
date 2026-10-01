@@ -603,6 +603,14 @@ The model fixture uses a bias-free projection; a hosted Torch 2.12 MPS
 [`nn.Linear` bias discrepancy](docs/pyg28-voxel-avg-pool.md) is documented
 separately with an independent reproduction probe.
 
+The pinned [PyG 2.8 graph `avg_pool` path](docs/pyg28-graph-avg-pool.md)
+also runs on MPS for the tested finite float32 graph fixtures. PyG's native
+tensor operations coarsen `edge_index`, sum duplicate `edge_attr`, average
+node `x` and `pos`, and preserve valid batch labels. The tested
+`voxel_grid -> avg_pool` composition includes `x`, `pos`, and `edge_attr`
+backward parity. This project adds regression coverage and a synchronized
+coarsening benchmark, not a replacement `avg_pool` kernel or a speedup claim.
+
 ### Compact voxel downsampling API
 
 The experimental [voxel API](docs/voxel-api-contract.md) accepts flat
@@ -994,7 +1002,11 @@ surface to its source revision and raw logs.
       batched floor-based cells, exact inverse/CSR maps and counts, mean
       positions, and mean/sum features with first-order gradients on CPU/MPS.
       M1–M4, performance, and wider dtype coverage remain unverified.
-- [ ] Graph coarsening (`avg_pool`) and measured voxel-downsampling speed.
+- [~] PyG 2.8 graph `avg_pool` on finite float32 synthetic graphs: the
+      [coarsening contract and synchronized measurement](docs/pyg28-graph-avg-pool.md)
+      cover topology, duplicate edges, self-loops, batch labels, pooled values,
+      and first-order gradients. General PyG model coverage remains open.
+- [ ] Measured speed of the separate compact voxel-downsampling API.
 - [~] Legacy `torch_cluster.nearest` CPU/MPS float32 shim. The
       [contract and source-pinned comparison](docs/nearest-contract.md) cover
       finite well-separated examples, ragged batches, and the CUDA source's
