@@ -514,10 +514,11 @@ This follows the `fps`, `knn`, and `radius` call signatures of
 for three-dimensional FPS/radius coordinates and arbitrary-dimensional kNN
 features. Cosine kNN and `ignore_same_index=True` are
 unsupported and raise an error. The shim also provides `knn_graph` and
-`radius_graph` using these searches, including `loop` and `flow`. It exposes
-explicitly unsupported `grid_cluster`, `graclus_cluster`, `random_walk`, and
-`nearest` placeholders so that importing PyG 2.7.0 succeeds; calling those
-placeholders raises `NotImplementedError`.
+`radius_graph` using these searches, including `loop` and `flow`. It also
+exposes an [experimental 3D float32 `grid_cluster`](docs/grid-cluster-contract.md)
+CPU/MPS path. `graclus_cluster`, `random_walk`, and `nearest` remain
+placeholders so that importing PyG 2.7.0 succeeds; calling those placeholders
+raises `NotImplementedError`.
 
 [PyG 2.7.0](https://github.com/pyg-team/pytorch_geometric/blob/2.7.0/torch_geometric/nn/pool/__init__.py)
 calls these `torch_cluster` functions directly. Its `fps`, `knn`, `radius`,
@@ -896,7 +897,10 @@ listed versions, devices, models, and inputs that have passing logs.
       instead of inferring it from the MSL version. Use a reproducible segmented
       reduction as the safe baseline; add device-specific atomic paths only
       where supported and measured. A `torch_scatter` stand-in follows demand.
-- [ ] Voxelization, voxel downsampling and `grid_cluster`.
+- [~] Experimental float32 3D `grid_cluster` CPU/MPS shim (#30). Its
+      [contract and parity tests](docs/grid-cluster-contract.md) cover finite
+      points; it is not a full PyG voxelization path.
+- [ ] Voxelization and voxel downsampling.
 - [ ] Remaining `torch_cluster` operators: `nearest`, `graclus`, `random_walk`.
       Done when: no function in the stand-in raises `NotImplementedError`.
 
