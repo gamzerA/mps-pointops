@@ -81,6 +81,8 @@ jobs:
               "mps_pointops/kernels/fps.metal",
               "mps_pointops/kernels/knn.metal",
               "mps_pointops/kernels/ball_query.metal",
+              "mps_pointops/kernels/fps_flat.metal",
+              "mps_pointops/kernels/flat_search.metal",
           }
           missing = required - names
           licenses = [n for n in names if "/licenses/" in n]

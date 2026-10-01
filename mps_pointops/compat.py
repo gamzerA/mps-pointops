@@ -1,4 +1,4 @@
-"""Drop-in stand-ins for the CUDA-only ``pointnet2_ops`` and ``knn_cuda``.
+"""Optional stand-ins for ``pointnet2_ops``, ``knn_cuda`` and ``torch_cluster``.
 
 Call ``install()`` before importing code that uses them::
 
@@ -7,10 +7,12 @@ Call ``install()`` before importing code that uses them::
 
     from pointnet2_ops import pointnet2_utils  # served by mps_pointops
     from knn_cuda import KNN
+    from torch_cluster import fps, knn, radius
 
-``install()`` registers ``pointnet2_ops``, ``pointnet2_ops.pointnet2_utils``
-and ``knn_cuda`` in ``sys.modules``. A name that is already importable, such
-as the real package on a CUDA machine, is left alone unless ``force=True``.
+``install()`` registers ``pointnet2_ops``, ``pointnet2_ops.pointnet2_utils``,
+``knn_cuda`` and ``torch_cluster`` in ``sys.modules``. A name that is already
+importable, such as the real package on a CUDA machine, is left alone unless
+``force=True``. Call it before importing the packages that use these names.
 
 Covered: ``furthest_point_sample``, ``gather_operation``,
 ``grouping_operation`` and ``ball_query`` from ``pointnet2_utils``, and
@@ -21,18 +23,23 @@ Covered: ``furthest_point_sample``, ``gather_operation``,
   kernels use their own reduction order.
 - ``ball_query`` uses the Metal kernel for MPS inputs and pads in the
   ``pointnet2_ops`` convention.
+- The ``torch_cluster`` shim exposes ``fps``, ``knn``, ``radius`` and their
+  same-set graph wrappers for flat three-dimensional point coordinates.
+  Other names needed for PyG 2.7 package import raise ``NotImplementedError``
+  when called. It does not register PyG's separate ``torch.ops.pyg`` operators.
 """
 
 from __future__ import annotations
 
 import importlib.util
+from importlib.machinery import ModuleSpec
 import sys
 import types
 
 import torch
 from torch import Tensor
 
-from . import ops
+from . import flat, ops
 
 
 # ---------------------------------------------------------------- pointnet2_ops
@@ -106,7 +113,18 @@ class KNN(torch.nn.Module):
 def _module(name: str, **attrs) -> types.ModuleType:
     module = types.ModuleType(name)
     module.__dict__.update(attrs)
+    module.__spec__ = ModuleSpec(name, loader=None, is_package="__path__" in attrs)
     return module
+
+
+def _unsupported_torch_cluster(name: str):
+    def unsupported(*args, **kwargs):
+        raise NotImplementedError(
+            f"torch_cluster.{name} is outside the mps_pointops point-cloud subset"
+        )
+
+    unsupported.__name__ = name
+    return unsupported
 
 
 def install(force: bool = False) -> list[str]:
@@ -124,6 +142,20 @@ def install(force: bool = False) -> list[str]:
             "pointnet2_ops.pointnet2_utils": pointnet2_utils,
         },
         "knn_cuda": {"knn_cuda": _module("knn_cuda", KNN=KNN)},
+        "torch_cluster": {
+            "torch_cluster": _module(
+                "torch_cluster",
+                fps=flat.fps,
+                knn=flat.knn,
+                radius=flat.radius,
+                knn_graph=flat.knn_graph,
+                radius_graph=flat.radius_graph,
+                grid_cluster=_unsupported_torch_cluster("grid_cluster"),
+                graclus_cluster=_unsupported_torch_cluster("graclus_cluster"),
+                random_walk=_unsupported_torch_cluster("random_walk"),
+                nearest=_unsupported_torch_cluster("nearest"),
+            )
+        },
     }
     installed = []
     for top, modules in packages.items():
