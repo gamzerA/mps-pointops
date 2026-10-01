@@ -1,0 +1,4 @@
+mode=safe source_commit=221705f545f2ce20895d4f779e5dd995ced96b2f max_driver_mib=2048
+{"n": 32768, "paired_ratios": {"backward_concentrated_over_uniform": 88.28603137118563, "e2e_concentrated_over_uniform": 6.173312542932985, "scatter_pair_concentrated_over_uniform": 532.4126963379078}}
+{"n": 65536, "paired_ratios": {"backward_concentrated_over_uniform": 189.97907412302993, "e2e_concentrated_over_uniform": 4.190450290652855, "scatter_pair_concentrated_over_uniform": 1107.7814574664255}}
+Wrote /tmp/mps-pointops-v080-221705f-m1-chamfer-safe.json
