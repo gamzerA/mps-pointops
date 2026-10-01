@@ -120,11 +120,12 @@ def _ratio(value: float | Tensor | None, dtype: torch.dtype) -> Tensor:
     if value is None:
         value = 0.5
     if isinstance(value, Tensor):
-        if value.numel() != 1:
-            raise ValueError("ratio tensor must contain one value")
-        result = value.detach().to("cpu").reshape(())
-        if not result.is_floating_point():
-            result = result.to(torch.float32)
+        if value.numel() != 1 or value.ndim > 1:
+            raise ValueError("ratio tensor must be scalar or a length-one vector")
+        # Keep both dtype and shape. On CPU, a 0-D float64 ratio is treated as
+        # a wrapped scalar when multiplied by float32 degrees, while a [1]
+        # float64 ratio promotes the product to float64.
+        result = value.detach().to("cpu")
     elif isinstance(value, bool) or not isinstance(value, (int, float)):
         raise TypeError("ratio must be a number or scalar tensor")
     else:
@@ -134,14 +135,14 @@ def _ratio(value: float | Tensor | None, dtype: torch.dtype) -> Tensor:
     return result
 
 
-def _sample_counts(lengths: list[int], ratio: Tensor) -> list[int]:
-    """Samples per cloud, ``ceil(float32(N_b) * ratio)``, as in torch_cluster.
+def _sample_counts(lengths: list[int], ratio: Tensor, *, mps: bool) -> list[int]:
+    """Match torch_cluster's device-specific degree conversion and ceiling.
 
-    The product is rounded in the ratio's precision before the ceiling. In
-    float32 that is not always ``ceil`` of the exact product: 25 points at
-    ratio 0.6 give 16 samples, because 25 * float32(0.6) rounds just above 15.
+    torch_cluster CPU converts degrees to float32. Its CUDA path instead uses
+    the ratio dtype; MPS follows that GPU rule. Torch scalar promotion also
+    depends on whether a tensor ratio is 0-D or shape [1].
     """
-    sizes = torch.tensor(lengths, dtype=torch.float32)
+    sizes = torch.tensor(lengths, dtype=ratio.dtype if mps else torch.float32)
     return torch.ceil(sizes * ratio).to(torch.long).tolist()
 
 
@@ -153,11 +154,12 @@ def fps(
     batch_size: int | None = None,
     ptr: Tensor | Sequence[int] | None = None,
 ) -> Tensor:
-    """Sample ``ceil(float32(N_b) * ratio)`` global point indices per batch.
+    """Sample global point indices with the torch_cluster count rule.
 
-    The count is computed as torch_cluster does, with the ratio in the dtype
-    of ``x`` (or of the ratio tensor). ``ratio=None`` means 0.5. ``ptr`` takes
-    precedence over ``batch`` if
+    Python ratios use the dtype of ``x``; tensor ratios retain their dtype and
+    shape. CPU converts batch lengths to float32 before multiplication, while
+    MPS follows torch_cluster's GPU rule and uses the ratio dtype.
+    ``ratio=None`` means 0.5. ``ptr`` takes precedence over ``batch`` if
     supplied. ``random_start=False`` starts from the first point in each
     non-empty batch. The output is an int64 tensor on ``x.device``.
     """
@@ -168,7 +170,7 @@ def fps(
     offsets = _fps_ptr(x, batch, batch_size, ptr)
     offset_values = offsets.cpu().tolist()
     lengths = [hi - lo for lo, hi in zip(offset_values, offset_values[1:])]
-    counts = _sample_counts(lengths, sample_ratio)
+    counts = _sample_counts(lengths, sample_ratio, mps=x.device.type == "mps")
     output_offsets = [0]
     for count in counts:
         output_offsets.append(output_offsets[-1] + count)

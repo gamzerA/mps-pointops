@@ -169,6 +169,25 @@ def test_fps_sample_count_matches_float32_formula_over_a_sweep():
 
 
 @pytest.mark.parametrize("device", DEVICES)
+def test_fps_float64_tensor_ratio_preserves_shape_and_device_rule(device):
+    x = torch.rand(25, 3, device=device)
+    scalar_ratio = torch.tensor(0.6, dtype=torch.float64)
+    vector_ratio = torch.tensor([0.6], dtype=torch.float64)
+
+    # torch_cluster CPU uses deg.float() * ratio. A float64 scalar is weakly
+    # promoted, while a [1] tensor promotes the degree vector to float64.
+    # Its CUDA path uses deg.to(ratio.dtype) * ratio for either ratio shape.
+    expected_scalar = 16 if device == "cpu" else 15
+    assert len(flat.fps(x, ratio=scalar_ratio, random_start=False)) == expected_scalar
+    assert len(flat.fps(x, ratio=vector_ratio, random_start=False)) == 15
+
+
+def test_fps_float64_coordinates_keep_original_cpu_degree_precision():
+    x = torch.rand(25, 3, dtype=torch.float64)
+    assert len(flat.fps(x, ratio=0.6, random_start=False)) == 16
+
+
+@pytest.mark.parametrize("device", DEVICES)
 def test_radius_threshold_is_double_product_rounded_to_float32(device):
     # torch_cluster compares against fl32(r * r) with r * r computed in double.
     # For r = 0.21 that is one float32 ULP above fl32(r)^2, so a point exactly

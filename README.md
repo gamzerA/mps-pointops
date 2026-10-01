@@ -274,25 +274,32 @@ knn_edges = flat.knn(x, y, 2, batch_x, batch_y)
 radius_edges = flat.radius(x, y, 1.1, batch_x, batch_y, max_num_neighbors=32)
 ```
 
-`fps` returns `int64` sampled point indices, with `ceil(float32(N_b) * ratio)`
-samples per non-empty batch (`ratio=None` means `0.5`; `random_start=True` by
-default). The count follows `torch_cluster`'s arithmetic: the ratio is taken in
-the dtype of `x`, so in float32 the product can round just above an integer
-(25 points at ratio 0.6 give 16 samples, not 15).
+`fps` returns `int64` sampled point indices (`ratio=None` means `0.5`;
+`random_start=True` by default). A Python ratio is converted to the dtype of
+`x`; a tensor ratio keeps its dtype and shape. The count follows
+`torch_cluster` 1.6.3's device-specific arithmetic: CPU computes
+`ceil(float32(N_b) * ratio)`, while MPS follows the CUDA path
+`ceil(cast(N_b, ratio.dtype) * ratio)`. In float32, 25 points at ratio 0.6
+give 16 samples, not 15. A scalar tensor and a length-one tensor can also
+promote the CPU product differently when the ratio is float64.
 It also accepts an explicit `ptr` offset array. `knn` and `radius` return
 `int64` `edge_index` tensors of shape `[2, E]`: row 0 is a query index into
 `y` and row 1 is a reference index into `x`. kNN is ordered by squared distance,
 then reference index; if a batch has fewer than `k` references, it emits only
-the available edges. Radius search uses strict `distance² < fl32(r * r)`, with
-`r * r` computed in double precision as `torch_cluster` does (the dense Ball
-Query uses the PyTorch3D threshold `fl32(fl32(r) * fl32(r))` instead; the two
-can differ by one float32 ULP). It takes up to `max_num_neighbors` matches in
+the available edges. For float32 coordinates, radius search uses strict
+`distance² < fl32(r * r)`, with `r * r` computed in double precision as
+`torch_cluster` does (the dense Ball Query uses the PyTorch3D threshold
+`fl32(fl32(r) * fl32(r))` instead; the two can differ by one float32 ULP).
+For very small radii, MPS uses the native Ball Query's normalized comparison,
+so near-boundary bits may differ. It takes up to `max_num_neighbors` matches in
 reference input order, like `torch_cluster`'s CUDA kernel; `torch_cluster` on
 CPU keeps an arbitrary subset when there are more matches. Padded internal slots
 are removed before returning the edge tensor. CPU inputs use PyTorch; MPS
 inputs use Metal for supported sizes, with a PyTorch fallback for kNN `k > 256`.
 On MPS, FPS and kNN require float32; radius accepts float32 or float16 and
-the same positive-radius lower bound as the native Ball Query contract.
+the same positive-radius lower bound as the native Ball Query contract. The
+float16 radius path computes distances and the threshold in float32; it does
+not promise bitwise parity with `torch_cluster`'s half-precision CUDA kernel.
 Flat FPS uses one threadgroup per cloud and scans only that cloud's
 offset range. Very uneven batch sizes can still leave a long-running group;
 splitting one FPS sequence across groups would need synchronization after each
