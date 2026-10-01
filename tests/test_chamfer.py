@@ -82,6 +82,49 @@ def test_all_zero_weights_have_zero_gradient_on_every_input(device):
 
 
 @pytest.mark.parametrize("device", ["cpu", "mps"])
+@pytest.mark.parametrize("point_reduction", ["mean", "sum", "max", None])
+@pytest.mark.parametrize("single_directional", [False, True])
+def test_all_zero_weights_match_upstream_return_shape_and_gradient_presence(
+    device, point_reduction, single_directional
+):
+    if device == "mps" and not torch.backends.mps.is_available():
+        pytest.skip("MPS not available")
+    x = torch.tensor(
+        [[[0.0, 0.0, 0.0], [2.0, 0.0, 0.0]],
+         [[3.0, 0.0, 0.0], [4.0, 0.0, 0.0]]],
+        device=device, requires_grad=True,
+    )
+    y = torch.tensor(
+        [[[1.0, 0.0, 0.0], [2.0, 0.0, 0.0]],
+         [[3.0, 0.0, 0.0], [5.0, 0.0, 0.0]]],
+        device=device, requires_grad=True,
+    )
+    weights = torch.zeros(2, device=device, requires_grad=True)
+    loss, normals = chamfer_distance(
+        x, y, weights=weights, point_reduction=point_reduction,
+        batch_reduction=None, single_directional=single_directional,
+    )
+    parts = loss if isinstance(loss, tuple) else (loss,)
+    assert len(parts) == (1 if single_directional or point_reduction is not None else 2)
+    for part in parts:
+        assert part.shape == (2, 2)
+        torch.testing.assert_close(part.cpu(), torch.zeros(2, 2), rtol=0, atol=0)
+    if point_reduction == "max" and not single_directional:
+        assert normals is None
+    elif isinstance(loss, tuple):
+        assert isinstance(normals, tuple) and len(normals) == 2
+        assert all(part.shape == (2, 2) for part in normals)
+    else:
+        assert isinstance(normals, torch.Tensor) and normals.shape == (2, 2)
+    grads = torch.autograd.grad(sum(part.sum() for part in parts), (x, y, weights), allow_unused=True)
+    assert grads[0] is not None and grads[2] is not None
+    assert (grads[1] is None) == single_directional
+    for grad in grads:
+        if grad is not None:
+            torch.testing.assert_close(grad.cpu(), torch.zeros_like(grad.cpu()), rtol=0, atol=0)
+
+
+@pytest.mark.parametrize("device", ["cpu", "mps"])
 @pytest.mark.parametrize(
     ("point_reduction", "expected_loss", "expected_x_grad", "expected_y_grad"),
     [
