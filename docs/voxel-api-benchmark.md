@@ -49,6 +49,15 @@ PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=1 \
   --output docs/bench-voxel-api-m5pro-torch214-fast-2026-10-02.json
 ```
 
+The runner writes its output after every case but does not resume an existing
+file. Keep an interrupted JSON unchanged, rerun missing cases with narrowed
+`--nodes`, `--batch-shapes`, `--occupancies`, and `--devices` values into new
+files, then use [`merge_voxel_api_fragments.py`](../bench/merge_voxel_api_fragments.py)
+to validate and assemble the canonical 24-case matrix. The merge tool rejects
+different source or environment metadata, missing or reordered cases, and
+CPU/MPS input-hash mismatches; it preserves the input files and records their
+SHA-256 values in the assembled result.
+
 ## Timing definition
 
 All numbers below are **median wall milliseconds** from the five raw samples.
