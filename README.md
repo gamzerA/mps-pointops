@@ -509,16 +509,20 @@ offset range. Very uneven batch sizes can still leave a long-running group;
 splitting one FPS sequence across groups would need synchronization after each
 selected point and remains a performance task.
 
-This follows the `fps`, `knn`, and `radius` call signatures of
+This follows the `fps`, `knn`, `radius`, and `nearest` call signatures of
 [`torch_cluster` 1.6.3](https://github.com/rusty1s/pytorch_cluster/tree/1.6.3/torch_cluster)
 for three-dimensional FPS/radius coordinates and arbitrary-dimensional kNN
 features. Cosine kNN and `ignore_same_index=True` are
 unsupported and raise an error. The shim also provides `knn_graph` and
 `radius_graph` using these searches, including `loop` and `flow`. It also
 exposes an [experimental 3D float32 `grid_cluster`](docs/grid-cluster-contract.md)
-CPU/MPS path. `graclus_cluster`, `random_walk`, and `nearest` remain
-placeholders so that importing PyG 2.7.0 succeeds; calling those placeholders
-raises `NotImplementedError`.
+CPU/MPS path. The
+`torch_cluster.nearest(x, y, batch_x, batch_y)` shim returns one global index
+into `y` for each `x` row. It accepts one-dimensional or `(N, D)` float32 MPS
+inputs, including ragged batches with empty ID gaps. Its source-level CUDA
+threshold, error choices, and cross-backend limits are in the
+[nearest contract](docs/nearest-contract.md). `graclus_cluster` and
+`random_walk` remain explicit placeholders that raise `NotImplementedError`.
 
 [PyG 2.7.0](https://github.com/pyg-team/pytorch_geometric/blob/2.7.0/torch_geometric/nn/pool/__init__.py)
 calls these `torch_cluster` functions directly. Its `fps`, `knn`, `radius`,
@@ -903,7 +907,11 @@ listed versions, devices, models, and inputs that have passing logs.
       [contract and parity tests](docs/grid-cluster-contract.md) cover finite
       points; it is not a full PyG voxelization path.
 - [ ] Voxelization and voxel downsampling.
-- [ ] Remaining `torch_cluster` operators: `nearest`, `graclus`, `random_walk`.
+- [~] Legacy `torch_cluster.nearest` CPU/MPS float32 shim. The
+      [contract and source-pinned comparison](docs/nearest-contract.md) cover
+      finite well-separated examples, ragged batches, and the CUDA source's
+      1024-lane tie priority; CUDA binary parity remains untested.
+- [ ] Remaining `torch_cluster` operators: `graclus`, `random_walk`.
       Done when: no function in the stand-in raises `NotImplementedError`.
 
 ### Phase 4: Geometry losses and large-scale search (target 0.8.0 to 0.9.0)

@@ -18,13 +18,13 @@ Covered: ``furthest_point_sample``, ``gather_operation``,
 ``grouping_operation`` and ``ball_query`` from ``pointnet2_utils``, and
 ``KNN`` from ``knn_cuda``. Differences from the CUDA versions:
 
-- Near ties can resolve differently. The kernels round each squared
-  distance without FMA and break ties by the smaller index; the CUDA
-  kernels use their own reduction order.
+- Near ties can resolve differently because floating-point accumulation and
+  CUDA reduction order differ. The ``nearest`` kernel reproduces the legacy
+  1024-lane CUDA tie priority described in ``docs/nearest-contract.md``.
 - ``ball_query`` uses the Metal kernel for MPS inputs and pads in the
   ``pointnet2_ops`` convention.
-- The ``torch_cluster`` shim exposes ``fps``, ``knn``, ``radius`` and their
-  same-set graph wrappers. FPS and radius use three-dimensional point
+- The ``torch_cluster`` shim exposes ``fps``, ``knn``, ``radius``, ``nearest``,
+  and kNN/radius graph wrappers. FPS and radius use three-dimensional point
   coordinates; kNN also accepts float32 feature vectors on MPS. Experimental
   ``grid_cluster`` accepts float32 3D coordinates. Other names needed for PyG
   2.7 package import raise ``NotImplementedError`` when called. It does not
@@ -41,7 +41,7 @@ import types
 import torch
 from torch import Tensor
 
-from . import flat, grid, ops
+from . import flat, grid, nearest as nearest_ops, ops
 
 
 # ---------------------------------------------------------------- pointnet2_ops
@@ -155,7 +155,7 @@ def install(force: bool = False) -> list[str]:
                 grid_cluster=grid.grid_cluster,
                 graclus_cluster=_unsupported_torch_cluster("graclus_cluster"),
                 random_walk=_unsupported_torch_cluster("random_walk"),
-                nearest=_unsupported_torch_cluster("nearest"),
+                nearest=nearest_ops.nearest,
             )
         },
     }
