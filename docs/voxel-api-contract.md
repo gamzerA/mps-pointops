@@ -112,8 +112,20 @@ PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=1 \
   python -m pytest tests/test_voxel.py -q -ra
 ```
 
-The [Safe](pytest-voxel-api-safe-2026-10-01.log) and
-[Fast](pytest-voxel-api-fast-2026-10-01.log) logs record the M5 Pro result,
-exact integer maps in unsorted/gapped batches, negative and boundary cells,
-empty input, and feature/position backward. Only M5 Pro was measured here;
-M1–M4 and larger inputs remain untested.
+On an Apple M5 Pro, macOS 26.5.2 (25F84), Python 3.12.13, source commit
+`62d2ca0358d6e6a226e0384c2beb2a834a4f7dbd`, all runs used
+`PYTORCH_ENABLE_MPS_FALLBACK=0` and separate processes:
+
+| Environment | Safe Math | Fast Math |
+| --- | --- | --- |
+| Torch 2.12.0, PyG 2.8.0, pyg-lib 0.7.0+pt212 | [390 passed, 11 skipped](pytest-voxel-api-torch212-safe-2026-10-01.log) | [389 passed, 12 skipped](pytest-voxel-api-torch212-fast-2026-10-01.log) |
+| Torch 2.14.1, real torch-cluster 1.6.3; no optional PyG/pyg-lib | [373 passed, 28 skipped](pytest-voxel-api-torch214-safe-2026-10-01.log) | [372 passed, 29 skipped](pytest-voxel-api-torch214-fast-2026-10-01.log) |
+
+The new API's focused tests passed **20/20** in each mode and each environment.
+The full logs record the current suite including optional-dependency skips;
+they are not performance measurements. Exact integer maps cover
+unsorted/gapped batches, negative and representable boundary cells, empty
+input, and feature/position backward. `uv build --offline --no-build-isolation`
+produced a wheel and source distribution; the wheel contains
+`mps_pointops/voxel.py`. Only M5 Pro was measured here; M1–M4 and larger
+inputs remain untested.
