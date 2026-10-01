@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### Added
+
+- Experimental, source-only `three_nn` and `three_interpolate` for PointNet++
+  feature propagation on MPS, with a PyTorch CPU reference and native Metal
+  forward/interpolation backward. PyPI v0.4.0 does not include these APIs.
+  The [contract](docs/pointnet2-propagation.md) records the supported shapes,
+  tie order, and gradient surface; full segmentation validation remains open.
+- Experimental, source-only squared-L2 `chamfer_distance`. Metal returns
+  nearest indices and distances, while PyTorch `scatter_add_` accumulates the
+  bidirectional first-order gradient. Supported lengths mask padding in both
+  passes; point/batch reductions and weights scale the gradient as specified
+  in the [contract](docs/chamfer-contract.md). PyPI v0.4.0 does not include it;
+  direct PyTorch3D parity testing remains open.
+
+### Survey and measurements
+
+- A [PyG 2.8.0 survey](docs/pyg-survey/2026-10-01-m5-pro-pyg28.md) ran GCN,
+  GraphSAGE, and GAT forward/backward on a fixed synthetic 12-node graph on
+  an M5 Pro with MPS fallback disabled. No missing operator appeared in that
+  tested configuration; it does not establish coverage of other graphs or
+  package combinations.
+- Synchronized [Safe](bench/results/2026-10-01-apple-m5-pro-chamfer-contention-safe.md)
+  and [Fast](bench/results/2026-10-01-apple-m5-pro-chamfer-contention-fast.md)
+  Chamfer runs compared uniform and concentrated nearest-index selection at
+  batch 4 and 256–16,384 points per cloud. Neither backward timings nor a
+  direct `scatter_add_` control showed a consistent contention slowdown in
+  this range; larger clouds, other GPUs, and bidirectional losses are untested.
+
 ## 0.4.0 — 2026-10-01
 
 ### Documentation

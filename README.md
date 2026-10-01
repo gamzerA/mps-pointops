@@ -40,6 +40,11 @@ python -m pip install mps-pointops
 Version 0.4.0 includes the dense SIMD Ball Query kernel, the PyTorch3D-style
 adapter, and the large-cloud FPS path for a single cloud.
 
+The `main` source also has experimental `three_nn`, `three_interpolate`, and
+`chamfer_distance` APIs. They are **source-only and unreleased**: PyPI v0.4.0
+does not include them. See the [PointNet++ propagation](docs/pointnet2-propagation.md)
+and [Chamfer](docs/chamfer-contract.md) contracts for their supported inputs.
+
 ### Minimal example
 
 ```python
@@ -320,7 +325,7 @@ Ball Query's maximum squared-distance error against the separate-operation
 CPU reference was 1.9e-9; FPS indices matched and kNN reported no distance
 error.
 These are observations on one M5 Pro, not a guarantee for every input, GPU or
-compiler. The current source, including the large-cloud FPS path and
+compiler. The v0.4.0 release source, including the large-cloud FPS path and
 PyTorch3D-style adapter, reported **201 passed, 12 skipped** in separate
 [Safe](docs/pytest-fps-p3d-safe-torch214-2026-10-01.log) and
 [Fast](docs/pytest-fps-p3d-fast-torch214-2026-10-01.log) processes under
@@ -694,14 +699,14 @@ This project aims to be the standard operator library for 3D, point-cloud and
 graph deep learning on Apple Silicon: code written for CUDA-only extensions
 should run on PyTorch MPS without changes and give the same results.
 
-Every operator ships with four things:
+An operator counts as complete for a release after these four checks:
 
 1. **Contract**: ordering, padding, tie-breaking and floating-point boundary
    behavior, written down.
 2. **PyTorch reference**: a plain implementation that defines the contract.
-3. **Upstream parity tests**: checked against the original implementation. CI
-   compares with the upstream CPU build; CUDA results are compared where they
-   are available. Near ties and float boundaries can differ as documented.
+3. **Upstream parity tests**: compare with the original implementation in CI
+   where its CPU build is available, and compare CUDA results where available.
+   Near ties and float boundaries can differ as documented.
 4. **Reproducible benchmarks**: raw results, environment and counterexamples.
 
 Status marks: `[x]` released, `[~]` merged on `main` and not yet released,
@@ -715,8 +720,8 @@ original implementation.
 - [x] Point-MAE grouping on MulSen-AD point clouds (FPS + kNN): 30 clouds, no mismatches
 - [x] MulSen-AD 3D-only anomaly detector: 45 runs, same metrics as the CUDA runs
 - [ ] DGCNN (Phase 2)
-- [ ] PointNet++ segmentation (Phase 2)
-- [ ] PyG example models (Phase 3)
+- [ ] PointNet++ segmentation end to end (Phase 2)
+- [ ] PyG example models on representative graphs and data (Phase 3)
 - [ ] Point Transformer family (Phase 4)
 - [ ] A sparse-convolution model (Phase 5)
 
@@ -758,19 +763,26 @@ original implementation.
       outside ambiguous ties and model-output errors within a documented
       tolerance, rather than requiring bitwise CPU/MPS index parity at every
       boundary.
-- [ ] `three_nn` and `three_interpolate` for PointNet++ feature propagation.
-      The first returns Euclidean distances and three indices. The second
-      accepts externally computed weights and accumulates backward gradients
-      into input features. Validate PointNet++ segmentation end to end.
+- [~] Experimental, source-only `three_nn` and `three_interpolate` for PointNet++
+      feature propagation (#16). The first returns Euclidean distances and
+      three indices. The second accepts externally computed weights and
+      accumulates backward gradients into input features. See the
+      [contract and differential tests](docs/pointnet2-propagation.md).
+- [ ] Validate PointNet++ segmentation end to end on MPS and compare model
+      outputs with the original implementation.
 - [ ] Open issues upstream (`pyg-lib`, `torch_cluster`, `PyTorch3D`) to ask
       whether MPS support would be accepted and in what form.
 
 ### Phase 3: Graph and grid infrastructure (target 0.6.0 to 0.7.0)
 
-- [ ] Survey first: pin a PyG version and run GCN, GraphSAGE, and GAT with
-      `PYTORCH_ENABLE_MPS_FALLBACK=0`. Record every failing operator and profile
-      native `scatter_add_` and `scatter_reduce_` before choosing new Metal
-      kernels. Revise the operator list below from those measurements.
+- [~] Initial PyG operator survey (#17): GCN, GraphSAGE, and GAT forward and
+      backward passed on a fixed synthetic 12-node graph with PyG 2.8.0,
+      PyTorch 2.14.1, and an M5 Pro, with `PYTORCH_ENABLE_MPS_FALLBACK=0` and
+      no optional pyg-lib/torch-scatter packages. No missing operator was
+      observed in this [tested configuration](docs/pyg-survey/2026-10-01-m5-pro-pyg28.md).
+- [ ] Profile native `scatter_add_` and `scatter_reduce_` on representative
+      graph workloads before choosing new Metal kernels; revise the operator
+      list below from those measurements.
 - [ ] Core scatter reductions on Metal: sum, mean, max, min, with argmax and
       argmin. Check floating-point atomic support on each device at runtime
       instead of inferring it from the MSL version. Use a reproducible segmented
@@ -782,9 +794,13 @@ original implementation.
 
 ### Phase 4: Geometry losses and large-scale search (target 0.8.0 to 0.9.0)
 
-- [ ] Bidirectional Chamfer distance with a backward path. For the un-reduced
-      squared-L2 sum, let `a(i)` be the nearest point in `x` to `q[i]`, and
-      `b(j)` the nearest point in `q` to `x[j]`. Then the gradient must include
+- [~] Experimental, source-only bidirectional squared-L2 Chamfer distance
+      (#18). Metal returns nearest indices and squared distances; PyTorch's
+      native `scatter_add_` accumulates both backward directions. Supported
+      `lengths` mask padding in forward and backward, and point/batch
+      reductions scale gradients according to the [contract](docs/chamfer-contract.md).
+      For the un-reduced sum, let `a(i)` be the nearest point in `x` to `q[i]`,
+      and `b(j)` the nearest point in `q` to `x[j]`. Then the gradient includes
       both directions:
 
       $$L = \sum_i \lVert q_i-x_{a(i)}\rVert_2^2
@@ -794,9 +810,18 @@ original implementation.
       = 2(q_i-x_{a(i)})
       + 2\sum_{j:b(j)=i}(q_i-x_j).$$
 
-      Define tie rules and how supported `lengths`, `batch_reduction`, and
-      `point_reduction` modes weight or select these terms before implementation.
-      Done when supported values and gradients match PyTorch3D.
+      In the synchronized M5 Pro [Safe](bench/results/2026-10-01-apple-m5-pro-chamfer-contention-safe.md)
+      and [Fast](bench/results/2026-10-01-apple-m5-pro-chamfer-contention-fast.md)
+      runs (batch 4, 256–16,384 points per cloud), concentrated selection did
+      not consistently slow backward versus uniform selection. This supports
+      the current PyTorch scatter path for the tested sizes only.
+- [ ] Compare supported Chamfer values and first-order gradients directly
+      against PyTorch3D in CI, including `lengths`, weights, and each supported
+      reduction mode. Current checks use analytic cases and an independent CPU
+      reference.
+- [ ] Extend the Chamfer contention study to larger clouds, other Apple GPUs,
+      and bidirectional losses before deciding whether a dedicated Metal
+      reduction kernel helps.
 - [ ] Pointcept `pointops` compatibility for the Point Transformer family.
 - [ ] Spatial acceleration structures (uniform grid or BVH) for clouds of
       1M+ points. Done when: faster than a CPU KD-tree at 1M points.
