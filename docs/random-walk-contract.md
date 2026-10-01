@@ -92,6 +92,9 @@ The biased implementation currently allocates temporary tensors proportional
 to `W * d_max` per step, where `d_max` is the largest outdegree visited in
 that step. Its first-hop random vector is `O(W)`; the result itself is
 `O(W * L)`. It is an experimental correctness path, not a performance claim.
+The categorical draw clamps its selected offset to each walker's actual
+outdegree. This prevents a float32 draw rounded up to the cumulative total
+from selecting another walker's padding in the same vectorized tile.
 PyTorch's MPS random generator is seeded with `torch.manual_seed`, but its
 draws need not match the CPU generator. Safe and Fast Math can differ at the
 cumulative-sum boundary; tests check walk validity and distribution rather

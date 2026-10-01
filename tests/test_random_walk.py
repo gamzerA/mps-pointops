@@ -103,6 +103,23 @@ def test_random_precision_is_independent_of_default_dtype(device):
         assert nodes.dtype == edges.dtype == torch.int64
 
 
+def test_biased_boundary_draw_does_not_select_another_rows_padding(
+    device, monkeypatch,
+):
+    row = torch.tensor([0, 1, 3, 4, 4, 4], device=device)
+    col = torch.tensor([1, 0, 4, 0, 2, 3], device=device)
+    starts = torch.tensor([0, 3], device=device)
+
+    def boundary_rand(shape, *, device, dtype):
+        return torch.ones(shape, device=device, dtype=dtype)
+
+    monkeypatch.setattr(torch, "rand", boundary_rand)
+    nodes, edges = random_walk(row, col, starts, 2, p=2, q=4,
+                               num_nodes=5, return_edge_indices=True)
+    assert nodes.tolist() == [[0, 1, 0], [3, 4, 3]]
+    assert edges.tolist() == [[0, 1], [2, 5]]
+
+
 def test_upstream_163_cpu_uniform_exact_if_available():
     spec = importlib.util.find_spec("torch_cluster")
     if spec is None or spec.origin is None:

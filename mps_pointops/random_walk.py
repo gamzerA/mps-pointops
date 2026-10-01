@@ -107,7 +107,10 @@ def _choose_biased(previous: Tensor, current: Tensor, rowptr: Tensor,
     random_values = torch.rand(current.shape, device=current.device,
                                dtype=torch.float32) * total
     selected = (cumulative <= random_values.unsqueeze(1)).sum(dim=1)
-    selected = selected.clamp(max=width - 1)
+    # A float32 multiplication can round a near-one draw up to ``total``.
+    # Clamp per walker: using the tile width would select another row's
+    # padding when walkers have different outdegrees.
+    selected = torch.minimum(selected, (degree - 1).clamp(min=0))
     chosen_edge = edge.gather(1, selected.unsqueeze(1)).squeeze(1)
     chosen_node = candidate.gather(1, selected.unsqueeze(1)).squeeze(1)
     has_edge = degree > 0
