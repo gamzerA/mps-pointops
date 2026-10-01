@@ -83,6 +83,24 @@ The tests compare 192 deterministic raw CPU cases directly with
 compare both the raw operator and PyG's batched wrapper between CPU and MPS.
 They also verify the real dispatcher schema and MPS output device/dtype.
 
+On an M5 Pro with macOS 26.5.2 and MPS fallback disabled, the isolated pinned
+reference environment passed the complete test suite with **308 passed,
+9 skipped** in Safe Math and **307 passed, 10 skipped** in Fast Math. The two
+legacy `torch_cluster` differential tests skipped because that separate
+extension was absent; seven existing `k > n` tests skipped in both modes, and
+the feature-space kNN nonfinite test is Safe-only. The focused PyG operator
+tests passed **15/15** in each mode. See the unmodified pytest output with
+warning details disabled: [Safe](pytest-pyg28-grid-safe-2026-10-01.log) and
+[Fast](pytest-pyg28-grid-fast-2026-10-01.log).
+
+In the separate Torch 2.14.1 environment without optional PyG or pyg-lib,
+the full suite passed **295 with 22 skips** in Safe Math and **294 with
+23 skips** in Fast Math. The new optional differential tests skipped, while
+the independent CPU contract checks still passed. See
+[Safe](pytest-pyg28-grid-optional-safe-2026-10-01.log) and
+[Fast](pytest-pyg28-grid-optional-fast-2026-10-01.log). These logs contain
+no personal absolute paths. They measure correctness, not performance.
+
 **Voxel downsampling is a separate follow-up.** In PyG 2.8,
 [`avg_pool_x`](https://github.com/pyg-team/pytorch_geometric/blob/2.8.0/torch_geometric/nn/pool/avg_pool.py)
 first makes cluster IDs consecutive when `size=None`, then averages features

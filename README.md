@@ -561,7 +561,10 @@ This adds MPS dispatch for pyg-lib's existing `pyg::fps`, `pyg::knn`,
 CPU or CUDA kernels. [`voxel_grid` support](docs/pyg28-grid-cluster-contract.md)
 currently covers finite float32 1D–3D spatial coordinates and returns
 mixed-radix voxel IDs. Voxel downsampling and feature pooling remain separate
-work.
+work. The pinned PyG 2.8.0 and pyg-lib 0.7.0 M5 Pro
+[Safe](docs/pytest-pyg28-grid-safe-2026-10-01.log) and
+[Fast](docs/pytest-pyg28-grid-fast-2026-10-01.log) full-suite runs passed
+308/307 tests respectively, with 9/10 skips.
 PyG's graph wrappers use those same operators. The MPS path supports flat
 three-dimensional coordinates for FPS/radius and arbitrary positive feature
 dimension for float32 kNN; radius accepts float32 or float16. It returns
