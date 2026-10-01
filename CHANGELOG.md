@@ -29,8 +29,9 @@
 
 - With the large-cloud FPS path and PyTorch3D-style adapter, M5 Pro Safe and
   Fast Math each passed 201 tests with 12 expected skips. Paired public-API
-  FPS measurements at 1,024 samples gave 191.68 to 29.13 ms for 500,000
-  points and 417.06 to 48.97 ms for 1,000,000 points, with identical indices.
+  FPS measurements at 1,024 samples gave 193.08 to 29.37 ms for 500,000
+  points and 421.69 to 49.39 ms for 1,000,000 points, with identical indices
+  in every paired iteration.
 - Safe and Fast Math each passed 168 tests with 12 expected skips on M5 Pro.
   A separate sentinel-buffer checker passed 48 Safe and 40 Fast differential
   cases: complete output writes, byte-identical indices and squared distances

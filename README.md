@@ -280,8 +280,9 @@ The earlier [size sweep](bench/results/2026-10-01-apple-m5-pro-fps-multigroup.md
 found a crossover between 32,768 and 65,536 points on this M5 Pro. The 500,000
 point automatic cutoff is deliberately above that measured crossover. A
 [production-kernel spot check](bench/results/2026-10-01-apple-m5-pro-fps-production.json)
-at 1,024 samples measured 191.68 → 29.13 ms for 500,000 points and 417.06 →
-48.97 ms for 1,000,000 points, with identical output indices. These figures
+at 1,024 samples measured 193.08 → 29.37 ms for 500,000 points and 421.69 →
+49.39 ms for 1,000,000 points, with identical output indices in every paired
+iteration. These figures
 include host dispatch overhead and are bracketed by `torch.mps.synchronize()`;
 they do not establish a crossover on other Apple GPUs.
 
@@ -659,7 +660,8 @@ Ball Query is specified separately in the numerical contract.
 - `furthest_point_sample(xyz, npoint, start_idx=0, skip_near_origin=False, *, strategy="auto")`:
   starts at `start_idx`, ties go to the smaller index, and once every point is
   taken the remaining slots repeat index 0. Float32 only on MPS. `strategy`
-  accepts `"auto"`, `"single"`, or `"multigroup"`; the last requires B=1.
+  accepts `"auto"`, `"single"`, or `"multigroup"`; the last requires B=1
+  when sampling more than one point.
 - `knn(query, ref, k)`: Euclidean distances and indices, sorted by squared
   distance and then by index. `k <= N`, and `k <= 256` on MPS. Float32 only on
   MPS. (The reference itself uses `cdist` and `topk`, so it is only the

@@ -62,6 +62,7 @@ def main() -> int:
         xyz = torch.randn((1, n, 3), generator=generator).to("mps")
         times = {"single": [], "multigroup": []}
         outputs = {}
+        mismatches = 0
         for iteration in range(args.warmup + args.repeat):
             order = ("single", "multigroup") if iteration % 2 == 0 else ("multigroup", "single")
             for strategy in order:
@@ -71,7 +72,12 @@ def main() -> int:
                 torch.mps.synchronize()
                 if iteration >= args.warmup:
                     times[strategy].append((time.perf_counter() - start) * 1000)
-        mismatches = int((outputs["single"] != outputs["multigroup"]).sum().item())
+            pair_mismatches = int((outputs["single"] != outputs["multigroup"]).sum().item())
+            mismatches += pair_mismatches
+            if pair_mismatches:
+                raise AssertionError(
+                    f"{pair_mismatches} FPS indices differ at N={n}, iteration={iteration}"
+                )
         row = {
             "N": n,
             "B": 1,
@@ -85,8 +91,6 @@ def main() -> int:
         }
         results.append(row)
         print(json.dumps(row), flush=True)
-        if mismatches:
-            raise AssertionError(f"{mismatches} FPS indices differ at N={n}")
 
     memory = command("sysctl", "-n", "hw.memsize")
     report = {
