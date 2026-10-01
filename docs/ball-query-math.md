@@ -37,7 +37,7 @@ S[b,i,k] = s[b,i,I[b,i,k]]
 
 `B = 0`, `Q = 0`, `K = 0`이면 올바른 모양의 빈 출력 텐서를 반환하고 스레드를 디스패치하지 않는다. `P = 0`이고 출력 칸이 있으면 모든 칸을 `I = -1`, `S = 0`으로 채운다. 유효 lengths가 0인 경우도 같은 패딩 규칙을 따른다. 출력 형상과 입력 요소 수의 정수 범위는 호스트에서 검사한다.
 
-이는 **PyTorch3D의 전체 호출 서명과 아직 호환되지 않는다.** 최신 PyTorch3D는 `p1, p2, lengths1, lengths2, K, radius, return_nn, skip_points_outside_cube`를 받으며 기본값과 선택적 이웃 좌표 `knn` 출력이 있다. `skip_points_outside_cube=True`는 반경 바깥의 축 정렬 큐브에 놓인 점을 거리 계산 전에 거르는 최적화 인자다. 현재 API는 두 인자를 받지 않고 이웃 좌표도 반환하지 않는다. PyTorch3D의 일반 좌표 차원과 달리 이 Metal 커널은 `D = 3`으로 제한된다. [PyTorch3D 공개 API](https://github.com/facebookresearch/pytorch3d/blob/main/pytorch3d/ops/ball_query.py)
+기본 `mps_pointops.ball_query(query, ref, radius, K)`의 반환 형식은 PyTorch3D와 다르다. 별도 `mps_pointops.pytorch3d.ball_query` 어댑터는 [PyTorch3D 공개 API](https://github.com/facebookresearch/pytorch3d/blob/main/pytorch3d/ops/ball_query.py)의 `p1, p2, lengths1=None, lengths2=None, K=500, radius=0.2, return_nn=True, skip_points_outside_cube=False` 인자 순서와 기본값을 받는다. `KNN(dists, idx, knn)`으로 반환하며 `knn`은 `return_nn=True`일 때 선택한 대상 좌표를 모으고 `I=-1` 위치를 0으로 채운다. `skip_points_outside_cube=True`는 결과를 바꾸지 않는 최적화 힌트로 수용하지만, 현재 Metal 커널은 축 정렬 큐브 사전 필터를 실행하지 않는다. 이 어댑터는 float32 좌표의 `D=3`에 한정된다. PyTorch3D의 일반 좌표 차원, 모든 dtype과 경계값의 비트 단위 호환을 뜻하지 않는다.
 
 ## 커널 구현과 조기 종료
 

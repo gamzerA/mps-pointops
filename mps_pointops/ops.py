@@ -7,8 +7,10 @@ Tensors on other devices fall back to the pure PyTorch versions in
 from __future__ import annotations
 
 import math
+import subprocess
 from functools import cache
 from importlib import resources
+from typing import Literal
 
 import torch
 from torch import Tensor
@@ -18,6 +20,11 @@ from ._ball_query_mps import _check_simd_width, _checked_radius_and_k, ball_quer
 
 # Threads per threadgroup. 1024 is the Apple GPU maximum.
 _THREADS = 1024
+# The large-cloud path was measured on M5 Pro. Keep the automatic cutoff
+# conservative; callers can force either path when benchmarking other GPUs.
+_FPS_MULTIGROUP_MIN_N = 500_000
+_FPS_MULTIGROUP_GROUP_SIZE = 256
+_FPS_MULTIGROUP_CHUNK = 4096
 # Must match QUERIES_PER_GROUP and MAX_K in kernels/knn.metal.
 _KNN_QUERIES_PER_GROUP = 8
 _KNN_MAX_K = 256
@@ -30,8 +37,26 @@ def _library(name: str):
     return torch.mps.compile_shader(source)
 
 
+@cache
+def _fps_auto_multigroup_supported() -> bool:
+    """Only enable the measured large-cloud policy on the tested GPU model."""
+    try:
+        chip = subprocess.run(
+            ["sysctl", "-n", "machdep.cpu.brand_string"],
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return False
+    return chip == "Apple M5 Pro"
+
+
 def furthest_point_sample(
-    xyz: Tensor, npoint: int, start_idx: int = 0, skip_near_origin: bool = False
+    xyz: Tensor,
+    npoint: int,
+    start_idx: int = 0,
+    skip_near_origin: bool = False,
+    *,
+    strategy: Literal["auto", "single", "multigroup"] = "auto",
 ) -> Tensor:
     """Farthest point sampling.
 
@@ -47,12 +72,19 @@ def furthest_point_sample(
         start_idx: first sampled index.
         skip_near_origin: never pick points with x^2 + y^2 + z^2 <= 1e-3,
             other than the start index, like pointnet2_ops.
+        strategy: MPS dispatch choice. ``auto`` uses the multi-threadgroup
+            path only on the measured M5 Pro for one cloud with at least
+            500,000 points and two samples. Other hardware and smaller inputs
+            use the single-threadgroup path. ``single`` and ``multigroup``
+            override this for measurement. CPU tensors use the reference path.
 
     Returns:
         (B, npoint) int64 indices into ``xyz``.
     """
     if xyz.dim() != 3 or xyz.shape[-1] != 3:
         raise ValueError(f"xyz must have shape (B, N, 3), got {tuple(xyz.shape)}")
+    if strategy not in ("auto", "single", "multigroup"):
+        raise ValueError(f"strategy must be auto, single, or multigroup, got {strategy!r}")
     B, N, _ = xyz.shape
     if npoint < 0:
         raise ValueError(f"npoint must be >= 0, got {npoint}")
@@ -64,12 +96,44 @@ def furthest_point_sample(
         return reference.furthest_point_sample(xyz, npoint, start_idx, skip_near_origin)
     if xyz.dtype != torch.float32:
         raise TypeError(f"xyz must be float32 on MPS, got {xyz.dtype}")
+    if strategy == "multigroup" and B > 1 and npoint > 1:
+        raise ValueError("multigroup FPS requires batch size 1; use auto or single for batches")
 
-    out = torch.empty(B, npoint, dtype=torch.long, device=xyz.device)
+    use_multigroup = B == 1 and npoint > 1 and (
+        strategy == "multigroup" or (
+            strategy == "auto" and N >= _FPS_MULTIGROUP_MIN_N
+            and _fps_auto_multigroup_supported()
+        )
+    )
+    if use_multigroup and N >= 2**32:
+        raise ValueError("multigroup FPS requires fewer than 2**32 points")
+    out = (
+        torch.full((B, npoint), start_idx, dtype=torch.long, device=xyz.device)
+        if use_multigroup
+        else torch.empty((B, npoint), dtype=torch.long, device=xyz.device)
+    )
     if B == 0 or npoint == 0:
         return out
     xyz = xyz.contiguous()
     min_d2 = torch.empty(B, N, dtype=torch.float32, device=xyz.device)
+    if use_multigroup:
+        groups = (N + _FPS_MULTIGROUP_CHUNK - 1) // _FPS_MULTIGROUP_CHUNK
+        partial_d2 = torch.empty(groups, dtype=torch.float32, device=xyz.device)
+        partial_idx = torch.empty(groups, dtype=torch.int32, device=xyz.device)
+        library = _library("fps_multigroup")
+        for step in range(npoint - 1):
+            library.fps_update_partials(
+                xyz, min_d2, out, partial_d2, partial_idx,
+                N, step, _FPS_MULTIGROUP_CHUNK, int(skip_near_origin),
+                threads=groups * _FPS_MULTIGROUP_GROUP_SIZE,
+                group_size=_FPS_MULTIGROUP_GROUP_SIZE,
+            )
+            library.fps_reduce_partials(
+                partial_d2, partial_idx, out, groups, step,
+                threads=_FPS_MULTIGROUP_GROUP_SIZE,
+                group_size=_FPS_MULTIGROUP_GROUP_SIZE,
+            )
+        return out
     _library("fps").furthest_point_sample(
         xyz, min_d2, out, N, npoint, start_idx, int(skip_near_origin),
         threads=(_THREADS, B), group_size=(_THREADS, 1),

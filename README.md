@@ -266,19 +266,25 @@ Math also included NaN and Inf inputs. Its [Safe](bench/results/2026-10-01-apple
 and [Fast](bench/results/2026-10-01-apple-m5-pro-ball-query-simd-contract-fast.json)
 JSON files identify the exact inputs and shader hashes.
 
-### Large single-cloud FPS experiment
+### Large single-cloud FPS path
 
-The public FPS kernel uses one threadgroup per cloud. A separate experiment
-splits a single cloud over multiple threadgroups and performs a global
-reduction at each sampling step. The paired B=1, Safe Math measurements on
-this M5 Pro showed no clear win at 32,768 points, then a gain at 65,536 and
-larger sizes. With 1,024 samples, the random-order 500,000-point case measured
-194.15 → 29.49 ms, and 1,000,000 points measured 433.28 → 49.81 ms. All
-25,600 sampled indices in the 40 tested conditions matched the public FPS
-kernel. This is [benchmark-only code](bench/bench_fps_multigroup.py); choosing
-a production switch requires more hardware and batch-size measurements.
-See the [experiment report](bench/results/2026-10-01-apple-m5-pro-fps-multigroup.md)
-and [raw timings](bench/results/2026-10-01-apple-m5-pro-fps-multigroup.json).
+The source tree also provides a [multi-threadgroup FPS kernel](mps_pointops/kernels/fps_multigroup.metal)
+for batch size 1. It divides a cloud into 4,096-point chunks and uses a second
+dispatch to reduce their partial maxima after each sampling step. The
+`strategy="auto"` policy selects it only on the tested **M5 Pro** for at least
+500,000 points and two samples. Other Apple GPUs and all multi-cloud batches
+keep the original single-threadgroup path by default; callers can compare
+`strategy="single"` and `strategy="multigroup"` on their own hardware.
+
+The earlier [size sweep](bench/results/2026-10-01-apple-m5-pro-fps-multigroup.md)
+found a crossover between 32,768 and 65,536 points on this M5 Pro. The 500,000
+point automatic cutoff is deliberately above that measured crossover. A
+[production-kernel spot check](bench/results/2026-10-01-apple-m5-pro-fps-production.json)
+at 1,024 samples measured 193.08 → 29.37 ms for 500,000 points and 421.69 →
+49.39 ms for 1,000,000 points, with identical output indices in every paired
+iteration. These figures
+include host dispatch overhead and are bracketed by `torch.mps.synchronize()`;
+they do not establish a crossover on other Apple GPUs.
 
 ### Correctness checks
 
@@ -305,11 +311,17 @@ For the flat API implementation at commit `8b060f743b84ad6947daad591948855bcc9ce
 PyTorch 2.7.0 on the same M5 Pro reported **147 passed, 7 skipped** in each
 separate process ([Safe log](docs/pytest-flat-safe-torch27-2026-10-01.log),
 [Fast log](docs/pytest-flat-fast-torch27-2026-10-01.log)).
-The current dense SIMD source with PyTorch 2.14.1 reported **168 passed,
+The dense SIMD merge at commit `90338fd395d385194b3bc56c6b0d441de76e90b9`
+with PyTorch 2.14.1 reported **168 passed,
 12 skipped** in separate [Safe](docs/pytest-dense-simd-safe-torch214-2026-10-01.log)
 and [Fast](docs/pytest-dense-simd-fast-torch214-2026-10-01.log) processes.
 Seven skips are the existing kNN `k > n` cases and five are PyG 2.8 tests
 whose optional `pyg-lib` dependency is absent from this environment.
+With the large-cloud FPS path and PyTorch3D-style adapter, the M5 Pro suite
+reported **201 passed, 12 skipped** in separate
+[Safe](docs/pytest-fps-p3d-safe-torch214-2026-10-01.log) and
+[Fast](docs/pytest-fps-p3d-fast-torch214-2026-10-01.log) processes under
+PyTorch 2.14.1.
 
 ### Run it
 
@@ -340,6 +352,27 @@ already loaded or importable package; the default preserves it.
 | `pointnet2_utils.gather_operation`, `grouping_operation` | `torch.gather`, differentiable |
 | `pointnet2_utils.ball_query(radius, nsample, xyz, new_xyz)` | Metal on MPS. int32, empty slots repeat the first neighbor, no neighbor gives all zeros |
 | `knn_cuda.KNN(k, transpose_mode)` | Metal kernel. Same layouts as knn_cuda, Euclidean distances, no gradients |
+
+### PyTorch3D-style Ball Query
+
+`mps_pointops.pytorch3d.ball_query` accepts the [PyTorch3D Ball Query](https://github.com/facebookresearch/pytorch3d/blob/main/pytorch3d/ops/ball_query.py)
+argument order and defaults, including `lengths1`, `lengths2`, `return_nn`,
+and `skip_points_outside_cube`. It returns `KNN(dists, idx, knn)`, with zero
+coordinates in `knn` where `idx = -1` and `knn=None` when `return_nn=False`.
+
+```python
+from mps_pointops.pytorch3d import ball_query
+
+result = ball_query(centers, xyz, K=64, radius=0.1, return_nn=True)
+neighbor_indices = result.idx
+neighbor_coordinates = result.knn
+```
+
+This is an explicit adapter and does not replace an installed PyTorch3D
+package. It supports three-dimensional float32 coordinates. The cube flag is
+accepted as a result-preserving optimization hint; the current Metal kernel
+does not run a cube prefilter. General coordinate dimensions and bitwise
+agreement at all floating-point boundaries remain outside its contract.
 
 ### Flat `torch_cluster` subset
 
@@ -561,12 +594,13 @@ external implementation contracts, and this project's code.
 
 ## How the kernels work
 
-All three kernels are in [mps_pointops/kernels/](mps_pointops/kernels/) and are
+The operator kernels are in [mps_pointops/kernels/](mps_pointops/kernels/) and are
 compiled at runtime with `torch.mps.compile_shader`. FPS and kNN turn off FMA
 contraction and sum squared distances as ((dx² + dy²) + dz²). Ball Query uses
 an explicit FMA sequence and a documented policy for very small radii.
 
-**FPS** ([fps.metal](mps_pointops/kernels/fps.metal))
+**FPS** ([single-group kernel](mps_pointops/kernels/fps.metal),
+[multi-group kernel](mps_pointops/kernels/fps_multigroup.metal))
 
 - One threadgroup of 1024 threads per point cloud runs all `npoint` steps, so
   sampling is a single dispatch instead of thousands of small ones.
@@ -578,6 +612,11 @@ an explicit FMA sequence and a documented policy for very small radii.
 - A batch of B clouds uses B threadgroups. Batch 1 therefore launches only
   one threadgroup, which limits device-wide parallelism; this does not establish
   that exactly one GPU core is busy.
+- For one large cloud, the alternate kernel updates 4,096-point chunks in
+  parallel threadgroups. One reduction dispatch chooses the next center. The
+  two dispatches repeat for each remaining sample, preserving the same
+  minimum-distance and smaller-index tie rule. Its additional launches pay
+  off only when a cloud is large enough on the tested hardware.
 
 **kNN** ([knn.metal](mps_pointops/kernels/knn.metal))
 
@@ -608,8 +647,9 @@ call checks the width on the GPU and raises an error if it is different.
   and coordinate gradients.
 - [Math and floating-point contract](docs/ball-query-math.md) records the
   radius-square rounding, subnormal behavior, boundary policy and backward
-  equations. PyTorch3D's full call signature and bitwise parity remain future
-  compatibility work.
+  equations. The [PyTorch3D-style adapter](#pytorch3d-style-ball-query)
+  covers the optional call arguments for 3D float32 inputs; general D and
+  bitwise PyTorch3D CPU/CUDA parity remain outside the contract.
 
 ## Contracts
 
@@ -617,9 +657,11 @@ The pure PyTorch versions in [mps_pointops/reference.py](mps_pointops/reference.
 provide CPU fallbacks and benchmark baselines. MPS boundary arithmetic for
 Ball Query is specified separately in the numerical contract.
 
-- `furthest_point_sample(xyz, npoint, start_idx=0, skip_near_origin=False)`:
+- `furthest_point_sample(xyz, npoint, start_idx=0, skip_near_origin=False, *, strategy="auto")`:
   starts at `start_idx`, ties go to the smaller index, and once every point is
-  taken the remaining slots repeat index 0. Float32 only on MPS.
+  taken the remaining slots repeat index 0. Float32 only on MPS. `strategy`
+  accepts `"auto"`, `"single"`, or `"multigroup"`; the last requires B=1
+  when sampling more than one point.
 - `knn(query, ref, k)`: Euclidean distances and indices, sorted by squared
   distance and then by index. `k <= N`, and `k <= 256` on MPS. Float32 only on
   MPS. (The reference itself uses `cdist` and `topk`, so it is only the
@@ -634,15 +676,14 @@ Ball Query is specified separately in the numerical contract.
 
 ## Roadmap
 
-1. ~~Metal kernel for FPS~~ — benchmark-only multi-threadgroup reduction has
-   been measured for large single-cloud inputs; validate other chips and
-   batch sizes before selecting a production dispatch strategy
+1. ~~Metal kernel for FPS~~ — large B=1 inputs have a multi-threadgroup path;
+   tune selection on other Apple GPUs and variable-size batches
 2. ~~Metal kernel for kNN~~
 3. ~~Drop-in stand-ins for `pointnet2_ops` and `knn_cuda`, checked on real
    MulSen-AD data~~
-4. ~~Metal kernel for ball query~~ — dense order-preserving SIMD prefix scan
-   and paired sorted-input ablation are implemented; finish the PyTorch3D API
-   compatibility surface
+4. ~~Metal kernel for ball query~~ — dense order-preserving SIMD prefix scan,
+   paired sorted-input ablation, and a 3D float32 PyTorch3D-style adapter are
+   implemented; general D and numerical parity remain future work
 5. ~~MulSen-AD Point-MAE 3D detector on MPS, matching the CUDA runs~~ — the
    full TripleAD pipeline (RGB + IR + 3D) is next
 6. `torch_cluster`-style flat/ragged `radius`, `knn` and `fps` — the 3D
