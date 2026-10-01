@@ -131,11 +131,24 @@ def voxelize(
         raise ValueError("cell coordinate exceeds the supported int64 range")
     cells = torch.floor(quotient).to(torch.int64)
     keys = torch.cat((batch[:, None], cells), dim=1)
-    rows, inverse, counts = torch.unique(
-        keys, dim=0, sorted=True, return_inverse=True, return_counts=True,
-    )
-    point_order = torch.argsort(inverse, stable=True)
-    ptr = torch.cat((counts.new_zeros((1,)), counts.cumsum(dim=0)))
+    # torch.unique(dim=0) calls aten::unique_dim, which has no MPS kernel in
+    # the oldest supported PyTorch 2.7. Stable column sorts build the same
+    # lexicographic order without packing int64 coordinates or CPU fallback.
+    point_order = torch.arange(count, dtype=torch.int64, device=pos.device)
+    for column in range(dimensions, -1, -1):
+        point_order = point_order[
+            torch.argsort(keys[point_order, column], stable=True)
+        ]
+    ordered_keys = keys[point_order]
+    begins = torch.cat((
+        torch.ones((1,), dtype=torch.bool, device=pos.device),
+        (ordered_keys[1:] != ordered_keys[:-1]).any(dim=1),
+    ))
+    ptr = torch.cat((torch.nonzero(begins).flatten(), point_order.new_tensor([count])))
+    counts = ptr[1:] - ptr[:-1]
+    rows = ordered_keys[ptr[:-1]]
+    sorted_inverse = begins.to(torch.int64).cumsum(dim=0) - 1
+    inverse = torch.empty_like(point_order).scatter_(0, point_order, sorted_inverse)
     return Voxelization(
         voxel_coords=rows[:, 1:], batch=rows[:, 0], inverse=inverse,
         counts=counts, point_order=point_order, ptr=ptr,
