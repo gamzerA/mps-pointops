@@ -538,8 +538,9 @@ calls these `torch_cluster` functions directly. Its `fps`, `knn`, `radius`,
 on an M5 Pro. In contrast,
 [PyG 2.8.0](https://github.com/pyg-team/pytorch_geometric/blob/2.8.0/torch_geometric/nn/pool/__init__.py)
 calls separate `torch.ops.pyg` operators. For that version, use the MPS
-registration below. The `torch_cluster` shim does not provide the rest of
-`torch_cluster`.
+registration below. The `torch_cluster` shim has the separately documented
+legacy API subsets listed above; it does not register PyG's `pyg-lib`
+operators.
 
 ### PyG 2.8 MPS operator registration
 
@@ -933,15 +934,19 @@ Release claims follow the [pinned compatibility matrix](docs/phase3-compatibilit
 PyG 2.8's `pyg-lib` operator path, native graph aggregation, and the legacy
 `torch_cluster` shim are checked separately. “No failures” refers only to the
 listed versions, devices, models, and inputs that have passing logs.
+The [dated result matrix](docs/phase3-results-2026-10-01.md) links each tested
+surface to its source revision and raw logs.
 
 - [~] Initial PyG operator survey (#17): GCN, GraphSAGE, and GAT forward and
       backward passed on a fixed synthetic 12-node graph with PyG 2.8.0,
       PyTorch 2.14.1, and an M5 Pro, with `PYTORCH_ENABLE_MPS_FALLBACK=0` and
       no optional pyg-lib/torch-scatter packages. No missing operator was
       observed in this [tested configuration](docs/pyg-survey/2026-10-01-m5-pro-pyg28.md).
-- [ ] Profile native `scatter_add_` and `scatter_reduce_` on representative
-      graph workloads before choosing new Metal kernels; revise the operator
-      list below from those measurements.
+- [~] Native `scatter_add_` and `scatter_reduce_` were profiled on synthetic
+      4,096 and 32,768 node uniform and hub graphs with synchronized GCN,
+      GraphSAGE, and GAT runs. The [raw results and limits](docs/pyg-survey/2026-10-01-m5-pro-scatter-profile.md)
+      do not yet justify a new Metal kernel; broader graph distributions and
+      stable GAT timings remain to be established.
 - [ ] Core scatter reductions on Metal: sum, mean, max, min, with argmax and
       argmin. Check floating-point atomic support on each device at runtime
       instead of inferring it from the MSL version. Use a reproducible segmented
