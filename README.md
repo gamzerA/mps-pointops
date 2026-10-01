@@ -564,7 +564,9 @@ mixed-radix voxel IDs. Voxel downsampling and feature pooling remain separate
 work. The pinned PyG 2.8.0 and pyg-lib 0.7.0 M5 Pro
 [Safe](docs/pytest-pyg28-grid-safe-2026-10-01.log) and
 [Fast](docs/pytest-pyg28-grid-fast-2026-10-01.log) full-suite runs passed
-308/307 tests respectively, with 9/10 skips.
+327/326 tests respectively, with 9/10 skips, on the branch rebased onto
+`c3c7cc73bab1b2181815ba38a7d16bf6c0332601`.
+
 PyG's graph wrappers use those same operators. The MPS path supports flat
 three-dimensional coordinates for FPS/radius and arbitrary positive feature
 dimension for float32 kNN; radius accepts float32 or float16. It returns
