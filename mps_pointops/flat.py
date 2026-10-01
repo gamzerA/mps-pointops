@@ -110,19 +110,39 @@ def _fps_ptr(x: Tensor, batch: Tensor | None, batch_size: int | None, ptr: Tenso
     return _ptr_from_batch(batch, len(x), x.device, size)
 
 
-def _ratio(value: float | Tensor | None) -> float:
+def _ratio(value: float | Tensor | None, dtype: torch.dtype) -> Tensor:
+    """Return the ratio as the CPU scalar tensor torch_cluster would use.
+
+    torch_cluster turns a Python ratio into a tensor of the points' dtype and
+    keeps a tensor ratio as given. The sample counts are then computed in that
+    precision, so the dtype is part of the contract.
+    """
     if value is None:
-        return 0.5
+        value = 0.5
     if isinstance(value, Tensor):
         if value.numel() != 1:
             raise ValueError("ratio tensor must contain one value")
-        value = float(value.item())
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        result = value.detach().to("cpu").reshape(())
+        if not result.is_floating_point():
+            result = result.to(torch.float32)
+    elif isinstance(value, bool) or not isinstance(value, (int, float)):
         raise TypeError("ratio must be a number or scalar tensor")
-    result = float(value)
-    if not math.isfinite(result) or result < 0:
+    else:
+        result = torch.tensor(float(value), dtype=dtype)
+    if not math.isfinite(float(result)) or float(result) < 0:
         raise ValueError("ratio must be finite and non-negative")
     return result
+
+
+def _sample_counts(lengths: list[int], ratio: Tensor) -> list[int]:
+    """Samples per cloud, ``ceil(float32(N_b) * ratio)``, as in torch_cluster.
+
+    The product is rounded in the ratio's precision before the ceiling. In
+    float32 that is not always ``ceil`` of the exact product: 25 points at
+    ratio 0.6 give 16 samples, because 25 * float32(0.6) rounds just above 15.
+    """
+    sizes = torch.tensor(lengths, dtype=torch.float32)
+    return torch.ceil(sizes * ratio).to(torch.long).tolist()
 
 
 def fps(
@@ -133,20 +153,22 @@ def fps(
     batch_size: int | None = None,
     ptr: Tensor | Sequence[int] | None = None,
 ) -> Tensor:
-    """Sample ``ceil(ratio * N_b)`` global point indices per batch.
+    """Sample ``ceil(float32(N_b) * ratio)`` global point indices per batch.
 
-    ``ratio=None`` means 0.5. ``ptr`` takes precedence over ``batch`` if
+    The count is computed as torch_cluster does, with the ratio in the dtype
+    of ``x`` (or of the ratio tensor). ``ratio=None`` means 0.5. ``ptr`` takes
+    precedence over ``batch`` if
     supplied. ``random_start=False`` starts from the first point in each
     non-empty batch. The output is an int64 tensor on ``x.device``.
     """
     _points(x, "x")
     if x.device.type == "mps" and x.dtype != torch.float32:
         raise TypeError("x must be float32 on MPS")
-    sample_ratio = _ratio(ratio)
+    sample_ratio = _ratio(ratio, x.dtype)
     offsets = _fps_ptr(x, batch, batch_size, ptr)
     offset_values = offsets.cpu().tolist()
     lengths = [hi - lo for lo, hi in zip(offset_values, offset_values[1:])]
-    counts = [math.ceil(n * sample_ratio) for n in lengths]
+    counts = _sample_counts(lengths, sample_ratio)
     output_offsets = [0]
     for count in counts:
         output_offsets.append(output_offsets[-1] + count)

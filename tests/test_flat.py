@@ -130,3 +130,59 @@ def test_mps_large_k_uses_torch_fallback():
     result = flat.knn(x.to("mps"), y.to("mps"), 300)
     assert result.shape == (2, 300)
     assert torch.equal(result[1].cpu(), torch.arange(300))
+
+
+DEVICES = ["cpu"] + (["mps"] if torch.backends.mps.is_available() else [])
+
+
+@pytest.mark.parametrize("device", DEVICES)
+@pytest.mark.parametrize(
+    "n, ratio, expected",
+    [
+        # torch_cluster computes ceil(float32(N) * float32(ratio)). These products
+        # round just above an integer in float32, so the count is one more than
+        # ceil of the exact product.
+        (25, 0.6, 16),
+        (45, 0.6, 28),
+        (50, 0.3, 16),
+        (90, 0.3, 28),
+        # Ordinary cases.
+        (10, 0.5, 5),
+        (7, 0.5, 4),
+        (9, 1.0, 9),
+    ],
+)
+def test_fps_sample_count_uses_torch_cluster_float32_arithmetic(device, n, ratio, expected):
+    x = torch.rand(n, 3, device=device)
+    assert len(flat.fps(x, ratio=ratio, random_start=False)) == expected
+
+
+def test_fps_sample_count_matches_float32_formula_over_a_sweep():
+    for ratio in (0.05, 0.1, 0.3, 1 / 3, 0.6, 0.7, 0.95):
+        lengths = list(range(1, 300))
+        want = torch.ceil(torch.tensor(lengths, dtype=torch.float32) * torch.tensor(ratio, dtype=torch.float32)).long()
+        ptr = [0]
+        for n in lengths:
+            ptr.append(ptr[-1] + n)
+        x = torch.rand(ptr[-1], 3)
+        assert len(flat.fps(x, ptr=ptr, ratio=ratio, random_start=False)) == int(want.sum())
+
+
+@pytest.mark.parametrize("device", DEVICES)
+def test_radius_threshold_is_double_product_rounded_to_float32(device):
+    # torch_cluster compares against fl32(r * r) with r * r computed in double.
+    # For r = 0.21 that is one float32 ULP above fl32(r)^2, so a point exactly
+    # fl32(r) away from the query is a neighbor.
+    r = 0.21
+    r32 = torch.tensor(r, dtype=torch.float32)
+    assert float(r32 * r32) < float(torch.tensor(r * r, dtype=torch.float32))  # the premise
+    x = torch.tensor([[float(r32), 0.0, 0.0]], device=device)
+    y = torch.zeros(1, 3, device=device)
+    assert flat.radius(x, y, r).tolist() == [[0], [0]]
+
+    # For r = 0.1, fl32(r * r) is below fl32(r)^2, so the same construction is outside.
+    r = 0.1
+    r32 = torch.tensor(r, dtype=torch.float32)
+    assert float(r32 * r32) > float(torch.tensor(r * r, dtype=torch.float32))
+    x = torch.tensor([[float(r32), 0.0, 0.0]], device=device)
+    assert flat.radius(x, y, r).shape == (2, 0)

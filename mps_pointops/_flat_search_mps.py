@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from functools import cache
 from importlib import resources
+import math
+import struct
 
 import torch
 from torch import Tensor
@@ -49,6 +51,19 @@ def _check_inputs(x: Tensor, y: Tensor, ptr_x: Tensor, ptr_y: Tensor) -> tuple[i
     return int(ptr_x.numel() - 1), int(y.shape[0])
 
 
+def _torch_cluster_radius_sq(r: float) -> float:
+    """The threshold torch_cluster compares against: fl32(r * r), r * r in double.
+
+    torch_cluster takes ``r`` as a double and passes ``r * r`` to a float32
+    kernel. PyTorch3D-style Ball Query instead squares the float32-rounded
+    radius; the two can differ by one float32 ULP (for example at r = 0.21).
+    """
+    try:
+        return struct.unpack("f", struct.pack("f", r * r))[0]
+    except OverflowError:
+        return math.inf
+
+
 def knn_indices(x: Tensor, y: Tensor, ptr_x: Tensor, ptr_y: Tensor, k: int) -> Tensor:
     """Return global x indices, sorted by (squared distance, x index)."""
     batch_count, query_count = _check_inputs(x, y, ptr_x, ptr_y)
@@ -79,7 +94,8 @@ def radius_indices(
     batch_count, query_count = _check_inputs(x, y, ptr_x, ptr_y)
     if x.dtype not in (torch.float32, torch.float16) or y.dtype != x.dtype:
         raise TypeError("flat Metal radius requires matching float32 or float16 x and y")
-    radius_f32, radius_sq = _checked_radius_and_k(r, max_num_neighbors)
+    radius_f32, _ = _checked_radius_and_k(r, max_num_neighbors)
+    radius_sq = _torch_cluster_radius_sq(float(r))
     if query_count * max_num_neighbors > (1 << 63) - 1:
         raise ValueError("radius output size exceeds int64 indexing")
     out = torch.empty((query_count, max_num_neighbors), dtype=torch.int64, device=x.device)
