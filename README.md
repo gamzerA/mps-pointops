@@ -12,7 +12,7 @@
 
 **Point-cloud operators for PyTorch on Apple Silicon.** Native Metal kernels
 run farthest point sampling, k nearest neighbors, and Ball Query on MPS.
-Version 0.6.0 also provides experimental PointNet++ feature propagation,
+Version 0.7.0 also provides experimental PointNet++ feature propagation,
 squared-L2 Chamfer distance, feature-space kNN, and graph/grid interfaces.
 Compatibility stand-ins cover supported `pointnet2_ops`, `knn_cuda`, and
 `torch_cluster` call sites; CPU tensors use PyTorch reference implementations.
@@ -39,11 +39,12 @@ kernels compile on first use.
 python -m pip install mps-pointops
 ```
 
-Version 0.6.0 includes dense SIMD Ball Query, the PyTorch3D-style Ball Query
+Version 0.7.0 includes dense SIMD Ball Query, the PyTorch3D-style Ball Query
 adapter, and the large-cloud FPS path for a single cloud. Experimental
 `three_nn`, `three_interpolate`, squared-L2 `chamfer_distance`, and
-feature-space kNN APIs are available; the legacy graph and voxel interfaces
-have bounded input contracts. The supported propagation and loss inputs and
+feature-space kNN APIs are available; the graph and voxel interfaces have
+bounded input contracts. Compact voxel downsampling now includes an opt-in
+Metal CSR pooling prototype. The supported propagation and loss inputs and
 their differences from upstream are specified in the
 [PointNet++ propagation](docs/pointnet2-propagation.md) and
 [Chamfer](docs/chamfer-contract.md) contracts.
@@ -673,8 +674,14 @@ result.features.sum().backward()
 This API uses `floor` for negative cell coordinates and compact labels. PyG
 `voxel_grid` and legacy `torch_cluster.grid_cluster` use different raw ID
 contracts; this submodule does not replace their signatures or implement
-PyG graph `avg_pool`. Its native PyTorch tensor path has MPS validation
-synchronization and no speed claim.
+PyG graph `avg_pool`. The default `pool_backend="index_add"` uses native
+PyTorch reductions. On MPS, experimental `pool_backend="fused_csr"` pools
+positions and features in one Metal dispatch **after** constructing the same
+CSR map. The [numerical contract](docs/voxel-api-contract.md) documents an
+expected severe-cancellation difference from MPS `index_add_`; this opt-in
+prototype has [mixed full-call results](docs/voxel-fused-benchmark.md) and no
+general speedup claim. Both paths currently synchronize MPS
+for input validation and data-dependent compact output shape.
 
 PyG's graph wrappers use those same operators. The MPS path supports flat
 three-dimensional coordinates for FPS/radius and arbitrary positive feature
@@ -1048,15 +1055,25 @@ correctness and timing evidence without extending claims to M2–M4.
       batched floor-based cells, exact inverse/CSR maps and counts, mean
       positions, and mean/sum features with first-order gradients on CPU/MPS.
       The physical M1 Safe/Fast full suites also passed all 20 voxel tests;
-      compact API speed, M2–M4, and wider dtype coverage remain unverified.
+      compact API speed on M1, M2–M4, and wider dtype coverage remain unverified.
 - [~] PyG 2.8 graph `avg_pool` on finite float32 synthetic graphs: the
       [coarsening contract and synchronized measurement](docs/pyg28-graph-avg-pool.md)
       cover topology, duplicate edges, self-loops, batch labels, pooled values,
       and first-order gradients. General PyG model coverage remains open.
-- [ ] Measured speed of the separate compact voxel-downsampling API.
-- [ ] Design and benchmark a fused Metal voxel-pooling candidate only after it
-      matches the current cell IDs, mean/sum outputs, and first-order gradients.
-      No fused kernel exists in the measured release.
+- [~] Measured speed of the separate compact voxel-downsampling API on a
+      [physical M5 Pro](docs/voxel-api-benchmark.md) across 20k/100k/500k
+      points, uniform/ragged batches, and dense/sparse cells. The report keeps
+      stage timings separate from the full forward/backward call and labels
+      MPS allocator readings as current values, not memory peaks. Physical M1
+      speed remains to be measured.
+- [~] An opt-in [fused Metal CSR pooling prototype](docs/voxel-api-contract.md)
+      retains the exact integer cell/inverse/CSR maps and matches bounded
+      mean/sum and first-order gradient fixtures. It reduces position and
+      feature values in one dispatch **after** map construction. Severe
+      cancellation can exceed the tolerance against MPS `index_add_`, so it
+      remains opt in. The [M5 Pro full-call ablation](docs/voxel-fused-benchmark.md)
+      has mixed wins and losses, with no general speedup or lower-peak-memory
+      claim.
 - [~] Legacy `torch_cluster.nearest` CPU/MPS float32 shim. The
       [contract and source-pinned comparison](docs/nearest-contract.md) cover
       finite well-separated examples, ragged batches, and the CUDA source's
@@ -1139,7 +1156,9 @@ local Safe/Fast Math tests, and the six required CI checks for `main`.
 
 ## Citation
 
-For v0.6.0, cite its archived
+For v0.7.0, cite the reserved
+[version DOI (10.5281/zenodo.23087369)](https://doi.org/10.5281/zenodo.23087369)
+after the archive is published. For results using v0.6.0, cite its archived
 [version DOI (10.5281/zenodo.23086417)](https://doi.org/10.5281/zenodo.23086417).
 For results using v0.5.0, cite its archived
 [version DOI (10.5281/zenodo.23080506)](https://doi.org/10.5281/zenodo.23080506).
