@@ -6,7 +6,7 @@
   "fixture_id": "pointnet2-ssg-segmentation-synthetic-v1",
   "fixture_sha256": "e3998b2eb58c9b9a410ef2a081b539e65aca5d15fcdb72a203849ade0be511f1",
   "gpu_name": "Apple M5 Pro",
-  "harness_sha256": "9970b84f3b12d06af1691eed9aa39a78681b0c0bbe8b7bcfb7141e0f173ccdd2",
+  "harness_sha256": "f662f8b081a6c4bad43ce57c49a67765b19a0d2e94fc51a85829f5897f7e9f13",
   "logits": [
     1,
     13,
@@ -31,7 +31,7 @@
     "mps_pointops/ops.py": "fbd5218ab0323558fc2733abc1bf47fc0074b568df8927d48d5033f8e42b796a",
     "mps_pointops/pointnet2.py": "55d946e1c4bfe32755566ecf51f643b0a08df3f94317f8ee6f1e07adf685a2e7"
   },
-  "result_sha256": "e37926c82a9b0f0ab622792e76447ccec235dd97b448f230923fc0b8d00e053d",
+  "result_sha256": "7fa883b3943b46a3d25e30f8bb81d636dfb68ff18625400139f8909625645ad7",
   "selection_kinds": [
     "furthest_point_sample",
     "ball_query",
@@ -50,6 +50,14 @@
   "upstream": {
     "build_only_setup_diff": "",
     "commit": "b5ceb6d9ca0467ea34beb81023f96ee82228f626",
+    "source_git_blob_sha1": {
+      "pointnet2/models/pointnet2_ssg_sem.py": "d3f70bc0bfb5bad4e8cdca5bd3f58a8d8c8118d8",
+      "pointnet2_ops_lib/pointnet2_ops/_ext-src/src/ball_query_gpu.cu": "559aef933bf1291dc05c1a374a7f42b79cf10aa7",
+      "pointnet2_ops_lib/pointnet2_ops/_ext-src/src/interpolate_gpu.cu": "81c554868bf4f510723300138d705cd6603f51a6",
+      "pointnet2_ops_lib/pointnet2_ops/_ext-src/src/sampling_gpu.cu": "fc573f0a92baa5a9cdf8770a44e02d0fabec25c6",
+      "pointnet2_ops_lib/pointnet2_ops/pointnet2_modules.py": "a0ad4f6bc23f54ca2d61454e657a6f533e9b875c",
+      "pointnet2_ops_lib/pointnet2_ops/pointnet2_utils.py": "150fcccade21001971a76e6c3628963972305739"
+    },
     "source_sha256": {
       "pointnet2/models/pointnet2_ssg_sem.py": "7d4e21fac5c53f9cb7dc57354b79ab0118e3158e61cdf26e14af4ffe4f3991d2",
       "pointnet2_ops_lib/pointnet2_ops/_ext-src/src/ball_query_gpu.cu": "7253c10da9db4b02d25e43b7a713ee956dae27b4ec25220f1b2abbaccc79530f",
