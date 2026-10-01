@@ -1,0 +1,77 @@
+name: PyTorch3D Chamfer parity
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  chamfer-upstream-parity:
+    name: PyTorch3D Chamfer MPS parity
+    runs-on: macos-latest
+    timeout-minutes: 75
+    env:
+      PYTORCH_ENABLE_MPS_FALLBACK: "0"
+      UPSTREAM_SHA: 88e182f989c80836f4bd744e0d9cb1852762ce01
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install pinned PyTorch and package
+        run: |
+          python -m pip install "torch==2.14.1"
+          python -m pip install . fvcore iopath ninja
+      - name: Require a real MPS device
+        run: |
+          python - <<'PY'
+          import platform
+          import torch
+          print(platform.platform(), torch.__version__)
+          assert torch.backends.mps.is_available(), "MPS is required for upstream parity"
+          PY
+      - name: Build pinned PyTorch3D CPU oracle
+        run: |
+          git clone --quiet https://github.com/facebookresearch/pytorch3d.git "$RUNNER_TEMP/pytorch3d"
+          git -C "$RUNNER_TEMP/pytorch3d" checkout --quiet "$UPSTREAM_SHA"
+          test "$(git -C "$RUNNER_TEMP/pytorch3d" rev-parse HEAD)" = "$UPSTREAM_SHA"
+          # This pinned upstream uses C++17, while torch 2.14.1 headers require
+          # C++20. Change only the two build flags, not algorithms or kernels.
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          setup = Path(os.environ["RUNNER_TEMP"]) / "pytorch3d" / "setup.py"
+          source = setup.read_text()
+          assert source.count("-std=c++17") == 2
+          setup.write_text(source.replace("-std=c++17", "-std=c++20"))
+          PY
+          cd "$RUNNER_TEMP/pytorch3d"
+          FORCE_CUDA=0 MAX_JOBS=2 python setup.py build_ext --inplace
+      - name: Chamfer parity (Metal safe math)
+        env:
+          PYTHONPATH: ${{ runner.temp }}/pytorch3d
+          PYTORCH_MPS_FAST_MATH: "0"
+        run: |
+          python tests/verify_upstream_chamfer.py \
+            --upstream-root "$RUNNER_TEMP/pytorch3d" \
+            --upstream-build-note 'CPU extension; setup.py C++20 flags only; torch 2.14.1' \
+            --devices mps --out "$RUNNER_TEMP/chamfer-safe.json"
+      - name: Chamfer parity (Metal fast math)
+        env:
+          PYTHONPATH: ${{ runner.temp }}/pytorch3d
+          PYTORCH_MPS_FAST_MATH: "1"
+        run: |
+          python tests/verify_upstream_chamfer.py \
+            --upstream-root "$RUNNER_TEMP/pytorch3d" \
+            --upstream-build-note 'CPU extension; setup.py C++20 flags only; torch 2.14.1' \
+            --devices mps --out "$RUNNER_TEMP/chamfer-fast.json"
+      - name: Preserve case-by-case results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chamfer-upstream-parity-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/chamfer-safe.json
+            ${{ runner.temp }}/chamfer-fast.json
+          if-no-files-found: ignore
