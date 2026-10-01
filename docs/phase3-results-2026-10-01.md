@@ -59,7 +59,10 @@ provenance.
   physical M1 in its separate fixture. They do not identify the GPU
   primitive, establish Metal-atomic contention, measure a full Chamfer or PyG
   model backward pass, or justify a custom Metal replacement without an
-  end-to-end ablation. The hosted PyTorch 2.12 `Linear` bias discrepancy is
+  end-to-end ablation. The [scoped adoption decision](pyg-survey/2026-10-02-m1-m5-scatter-decision.md)
+  retains native PyTorch for the documented graph path and leaves a candidate
+  segmented reduction as separate experimental work. The hosted PyTorch 2.12
+  `Linear` bias discrepancy is
   environment dependent; its internal cause and broader model impact remain
   unverified.
 - The graph survey does not cover all models, aggregation variants, PyTorch

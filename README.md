@@ -530,11 +530,14 @@ threshold, error choices, and cross-backend limits are in the
 `graclus_cluster` CPU/MPS path follows the
 [legacy matching contract](docs/graclus-contract.md). Experimental
 [`random_walk`](docs/random-walk-contract.md) uses PyTorch CPU/MPS tensor
-operations. Its uniform CPU walk can match the pinned upstream CPU RNG state;
-biased walks approximate the upstream CPU transition distribution, with
+operations for the documented int64 COO inputs. With the same CPU RNG state,
+uniform walks can match the pinned upstream CPU sampler; biased walks
+approximate its transition distribution, with
 device-specific random draws. The pinned CUDA source has a different biased
 rejection-loop state update, so CUDA biased-path parity is not claimed. This
-is not a native Metal performance path.
+is not a native Metal performance path. [PyG 2.8 `Node2Vec`](https://github.com/pyg-team/pytorch_geometric/blob/2.8.0/torch_geometric/nn/models/node2vec.py#L57-L60)
+calls the separate
+`torch.ops.pyg.random_walk` operator; the legacy shim does not register it.
 
 [PyG 2.7.0](https://github.com/pyg-team/pytorch_geometric/blob/2.7.0/torch_geometric/nn/pool/__init__.py)
 calls these `torch_cluster` functions directly. Its `fps`, `knn`, `radius`,
@@ -986,11 +989,14 @@ correctness and timing evidence without extending claims to M2–M4.
       PyTorch 2.14.1, and an M5 Pro, with `PYTORCH_ENABLE_MPS_FALLBACK=0` and
       no optional pyg-lib/torch-scatter packages. No missing operator was
       observed in this [tested configuration](docs/pyg-survey/2026-10-01-m5-pro-pyg28.md).
-- [~] Native `scatter_add_` and `scatter_reduce_` were profiled on synthetic
-      4,096 and 32,768 node uniform and hub graphs with synchronized GCN,
-      GraphSAGE, and GAT runs. The [raw results and limits](docs/pyg-survey/2026-10-01-m5-pro-scatter-profile.md)
-      do not yet justify a new Metal kernel; broader graph distributions and
-      stable GAT timings remain to be established. A separate
+- [x] Profile native `scatter_add_` and `scatter_reduce_` and record the
+      current implementation decision. Synchronized GCN, GraphSAGE, and GAT
+      runs on M5 Pro synthetic 4,096/32,768-node uniform and hub graphs, plus
+      separate physical M1 fan-in probes, support retaining native PyTorch for
+      the documented workloads. The [cross-device decision and limits](docs/pyg-survey/2026-10-02-m1-m5-scatter-decision.md)
+      identify concentrated destinations as a candidate for a controlled
+      segmented-reduction ablation; they do not establish a Metal-atomic cause
+      or a model-level speedup. A separate
       [backward probe](docs/pyg-survey/2026-10-01-m5-pro-scatter-backward.md)
       records native PyTorch's zero-extremum gradient behavior before any
       replacement contract is chosen.
@@ -1025,10 +1031,13 @@ correctness and timing evidence without extending claims to M2–M4.
 - [~] Experimental legacy `torch_cluster.graclus_cluster` CPU/MPS greedy
       matching subset; see its [contract and original CPU comparison](docs/graclus-contract.md).
       The Metal decision is serial and has no speedup claim.
-- [~] Experimental legacy `torch_cluster.random_walk` CPU/MPS tensor path.
-      The [stochastic contract](docs/random-walk-contract.md) separates exact
-      uniform CPU parity from biased transition probabilities; performance is
-      not yet established.
+- [x] Legacy `torch_cluster.random_walk` CPU/MPS tensor path is implemented
+      for the [documented int64 COO contract](docs/random-walk-contract.md),
+      with no `NotImplementedError` for its supported arguments. The pinned
+      upstream CPU comparison covers exact uniform walks under the same RNG
+      state and biased transition distributions within tolerance. This does
+      not register PyG 2.8 `torch.ops.pyg.random_walk` for `Node2Vec` or
+      establish CUDA-biased parity or a performance gain.
 
 ### Phase 4: Geometry losses and large-scale search (target 0.8.0 to 0.9.0)
 

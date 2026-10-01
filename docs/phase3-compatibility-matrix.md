@@ -12,9 +12,11 @@ PyG 2.8.0 deprecated `torch-cluster` and moved its optional accelerated
 operators to `pyg-lib>=0.6.0` ([PyG 2.8.0 changelog](https://github.com/pyg-team/pytorch_geometric/blob/2.8.0/CHANGELOG.md),
 [installation guide](https://pytorch-geometric.readthedocs.io/en/2.8.0/install/installation.html)).
 The `mps_pointops.compat` `torch_cluster` shim is still useful for older PyG
-versions and projects that import `torch_cluster` directly, but filling its
-remaining placeholders does not establish PyG 2.8 compatibility. The
+versions and projects that import `torch_cluster` directly, but completing
+that legacy call surface does not establish PyG 2.8 compatibility. The
 `mps_pointops.pyg` registration is a separate path for real `pyg::*` schemas.
+In particular, PyG 2.8 `Node2Vec` calls `torch.ops.pyg.random_walk`; the
+implemented legacy `torch_cluster.random_walk` shim does not register it.
 
 | Surface | Pinned reference for parity | Required evidence before marking complete |
 | --- | --- | --- |
@@ -43,6 +45,11 @@ See the [survey record](pyg-survey/2026-10-01-m5-pro-pyg28.md).
    language-version check alone does not prove float atomic availability.
 4. Benchmark correctness and total model time against the native path on each
    supported chip. A kernel merge does not imply a speedup.
+
+The [dated M1/M5 scatter decision](pyg-survey/2026-10-02-m1-m5-scatter-decision.md)
+closes the **profiling and current adoption decision** for its pinned synthetic
+workloads: retain native PyTorch scatter. A custom Metal reduction, real-graph
+ablation, and broader device coverage remain separate work.
 
 ## 0.7.0: grid and legacy operator coverage
 
