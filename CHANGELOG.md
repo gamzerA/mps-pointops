@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.4.0 — 2026-10-01
+
 ### Documentation
 
 - Re-measured 20,000/100,000-point FPS, kNN, and dense Ball Query on the
@@ -29,8 +31,8 @@
   21.43 to 2.91 ms on x-sorted input and 7.66 to 1.40 ms on random input.
 - Native kernel startup checks Apple Silicon macOS, an available PyTorch MPS
   backend, and 32-wide simdgroups before compiling the dense shader.
-- The README includes a small MPS smoke example and distinguishes the v0.3.0
-  benchmark from the current SIMD experiment.
+- The README includes an MPS smoke example and separates the archived v0.3.0
+  benchmark from measurements of the released SIMD kernel.
 
 ### Verified
 
@@ -44,9 +46,10 @@
   cases: complete output writes, byte-identical indices and squared distances
   versus the previous Metal kernel, and first-K indices equal to an independent
   CPU oracle on the tested inputs.
-- A benchmark-only multi-threadgroup FPS experiment measured sizes from 2,048
-  to 1,000,000 points at batch 1. It remains outside the public kernel until
-  other devices and batch sizes are tested.
+- An earlier multi-threadgroup FPS size sweep measured 2,048 to 1,000,000
+  points at batch 1 and informed the conservative public M5 Pro dispatch
+  threshold. Uneven batches and automatic selection on other Apple GPUs
+  remain future work.
 
 ## 0.3.0 — 2026-10-01
 

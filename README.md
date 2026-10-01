@@ -37,13 +37,8 @@ kernels compile on first use.
 python -m pip install mps-pointops
 ```
 
-The published PyPI v0.3.0 predates the dense SIMD kernel, large-cloud FPS path,
-and PyTorch3D-style adapter described below. Until the next release, install
-the current source for those features:
-
-```bash
-python -m pip install "git+https://github.com/gamzerA/mps-pointops.git@main"
-```
+Version 0.4.0 includes the dense SIMD Ball Query kernel, the PyTorch3D-style
+adapter, and the large-cloud FPS path for a single cloud.
 
 ### Minimal example
 
@@ -725,56 +720,79 @@ original implementation.
 - [ ] Point Transformer family (Phase 4)
 - [ ] A sparse-convolution model (Phase 5)
 
-### Phase 1: Core precision and parity (target 0.4.0)
+### Phase 1: Core precision and parity (0.4.0)
 
-- [~] Dense Ball Query with an order-preserving SIMD prefix scan (#7).
+- [x] Dense Ball Query with an order-preserving SIMD prefix scan (#7).
       Done when: faster than the best CPU library on sorted and random input.
-- [~] PyTorch3D signature adapter: `lengths1/2`, `return_nn`,
+- [x] PyTorch3D signature adapter: `lengths1/2`, `return_nn`,
       `skip_points_outside_cube` (#8).
       Done when: matches PyTorch3D's CPU `ball_query` on the parity suite.
-- [~] Large-cloud FPS for a single cloud (batch 1): a multi-threadgroup kernel,
+- [x] Large-cloud FPS for a single cloud (batch 1): a multi-threadgroup kernel,
       chosen automatically from 500,000 points on a validated GPU or with
       `strategy="multigroup"` (#8). On an M5 Pro, 1,024 samples from 1,000,000
       points went from 421.69 ms to 49.39 ms with identical indices.
+
+### Phase 1 follow-ups (after 0.4.0)
+
 - [ ] Multi-threadgroup FPS for multi-cloud batches, including uneven cloud
-      sizes, and validation of the automatic switch on other Apple GPUs.
-      Done when: uneven batches no longer leave one long-running threadgroup.
-- [ ] kNN with `k > 256` on Metal, and a faster CPU fallback. Unsupported
-      inputs warn or fail clearly instead of slowing down silently.
+      sizes: use `ptr` offsets to keep each cloud independent, reduce partial
+      maxima within each cloud, then select that cloud's global argmax. Measure
+      whether the segmented schedule removes long-running groups without
+      increasing per-sample synchronization costs. Validate any automatic
+      switch separately on other Apple GPUs.
+- [ ] kNN with `k > 256` on Metal. First replace the current mismatch between
+      the dense API's explicit error and the flat/PyG path's implicit PyTorch
+      fallback with a documented warning or error policy. Then evaluate tiled
+      top-k merging and benchmark its memory use and speed against the CPU
+      fallback. The current `MAX_K=256` is a kernel constant, not a hardware
+      limit.
 - [ ] Flat API benchmarks in the published results.
 - [ ] Benchmarks from other Apple Silicon chips (M1 to M4), on real hardware.
 
 ### Phase 2: Feature-space and propagation operators (target 0.5.0)
 
 - [ ] kNN in arbitrary dimension (D > 3) for feature-space neighbor search.
-      Done when: DGCNN's EdgeConv runs on MPS with the same neighbors as CPU.
+      Use direct dimension-by-dimension distance accumulation as the numerical
+      baseline before evaluating tiled or matrix-style paths. Define tie and
+      boundary behavior; validate DGCNN EdgeConv on MPS with neighbor checks
+      outside ambiguous ties and model-output errors within a documented
+      tolerance, rather than requiring bitwise CPU/MPS index parity at every
+      boundary.
 - [ ] `three_nn` and `three_interpolate` for PointNet++ feature propagation.
-      Done when: a PointNet++ segmentation model runs end to end with matching accuracy.
+      The first returns Euclidean distances and three indices. The second
+      accepts externally computed weights and accumulates backward gradients
+      into input features. Validate PointNet++ segmentation end to end.
 - [ ] Open issues upstream (`pyg-lib`, `torch_cluster`, `PyTorch3D`) to ask
       whether MPS support would be accepted and in what form.
 
 ### Phase 3: Graph and grid infrastructure (target 0.6.0 to 0.7.0)
 
-- [ ] Survey first: run PyG example models on MPS with CPU fallback disabled
-      and list the operators that fail. Recent PyG uses native PyTorch ops
-      rather than `torch_scatter`, so the gaps may be PyTorch ops missing on
-      MPS. The items below are adjusted to that list.
+- [ ] Survey first: pin a PyG version and run GCN, GraphSAGE, and GAT with
+      `PYTORCH_ENABLE_MPS_FALLBACK=0`. Record every failing operator and profile
+      native `scatter_add_` and `scatter_reduce_` before choosing new Metal
+      kernels. Revise the operator list below from those measurements.
 - [ ] Core scatter reductions on Metal: sum, mean, max, min, with argmax and
-      argmin. A `torch_scatter` stand-in covers these first; the rest of its
-      surface follows demand.
+      argmin. Check floating-point atomic support on each device at runtime
+      instead of inferring it from the MSL version. Use a reproducible segmented
+      reduction as the safe baseline; add device-specific atomic paths only
+      where supported and measured. A `torch_scatter` stand-in follows demand.
 - [ ] Voxelization, voxel downsampling and `grid_cluster`.
 - [ ] Remaining `torch_cluster` operators: `nearest`, `graclus`, `random_walk`.
       Done when: no function in the stand-in raises `NotImplementedError`.
 
 ### Phase 4: Geometry losses and large-scale search (target 0.8.0 to 0.9.0)
 
-- [ ] Chamfer distance with a backward path.
-      Done when: values and gradients match PyTorch3D's `chamfer_distance`.
+- [ ] Bidirectional Chamfer distance with a backward path. For each point,
+      accumulate both its own nearest-neighbor contribution and every reverse
+      contribution from points that select it. Specify supported `lengths`,
+      `batch_reduction`, and `point_reduction` modes before implementation.
+      Done when supported values and gradients match PyTorch3D.
 - [ ] Pointcept `pointops` compatibility for the Point Transformer family.
 - [ ] Spatial acceleration structures (uniform grid or BVH) for clouds of
       1M+ points. Done when: faster than a CPU KD-tree at 1M points.
-- [ ] Stretch: Earth Mover's Distance. Exact EMD is expensive, so this needs a
-      choice of approximation and its own contract.
+- [ ] Stretch: approximate optimal transport via entropic regularization
+      (Sinkhorn). Specify its numerical contract separately from exact Earth
+      Mover's Distance.
 
 ### Phase 5: Sparse 3D and upstream convergence (target 1.0)
 
@@ -801,7 +819,10 @@ local Safe/Fast Math tests, and the six required CI checks for `main`.
 
 ## Citation
 
-For results using v0.3.0, cite the archived release with its
+For v0.4.0, cite its reserved
+[version DOI (10.5281/zenodo.23078860)](https://doi.org/10.5281/zenodo.23078860).
+The DOI resolves after the v0.4.0 archive is published. For results using
+v0.3.0, cite its archived
 [version DOI (10.5281/zenodo.23076058)](https://doi.org/10.5281/zenodo.23076058).
 The badge above points to the [concept DOI](https://doi.org/10.5281/zenodo.23076057)
 for the version series. [CITATION.cff](CITATION.cff) supplies the current
