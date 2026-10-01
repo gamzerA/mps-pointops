@@ -922,7 +922,10 @@ listed versions, devices, models, and inputs that have passing logs.
       [contract and source-pinned comparison](docs/nearest-contract.md) cover
       finite well-separated examples, ragged batches, and the CUDA source's
       1024-lane tie priority; CUDA binary parity remains untested.
-- [ ] Remaining `torch_cluster` operators: `graclus`, `random_walk`.
+- [~] Experimental legacy `torch_cluster.graclus_cluster` CPU/MPS greedy
+      matching subset; see its [contract and original CPU comparison](docs/graclus-contract.md).
+      The Metal decision is serial and has no speedup claim.
+- [ ] Remaining `torch_cluster` operator: `random_walk`.
       Done when: no function in the stand-in raises `NotImplementedError`.
 
 ### Phase 4: Geometry losses and large-scale search (target 0.8.0 to 0.9.0)
