@@ -1,5 +1,5 @@
 {
-  "date_utc": "2026-10-01T17:28:23.894545+00:00",
+  "date_utc": "2026-10-01T17:54:52.019640+00:00",
   "pointcept_commit": "21fb5c51d8c622550b8e22c8ead984511e11d54a",
   "pointcept_checkout_clean": true,
   "pointcept_source": {
@@ -15,8 +15,8 @@
     "replacement_original": "torch.cuda.IntTensor(n_o)",
     "replacement_applied": "torch.tensor(n_o, dtype=torch.int32, device=p.device)"
   },
-  "mps_pointops_commit": "9199d1743536bb5bc30e4f2a1db30200f3082de7",
-  "pointcept_shim_sha256": "7118a712592f289551d08e0714605eda7fe6dfb3b5cf13f0534582e8b8d51aa1",
+  "mps_pointops_commit": "4aa2dcd71cafd8b64f6031ab9e12c46547929545",
+  "pointcept_shim_sha256": "a1baf068b92bba4d6d576e8ed3acc78a4391c18b01eef3fa60d6eb67be972039",
   "probe_sha256": "31a19be52ebf58cd8e41473ad8a780d346bc247d88039471244d6bbef76f61a3",
   "python": "3.12.13",
   "torch": "2.14.1",
@@ -38,8 +38,8 @@
     "gradient_rtol": 0.005,
     "gradient_relative_l2_limit": 0.01
   },
-  "cpu_elapsed_ms": 402.05979195889086,
-  "mps_elapsed_ms": 678.4726670011878,
+  "cpu_elapsed_ms": 407.8999579651281,
+  "mps_elapsed_ms": 663.8029590249062,
   "cpu_loss": 0.01829998753964901,
   "mps_loss": 0.01829998753964901,
   "comparisons": {
@@ -65,13 +65,13 @@
         3
       ],
       "max_abs": 3.637978807091713e-12,
-      "mean_abs": 4.0096455344341975e-13,
+      "mean_abs": 4.005910186899442e-13,
       "max_excess_over_atol_rtol": 0.0,
       "cpu_max_abs": 2.0092431441298686e-05,
-      "mps_max_abs": 2.009242780331988e-05,
-      "cpu_l2_norm": 9.567188252734061e-05,
-      "mps_l2_norm": 9.567188291939971e-05,
-      "relative_l2_error": 2.4132957859048383e-07,
+      "mps_max_abs": 2.0092431441298686e-05,
+      "cpu_l2_norm": 9.567188302163384e-05,
+      "mps_l2_norm": 9.56718833864281e-05,
+      "relative_l2_error": 2.4190488410963735e-07,
       "pointwise_close": true,
       "nonzero_gradient": true,
       "relative_l2_limit": 0.01,
@@ -82,14 +82,14 @@
         512,
         6
       ],
-      "max_abs": 2.9558577807620168e-12,
-      "mean_abs": 3.989900857620521e-13,
+      "max_abs": 2.8990143619012088e-12,
+      "mean_abs": 4.156683948864509e-13,
       "max_excess_over_atol_rtol": 0.0,
       "cpu_max_abs": 1.8275466572958976e-05,
-      "mps_max_abs": 1.8275464753969572e-05,
-      "cpu_l2_norm": 0.00014002284351322667,
-      "mps_l2_norm": 0.0001400228444219067,
-      "relative_l2_error": 2.132311163122391e-07,
+      "mps_max_abs": 1.8275466572958976e-05,
+      "cpu_l2_norm": 0.000140022844452228,
+      "mps_l2_norm": 0.00014002284444246228,
+      "relative_l2_error": 2.2296932130708882e-07,
       "pointwise_close": true,
       "nonzero_gradient": true,
       "relative_l2_limit": 0.01,
@@ -101,13 +101,13 @@
         6
       ],
       "max_abs": 1.1641532182693481e-10,
-      "mean_abs": 1.5936585384679347e-11,
+      "mean_abs": 1.5080678025802818e-11,
       "max_excess_over_atol_rtol": 0.0,
       "cpu_max_abs": 0.0006357089150696993,
-      "mps_max_abs": 0.0006357088568620384,
-      "cpu_l2_norm": 0.0026304977408075775,
-      "mps_l2_norm": 0.0026304977221878706,
-      "relative_l2_error": 1.2298859681829416e-07,
+      "mps_max_abs": 0.0006357089150696993,
+      "cpu_l2_norm": 0.002630497751586329,
+      "mps_l2_norm": 0.002630497715242896,
+      "relative_l2_error": 1.2491740221694058e-07,
       "pointwise_close": true,
       "nonzero_gradient": true,
       "relative_l2_limit": 0.01,
@@ -118,19 +118,19 @@
     "coordinate_gradient": {
       "old_logit_scale_rule_accepts_zero": true,
       "new_gradient_rule_rejects_zero": true,
-      "cpu_l2_norm": 9.567188252734061e-05,
+      "cpu_l2_norm": 9.567188302163384e-05,
       "relative_l2_error_if_zero": 1.0
     },
     "feature_gradient": {
       "old_logit_scale_rule_accepts_zero": true,
       "new_gradient_rule_rejects_zero": true,
-      "cpu_l2_norm": 0.00014002284351322667,
+      "cpu_l2_norm": 0.000140022844452228,
       "relative_l2_error_if_zero": 1.0
     },
     "first_weight_gradient": {
       "old_logit_scale_rule_accepts_zero": true,
       "new_gradient_rule_rejects_zero": true,
-      "cpu_l2_norm": 0.0026304977408075775,
+      "cpu_l2_norm": 0.002630497751586329,
       "relative_l2_error_if_zero": 1.0
     }
   }
