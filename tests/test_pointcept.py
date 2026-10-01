@@ -76,6 +76,24 @@ def test_knn_strict_upstream_distance_ceiling(device):
 
 
 @pytest.mark.parametrize("device", DEVICES)
+@pytest.mark.parametrize("bad", [float("nan"), float("inf")])
+def test_knn_nonfinite_reference_keeps_missing_slot_outside_other_batches(device, bad):
+    xyz = torch.tensor([[0., 0, 0], [bad, 0, 0]], device=device)
+    query = torch.tensor([[0., 0, 0]], device=device)
+    offset = torch.tensor([1, 2], dtype=torch.int32, device=device)
+    new_offset = torch.tensor([0, 1], dtype=torch.int32, device=device)
+    idx, dist = pointcept.knn_query(1, xyz, offset, query, new_offset)
+    assert idx.cpu().tolist() == [[-1]]
+    torch.testing.assert_close(dist.cpu(), torch.tensor([[100_000.]]), rtol=0, atol=0)
+
+    xyz = torch.tensor([[0., 0, 0], [bad, 0, 0], [1., 0, 0]], device=device)
+    offset = torch.tensor([1, 3], dtype=torch.int32, device=device)
+    idx, dist = pointcept.knn_query(2, xyz, offset, query, new_offset)
+    assert idx.cpu().tolist() == [[2, -1]]
+    torch.testing.assert_close(dist.cpu(), torch.tensor([[1., 100_000.]]), rtol=0, atol=0)
+
+
+@pytest.mark.parametrize("device", DEVICES)
 def test_grouping_zero_padding_relative_xyz_and_gradients(device):
     xyz = torch.tensor([[0., 0, 0], [1., 0, 0], [2., 0, 0]], device=device, requires_grad=True)
     feat = torch.tensor([[1., 2.], [3., 4.], [5., 6.]], device=device, requires_grad=True)
