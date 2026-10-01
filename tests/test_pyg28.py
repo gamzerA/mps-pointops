@@ -86,6 +86,15 @@ def test_feature_space_knn_uses_registered_pyg_operator():
     assert edges.cpu().tolist() == [[0, 0, 1, 1], [0, 1, 2, 3]]
 
 
+@pytest.mark.parametrize("dimensions", [3, 64])
+def test_pyg_knn_large_effective_k_is_explicit_error(dimensions):
+    pyg.register_mps()
+    x = torch.arange(257, dtype=torch.float32, device="mps")[:, None].expand(-1, dimensions)
+    y = x[:1]
+    with pytest.raises(ValueError, match="effective k must be at most 256 on MPS"):
+        torch.ops.pyg.knn(x, y, None, None, 257)
+
+
 def test_query_batch_without_reference_batch_uses_all_references():
     pyg.register_mps()
     x = torch.tensor([[0.0, 0, 0], [10.0, 0, 0]], device="mps")

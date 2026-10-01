@@ -124,12 +124,27 @@ def test_mps_bipartite_search_matches_cpu():
 
 
 @mps
-def test_mps_large_k_uses_torch_fallback():
+@pytest.mark.parametrize("dimensions", [3, 64])
+def test_mps_large_effective_k_is_explicit_error(dimensions):
     x = torch.arange(300, dtype=torch.float32).unsqueeze(1).expand(-1, 3).contiguous()
     y = x[:1]
-    result = flat.knn(x.to("mps"), y.to("mps"), 300)
-    assert result.shape == (2, 300)
-    assert torch.equal(result[1].cpu(), torch.arange(300))
+    x = x[:, :1].expand(-1, dimensions).contiguous().to("mps")
+    y = y[:, :1].expand(-1, dimensions).contiguous().to("mps")
+    with pytest.raises(ValueError, match="effective k must be at most 256 on MPS"):
+        flat.knn(x, y, 257)
+    with pytest.raises(ValueError, match="effective k must be at most 256 on MPS"):
+        flat.knn_graph(x, 256, loop=False)
+    from mps_pointops import pyg
+
+    with pytest.raises(ValueError, match="effective k must be at most 256 on MPS"):
+        pyg._knn_mps(x, y, k=257)
+
+
+def test_cpu_large_k_remains_supported():
+    x = torch.arange(257, dtype=torch.float32).unsqueeze(1).expand(-1, 3).contiguous()
+    result = flat.knn(x, x[:1], 257)
+    assert result.shape == (2, 257)
+    assert torch.equal(result[1], torch.arange(257))
 
 
 DEVICES = ["cpu"] + (["mps"] if torch.backends.mps.is_available() else [])

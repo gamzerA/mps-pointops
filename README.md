@@ -505,9 +505,11 @@ so near-boundary bits may differ. It takes up to `max_num_neighbors` matches in
 reference input order, like `torch_cluster`'s CUDA kernel; `torch_cluster` on
 CPU keeps an arbitrary subset when there are more matches. Padded internal slots
 are removed before returning the edge tensor. CPU inputs use PyTorch; MPS
-inputs use Metal for supported sizes. The existing 3D flat/PyG kNN path has a
-PyTorch fallback for `k > 256`; feature-space kNN (`D != 3`) raises an explicit
-error above 256 instead. The [feature-space contract and DGCNN evidence](docs/feature-knn.md)
+inputs use Metal for supported sizes. Dense, flat, and PyG kNN raise an explicit
+error when the effective MPS neighbor count exceeds 256; there is no implicit
+slow PyTorch search. For flat/PyG calls the effective count is `min(k, len(x))`;
+`knn_graph` requests one extra neighbor when `loop=False`. Use CPU explicitly
+for larger counts. The [feature-space contract and DGCNN evidence](docs/feature-knn.md)
 explain direct dimension accumulation, numerical limits, and model scope.
 On MPS, FPS and kNN require float32; radius accepts float32 or float16 and
 the same positive-radius lower bound as the native Ball Query contract. The
@@ -942,12 +944,11 @@ original implementation.
       whether the segmented schedule removes long-running groups without
       increasing per-sample synchronization costs. Validate any automatic
       switch separately on other Apple GPUs.
-- [ ] kNN with `k > 256` on Metal. First replace the current mismatch between
-      the dense API's explicit error and the flat/PyG path's implicit PyTorch
-      fallback with a documented warning or error policy. Then evaluate tiled
-      top-k merging and benchmark its memory use and speed against the CPU
-      fallback. The current `MAX_K=256` is a kernel constant, not a hardware
-      limit.
+- [~] kNN with `k > 256` on Metal. Dense, flat, and PyG MPS calls now raise
+      explicitly for unsupported effective widths; CPU remains available for
+      larger requests. Tiled top-k merging and its memory/speed comparison
+      with CPU remain open. The current `MAX_K=256` is a kernel constant, not
+      a hardware limit.
 - [ ] Flat API benchmarks in the published results.
 - [~] Physical Apple M1 Safe/Fast validation and operator benchmarks are
       [recorded](docs/phase3-physical-m1-2026-10-02.md). M2–M4 real-hardware
@@ -1020,7 +1021,8 @@ correctness and timing evidence without extending claims to M2–M4.
 - [~] Experimental compact [voxelization and downsampling API](docs/voxel-api-contract.md):
       batched floor-based cells, exact inverse/CSR maps and counts, mean
       positions, and mean/sum features with first-order gradients on CPU/MPS.
-      M1–M4, performance, and wider dtype coverage remain unverified.
+      The physical M1 Safe/Fast full suites also passed all 20 voxel tests;
+      compact API speed, M2–M4, and wider dtype coverage remain unverified.
 - [~] PyG 2.8 graph `avg_pool` on finite float32 synthetic graphs: the
       [coarsening contract and synchronized measurement](docs/pyg28-graph-avg-pool.md)
       cover topology, duplicate edges, self-loops, batch labels, pooled values,

@@ -175,7 +175,10 @@ def knn(query: Tensor, ref: Tensor, k: int) -> tuple[Tensor, Tensor]:
     if query.dtype != torch.float32 or ref.dtype != torch.float32:
         raise TypeError(f"query and ref must be float32 on MPS, got {query.dtype} and {ref.dtype}")
     if k > _KNN_MAX_K:
-        raise ValueError(f"k must be at most {_KNN_MAX_K} on MPS, got {k}")
+        raise ValueError(
+            f"k must be at most {_KNN_MAX_K} on MPS, got {k}; "
+            "use CPU for larger k"
+        )
     if M >= 2**32 or N >= 2**32 or D >= 2**32:
         raise ValueError("M, N, and D must each be below 2**32 for the Metal kNN kernel")
 
