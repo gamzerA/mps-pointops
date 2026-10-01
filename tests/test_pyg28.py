@@ -93,6 +93,7 @@ def test_pyg_knn_large_effective_k_is_explicit_error(dimensions):
     y = x[:1]
     with pytest.raises(ValueError, match="effective k must be at most 256 on MPS"):
         torch.ops.pyg.knn(x, y, None, None, 257)
+    assert torch.ops.pyg.knn(x[:256], y, None, None, 300).shape == (2, 256)
 
 
 def test_query_batch_without_reference_batch_uses_all_references():

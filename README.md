@@ -520,6 +520,29 @@ offset range. Very uneven batch sizes can still leave a long-running group;
 splitting one FPS sequence across groups would need synchronization after each
 selected point and remains a performance task.
 
+The public flat FPS, kNN, and radius calls were measured on one physical
+**Apple M5 Pro (48 GiB, macOS 26.5.2, PyTorch 2.14.1)** with 1,024 or 4,096
+randomly ordered dyadic 3D reference points across uneven batches, 32 or 128
+queries, `k=16`, and 16-neighbor radius limits. CPU/MPS outputs matched
+exactly in all cases. Values below are median synchronized, preloaded-input
+public-call milliseconds; each cell has 20 raw samples. CPU is this package's
+PyTorch path, not an optimized CPU library.
+
+| Math mode | References / queries | FPS CPU / MPS | kNN CPU / MPS | Radius CPU / MPS |
+| --- | ---: | ---: | ---: | ---: |
+| Safe | 1,024 / 32 | 0.212 / 2.607 | 1.152 / 3.901 | 0.456 / 2.819 |
+| Safe | 4,096 / 128 | 1.447 / 2.312 | 19.665 / 4.377 | 3.102 / 4.297 |
+| Fast | 1,024 / 32 | 0.220 / 1.216 | 1.116 / 4.048 | 0.444 / 2.911 |
+| Fast | 4,096 / 128 | 1.453 / 1.865 | 19.851 / 3.896 | 3.083 / 3.485 |
+
+The [reproduction method and limits](docs/flat-api-bench-2026-10-02.md),
+[Safe raw samples](bench/results/2026-10-02-apple-m5-pro-flat-public-safe.json),
+and [Fast raw samples](bench/results/2026-10-02-apple-m5-pro-flat-public-fast.json)
+record source commit `584f4580b2ff899d2e73e4a2dcdaf0bf490912be`, file hashes,
+environment, and timing spread. Only the 4,096-point kNN fixture beat the
+tested CPU reference in both modes; the measurements do not establish a
+general flat API speedup.
+
 The shim follows the `fps`, `knn`, `radius`, `nearest`, `grid_cluster`,
 `graclus_cluster`, and `random_walk` call signatures of
 [`torch_cluster` 1.6.3](https://github.com/rusty1s/pytorch_cluster/tree/1.6.3/torch_cluster)
@@ -949,7 +972,10 @@ original implementation.
       larger requests. Tiled top-k merging and its memory/speed comparison
       with CPU remain open. The current `MAX_K=256` is a kernel constant, not
       a hardware limit.
-- [ ] Flat API benchmarks in the published results.
+- [x] Public flat FPS, kNN, and radius benchmarks on a physical M5 Pro for the
+      [recorded synthetic cases](docs/flat-api-bench-2026-10-02.md), with exact
+      CPU/MPS output checks and Safe/Fast raw samples. Other hardware and input
+      distributions remain unmeasured.
 - [~] Physical Apple M1 Safe/Fast validation and operator benchmarks are
       [recorded](docs/phase3-physical-m1-2026-10-02.md). M2–M4 real-hardware
       coverage remains open; the M1 Virtual CI runner is a separate environment.

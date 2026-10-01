@@ -138,6 +138,8 @@ def test_mps_large_effective_k_is_explicit_error(dimensions):
 
     with pytest.raises(ValueError, match="effective k must be at most 256 on MPS"):
         pyg._knn_mps(x, y, k=257)
+    assert flat.knn(x[:256], y, 300).shape == (2, 256)
+    assert pyg._knn_mps(x[:256], y, k=300).shape == (2, 256)
 
 
 def test_cpu_large_k_remains_supported():
