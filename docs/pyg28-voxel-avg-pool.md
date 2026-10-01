@@ -129,10 +129,25 @@ processes gave `max|nn.Linear-(xWᵀ+b)| = 0`,
 `max|functional.linear-(xWᵀ+b)| = 0`, and exact CPU/MPS equality for every
 reported tensor. The same fixed input in the previous hosted integration
 process had `max|nn.Linear-(xWᵀ+b)| = 0.75`; its
-`functional.linear` result was not recorded. These observations establish
-environment or process variability, without identifying a cause or assigning
-responsibility to PyTorch internals. A fresh hosted process is required to
-separate those possibilities further.
+`functional.linear` result was not recorded.
+
+The [fresh hosted run](https://github.com/gamzerA/mps-pointops/actions/runs/36877211964/job/110419589069)
+at probe commit `f33d058e061eef04c2bf10731d5d312b504ed439` used Apple M1
+(Virtual), macOS 26.6.2, Python 3.12.10, and Torch 2.12.0, with MPS available
+and CPU fallback disabled. The workflow installed only Torch and the script
+imported neither PyG nor `mps-pointops`. Both [Safe Math](diagnostics/mps-linear-hosted-m1virtual-torch212-safe-2026-10-01.json)
+and [Fast Math](diagnostics/mps-linear-hosted-m1virtual-torch212-fast-2026-10-01.json)
+fresh processes reproduced `max|F.linear-(xWᵀ+b)| = 0.75` and
+`max|nn.Linear-(xWᵀ+b)| = 0.75`. Both paths matched `xWᵀ` exactly. The input,
+weight, bias, `xWᵀ`, explicit addition, and `addmm` tensors each had CPU/MPS
+maximum difference `0.0`; `addmm` equaled explicit addition. The hosted CPU
+output norm was `7.479564666748047` for both Linear paths, and the hosted MPS
+output norm was `5.916103839874268`, equal to its `xWᵀ` norm. The raw JSON
+contains all `4 × 3` output values and elementwise differences. This
+independently locates the observed behavior in the hosted PyTorch/MPS execution
+path rather than the point-operations package or PyG pooling. The observations
+do not identify an internal PyTorch cause, and the local M5 Pro result shows
+that the symptom is environment dependent.
 
 The following independent snippet reproduces the projection comparison.
 It passed on the M5 Pro with pinned Torch 2.12.0; the hosted job's full probe

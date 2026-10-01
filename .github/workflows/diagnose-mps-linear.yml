@@ -5,7 +5,6 @@ on:
     paths:
       - .github/workflows/diagnose-mps-linear.yml
       - tools/diagnose_mps_linear.py
-      - docs/pyg28-voxel-avg-pool.md
   workflow_dispatch:
 
 # This workflow is evidence collection. Its numerical result is never used as
