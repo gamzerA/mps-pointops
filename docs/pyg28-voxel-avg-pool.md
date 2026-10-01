@@ -73,10 +73,47 @@ In the pinned environment on an M5 Pro with macOS 26.5.2 and
 `PYTORCH_ENABLE_MPS_FALLBACK=0`, `voxel_grid` without `register_mps()` first
 fails at `pyg::grid_cluster` with `NotImplementedError`. After
 `mps_pointops.pyg.register_mps()`, both the compact and fixed-size
-`voxel_grid -> avg_pool_x -> Linear -> loss.backward()` paths ran on MPS in
-separate Safe and Fast Math processes. PyG's mean scatter and its backward
-used existing PyTorch MPS operations; this observation does not establish a
-speedup. The pinned CPU outputs and gradients are the reference.
+`voxel_grid -> avg_pool_x -> bias-free Linear -> loss.backward()` paths ran on
+MPS in separate Safe and Fast Math processes. PyG's mean scatter and its
+backward used existing PyTorch MPS operations; this observation does not
+establish a speedup. The pinned CPU outputs and gradients are the reference.
+
+A bias-bearing `nn.Linear` was tested initially on the M5 Pro and passed,
+but the [hosted macOS CI diagnostic run](https://github.com/gamzerA/mps-pointops/actions/runs/36865707274/job/110380541934)
+on the `macos-26-arm64` runner image with Python 3.12.10 and Torch 2.12.0
+diverged: grid IDs and pooled features matched the CPU, and the transferred
+Linear weight and bias matched bit for bit. Every projected value omitted its
+corresponding bias; the largest output difference was `0.75`. For the
+four-row compact case the CPU loss was `12.3370438`, while MPS returned
+`9.2584095`, matching the CPU computation with bias set to zero. This is a
+large projection difference, not a reduction-order or tolerance effect.
+This is an observed failure downstream of pooling, not a proven root cause
+in PyTorch or pyg-lib. The portable integration fixture therefore uses a
+bias-free projection. Bias-bearing model parity across MPS environments
+remains unverified.
+
+This independent probe can separate the Linear behavior from the PyG path on
+the same runner. It has not yet been run there; the linked CI run establishes
+only the integrated observation above. Run it in the pinned environment with
+MPS fallback disabled and compare the printed CPU/MPS outputs:
+
+```bash
+PYTORCH_ENABLE_MPS_FALLBACK=0 python - <<'PY'
+from copy import deepcopy
+import torch
+
+x = torch.arange(16, dtype=torch.float32).reshape(4, 4) / 7
+cpu = torch.nn.Linear(4, 3)
+with torch.no_grad():
+    cpu.weight.copy_(torch.arange(12).reshape(3, 4) / 19)
+    cpu.bias.copy_(torch.tensor([-0.25, 0.5, 0.75]))
+mps = deepcopy(cpu).to('mps')
+print('bias on CPU:', cpu.bias.detach())
+print('bias copied to MPS:', mps.bias.detach().cpu())
+print('CPU output:', cpu(x).detach())
+print('MPS output:', mps(x.to('mps')).detach().cpu())
+PY
+```
 
 Run the focused regression in separate processes because Metal Math mode is
 cached within a process:
@@ -90,11 +127,11 @@ PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=1 \
 
 The focused tests cover 1D, 2D, and 3D positions; missing batch number 1;
 `size=None` and fixed-size output shapes and batch metadata; a model loss;
-input-feature and linear-weight gradients; and 256 points in one voxel. They
+input-feature and bias-free linear-weight gradients; and 256 points in one voxel. They
 also check the tagged PyG/pyg-lib CPU output. The package remains usable
 without optional PyG and pyg-lib; those differential tests then skip.
 
-On the source revision `012d9655a2dc908cfce1bbe8157ce6c7615303a2`, based
+On the source revision `0c3a62d82f94128886df1ce725428f704e67bd49`, based
 on `main` commit `94398da77fb305039c9648380182d55747609ad1`, the pinned
 M5 Pro environment passed the full suite with **352 passed, 9 skipped** in
 Safe Math and **351 passed, 10 skipped** in Fast Math. The focused tests

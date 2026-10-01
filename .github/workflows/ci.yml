@@ -134,6 +134,60 @@ jobs:
           print("pyg-lib", version("pyg-lib"))
           assert torch.backends.mps.is_available(), "MPS is required for this job"
           PY
+      - name: Diagnose hosted MPS Linear bias behavior
+        run: |
+          python - <<'PY'
+          from copy import deepcopy
+          import torch
+          import pyg_lib  # noqa: F401
+          from torch_geometric.nn import avg_pool_x, voxel_grid
+          from mps_pointops.pyg import register_mps
+
+          cpu_model = torch.nn.Linear(4, 3)
+          with torch.no_grad():
+              cpu_model.weight.copy_(torch.arange(12).reshape(3, 4) / 19)
+              cpu_model.bias.copy_(torch.tensor([-0.25, 0.5, 0.75]))
+          mps_model = deepcopy(cpu_model).to('mps')
+
+          def report(label, x_cpu, x_mps):
+              print(label)
+              print('x CPU:', x_cpu)
+              print('x MPS:', x_mps.cpu())
+              for device, x, model in [('CPU', x_cpu, cpu_model),
+                                        ('MPS', x_mps, mps_model)]:
+                  with torch.no_grad():
+                      mm = x @ model.weight.T
+                      bias = model.bias
+                      added = mm + bias
+                      fused = torch.addmm(bias, x, model.weight.T)
+                      linear = model(x)
+                  torch.mps.synchronize()
+                  for name, value in [('xW^T', mm), ('b', bias),
+                                      ('xW^T+b', added), ('addmm', fused),
+                                      ('Linear', linear)]:
+                      print(device, name, value.detach().cpu(),
+                            'norm=', value.detach().float().norm().item())
+                  print(device, 'max|Linear-(mm+b)|=',
+                        (linear - added).abs().max().item())
+                  print(device, 'max|Linear-mm|=',
+                        (linear - mm).abs().max().item())
+
+          direct = torch.arange(16, dtype=torch.float32).reshape(4, 4) / 7
+          report('standalone', direct, direct.to('mps'))
+
+          register_mps()
+          pos = torch.tensor([[-0.25], [0.0], [0.5], [1.0], [0.0], [1.0]])
+          batch = torch.tensor([0, 0, 0, 0, 2, 2])
+          features = torch.arange(24, dtype=torch.float32).reshape(6, 4) / 7
+          cpu_id = voxel_grid(pos[:, 0], 1.0, batch, start=0.0, end=2.0)
+          mps_id = voxel_grid(pos[:, 0].to('mps'), 1.0, batch.to('mps'),
+                              start=0.0, end=2.0)
+          cpu_x, _ = avg_pool_x(cpu_id, features, batch)
+          mps_x, _ = avg_pool_x(mps_id, features.to('mps'), batch.to('mps'))
+          print('grid IDs equal:', torch.equal(cpu_id, mps_id.cpu()))
+          print('pooled max difference:', (cpu_x - mps_x.cpu()).abs().max().item())
+          report('voxel pooled', cpu_x, mps_x)
+          PY
       - name: PyG integration (Metal safe math)
         run: pytest -ra tests/test_pyg28.py tests/test_pyg28_grid.py tests/test_pyg28_voxel_avg_pool.py
       - name: PyG integration (Metal fast math)

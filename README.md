@@ -590,7 +590,7 @@ pooled_x, pooled_batch = avg_pool_x(cluster, x, batch)
 
 The pinned M5 Pro full-suite [Safe](docs/pytest-pyg28-voxel-avg-safe-2026-10-01.log)
 and [Fast](docs/pytest-pyg28-voxel-avg-fast-2026-10-01.log) runs passed
-352/351 tests, with 9/10 skips, on source revision `012d9655a2dc908cfce1bbe8157ce6c7615303a2`
+352/351 tests, with 9/10 skips, on source revision `0c3a62d82f94128886df1ce725428f704e67bd49`
 based on `main` commit `94398da77fb305039c9648380182d55747609ad1`.
 
 PyG's graph wrappers use those same operators. The MPS path supports flat
