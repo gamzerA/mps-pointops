@@ -137,7 +137,7 @@ def test_fused_severe_cancellation_matches_float64_oracle(amplitude: float) -> N
 
 
 @pytest.mark.mps
-@pytest.mark.xfail(reason="MPS index_add_ atomic order differs under severe cancellation")
+@pytest.mark.xfail(reason="MPS index_add_ accumulation differs under severe cancellation")
 def test_severe_cancellation_exceeds_index_add_float_tolerance() -> None:
     if not torch.backends.mps.is_available():
         pytest.skip("MPS is unavailable")

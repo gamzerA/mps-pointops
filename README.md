@@ -211,8 +211,8 @@ by [this script](tools/render_readme_assets.py). The JSON records SHA-256 for
 the benchmark, operator dispatch, reference code, and all three timed kernels.
 The benchmark script and three timed Metal kernels still match those hashes;
 the shared dispatch and reference code have since changed, so these are
-snapshot timings rather than a new v0.6.0 benchmark. The Ball Query row times the dense
-`mps_pointops.ball_query` API, without the optional PyTorch3D adapter's
+snapshot timings rather than a current-release benchmark. The Ball Query row
+times the dense `mps_pointops.ball_query` API, without the optional PyTorch3D adapter's
 neighbor gathering. Displayed times are rounded to 0.1 ms; the speedups use
 unrounded medians in the JSON.
 

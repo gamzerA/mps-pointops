@@ -27,8 +27,8 @@
 ## 0.7.0 — 2026-10-02
 
 This release adds a measured compact voxel path and an **opt-in experimental**
-Metal CSR pooling prototype. Phase 3 is complete only for the pinned, tested
-PyG 2.8 and legacy shim surfaces documented in the compatibility matrix;
+Metal CSR pooling prototype. Phase 3 has bounded validated coverage for the
+pinned PyG 2.8 and legacy shim surfaces documented in the compatibility matrix;
 custom scatter reductions, universal PyG compatibility, and M2–M4 physical
 validation remain open.
 
