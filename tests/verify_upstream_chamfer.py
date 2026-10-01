@@ -147,6 +147,8 @@ def main() -> int:
         targets = [args.devices]
     if "mps" in targets and not torch.backends.mps.is_available():
         parser.error("MPS requested but unavailable")
+    if "mps" in targets and os.getenv("PYTORCH_ENABLE_MPS_FALLBACK") != "0":
+        parser.error("MPS parity requires PYTORCH_ENABLE_MPS_FALLBACK=0")
     cases = []
     modes = itertools.product(
         (11, 29), ("mean", "sum", "max", None),
