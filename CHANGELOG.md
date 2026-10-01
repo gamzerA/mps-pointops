@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.3.0 — 2026-10-01
+
+### Added
+
+- MPS dispatch for pyg-lib's `pyg::fps`, `pyg::knn`, and `pyg::radius`
+  operators used by PyG 2.8.0. PyG's `knn_graph` and `radius_graph` use these
+  operators; the latter now excludes equal global indices before its neighbor
+  cap. The integration keeps pyg-lib's CPU and CUDA dispatch intact.
+- An MPS batch-to-pointer bridge for PyG 2.8, whose original path reaches a
+  PyTorch CSR conversion without an MPS kernel. CPU conversion remains in PyG.
+- A pinned PyG 2.8 integration CI job and PyPI Trusted Publishing workflow.
+  This is the first PyPI release of `mps-pointops`.
+
+### Compatibility
+
+- The PyG 2.8 MPS path supports three-dimensional coordinates: float32 FPS
+  and kNN, float32 or float16 radius. The float16 radius path computes in
+  float32, so boundary membership can differ from pyg-lib's half arithmetic.
+- The published package version is now 0.3.0, with project links and metadata
+  for PyPI.
+
 ## 0.2.0 — 2026-10-01
 
 ### Added

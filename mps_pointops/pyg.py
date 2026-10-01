@@ -58,11 +58,13 @@ def _ptrs(
     x: Tensor, y: Tensor, ptr_x: Tensor | None, ptr_y: Tensor | None
 ) -> tuple[Tensor, Tensor]:
     flat._search_inputs(x, y)
-    if (ptr_x is None) != (ptr_y is None):
-        raise ValueError("ptr_x and ptr_y must both be given, or both be None")
     if ptr_x is None:
+        # pyg-lib treats an unbatched x as the full reference set even when
+        # y has a batch pointer. Its ptr_y is ignored in this case.
         ptr_x = torch.tensor([0, len(x)], dtype=torch.long, device=x.device)
         ptr_y = torch.tensor([0, len(y)], dtype=torch.long, device=y.device)
+    elif ptr_y is None:
+        raise ValueError("ptr_y is required when ptr_x is given")
     return ptr_x, ptr_y
 
 

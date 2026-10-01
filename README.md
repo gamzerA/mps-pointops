@@ -353,7 +353,9 @@ three-dimensional coordinates, float32 FPS/kNN, float32 or float16 radius,
 and global `[query, reference]` edges. `radius_graph(loop=False)` excludes
 equal global index numbers *before* applying `max_num_neighbors`, matching
 pyg-lib. Cosine kNN is not supported. Near ties and radius boundaries may
-differ across Metal and CUDA arithmetic. Registration also bridges PyG 2.8's
+differ across Metal and CUDA arithmetic. The float16 radius path computes
+distance and threshold in float32, so it can disagree with pyg-lib's half
+arithmetic at the boundary. Registration also bridges PyG 2.8's
 batch-to-pointer conversion on MPS with `torch.searchsorted`, because the
 `index2ptr` path reaches a PyTorch CSR conversion without an MPS kernel.
 CPU conversion continues to use PyG's original function.

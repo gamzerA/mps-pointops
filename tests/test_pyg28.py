@@ -71,3 +71,13 @@ def test_direct_pyg_operators_accept_schema_defaults():
     y = torch.tensor([[0.1, 0, 0]], device="mps")
     assert torch.ops.pyg.knn(x, y).cpu().tolist() == [[0], [0]]
     assert torch.ops.pyg.radius(x, y).cpu().tolist() == [[0], [0]]
+
+
+def test_query_batch_without_reference_batch_uses_all_references():
+    pyg.register_mps()
+    x = torch.tensor([[0.0, 0, 0], [10.0, 0, 0]], device="mps")
+    y = x.clone()
+    ptr_y = torch.tensor([0, 1, 2], dtype=torch.long, device="mps")
+    expected = [[0, 1], [0, 1]]
+    assert torch.ops.pyg.knn(x, y, None, ptr_y, 1).cpu().tolist() == expected
+    assert torch.ops.pyg.radius(x, y, None, ptr_y, 1.0, 2).cpu().tolist() == expected
