@@ -1,16 +1,23 @@
 {
-  "date_utc": "2026-10-01T17:13:21.141436+00:00",
+  "date_utc": "2026-10-01T17:25:12.447687+00:00",
   "pointcept_commit": "21fb5c51d8c622550b8e22c8ead984511e11d54a",
+  "pointcept_checkout_clean": true,
   "pointcept_source": {
     "official_seg_sha256": "1697a1d74af918f08c4c15415a3e31345921ec0254e58063e7d23d3700a37a75",
+    "official_dependency_sha256": {
+      "pointcept/models/builder.py": "0b2e27c34856d6485d69dfda05adb55bc9fb81d8e8bb878a96fadf264d090bf4",
+      "pointcept/models/point_transformer/utils.py": "8a8bd2d63661b4ab6be49ddebd86a6b1c1d2e974ea2015b6863e7fcfc04e5542",
+      "pointcept/utils/registry.py": "731d40157ed2b9756de2cf2da602f4fcb3ae82cd69276fa0acc5871bb77a8b95",
+      "pointcept/utils/misc.py": "eb2da605366532a4c7319df934060f3b337046f47cafa1ec598fd37f80d9f2f8"
+    },
     "temporary_seg_sha256": "3b79a8e79f9991ccd039fea4157b56a7fd18977c64e0e801a2e6dbe1e5666111",
     "replacement_count": 1,
     "replacement_original": "torch.cuda.IntTensor(n_o)",
     "replacement_applied": "torch.tensor(n_o, dtype=torch.int32, device=p.device)"
   },
-  "mps_pointops_commit": "a49874a1e4cbaa435305091c19277a20d25395af",
-  "pointcept_shim_sha256": "5a7e5abdf45fa154cb194655b70f07956bce6b543cfd87ed959a909f1117daa6",
-  "probe_sha256": "8e081b982217f005ab773e149c9741286ced91f613f16bc4414658540374f08a",
+  "mps_pointops_commit": "86a96cf2791d9ac3f298d6798d49cb3827424288",
+  "pointcept_shim_sha256": "7118a712592f289551d08e0714605eda7fe6dfb3b5cf13f0534582e8b8d51aa1",
+  "probe_sha256": "b78678c76ceeac5ab015d23963839182468ef73019dc11e84fddcb6ba0341163",
   "python": "3.12.13",
   "torch": "2.14.1",
   "einops": "0.8.1",
@@ -24,10 +31,15 @@
   "classes": 13,
   "model_mode": "eval with autograd enabled",
   "loss": "mean(square(logits))",
-  "atol": 0.002,
-  "rtol": 0.005,
-  "cpu_elapsed_ms": 391.21029095258564,
-  "mps_elapsed_ms": 616.4299579104409,
+  "tolerances": {
+    "logit_atol": 0.002,
+    "logit_rtol": 0.005,
+    "gradient_atol": 1e-07,
+    "gradient_rtol": 0.005,
+    "gradient_relative_l2_limit": 0.01
+  },
+  "cpu_elapsed_ms": 415.069125010632,
+  "mps_elapsed_ms": 628.313499968499,
   "cpu_loss": 0.01829998753964901,
   "mps_loss": 0.01829998753964901,
   "comparisons": {
@@ -39,7 +51,13 @@
       "max_abs": 8.940696716308594e-08,
       "mean_abs": 1.296668816763713e-08,
       "max_excess_over_atol_rtol": 0.0,
-      "allclose": true
+      "cpu_max_abs": 0.2831692397594452,
+      "mps_max_abs": 0.2831692397594452,
+      "cpu_l2_norm": 11.036517398991318,
+      "mps_l2_norm": 11.036517370974014,
+      "relative_l2_error": 1.2922032045254756e-07,
+      "pointwise_close": true,
+      "passed": true
     },
     "coordinate_gradient": {
       "shape": [
@@ -47,19 +65,35 @@
         3
       ],
       "max_abs": 5.4569682106375694e-12,
-      "mean_abs": 3.941933585105417e-13,
+      "mean_abs": 3.917543373033183e-13,
       "max_excess_over_atol_rtol": 0.0,
-      "allclose": true
+      "cpu_max_abs": 2.0092431441298686e-05,
+      "mps_max_abs": 2.009243326028809e-05,
+      "cpu_l2_norm": 9.567188255852856e-05,
+      "mps_l2_norm": 9.56718826676404e-05,
+      "relative_l2_error": 2.36089747827823e-07,
+      "pointwise_close": true,
+      "nonzero_gradient": true,
+      "relative_l2_limit": 0.01,
+      "passed": true
     },
     "feature_gradient": {
       "shape": [
         512,
         6
       ],
-      "max_abs": 3.637978807091713e-12,
-      "mean_abs": 3.932621101595396e-13,
+      "max_abs": 3.524291969370097e-12,
+      "mean_abs": 3.9828773959471597e-13,
       "max_excess_over_atol_rtol": 0.0,
-      "allclose": true
+      "cpu_max_abs": 1.8275466572958976e-05,
+      "mps_max_abs": 1.8275464753969572e-05,
+      "cpu_l2_norm": 0.00014002284430968945,
+      "mps_l2_norm": 0.00014002284351456205,
+      "relative_l2_error": 2.1508918752985224e-07,
+      "pointwise_close": true,
+      "nonzero_gradient": true,
+      "relative_l2_limit": 0.01,
+      "passed": true
     },
     "first_weight_gradient": {
       "shape": [
@@ -67,9 +101,37 @@
         6
       ],
       "max_abs": 1.1641532182693481e-10,
-      "mean_abs": 1.6998846774640697e-11,
+      "mean_abs": 1.519998883703355e-11,
       "max_excess_over_atol_rtol": 0.0,
-      "allclose": true
+      "cpu_max_abs": 0.0006357089150696993,
+      "mps_max_abs": 0.0006357088568620384,
+      "cpu_l2_norm": 0.0026304977651175326,
+      "mps_l2_norm": 0.0026304977481685743,
+      "relative_l2_error": 1.2843702272471472e-07,
+      "pointwise_close": true,
+      "nonzero_gradient": true,
+      "relative_l2_limit": 0.01,
+      "passed": true
+    }
+  },
+  "zero_gradient_counterexample": {
+    "coordinate_gradient": {
+      "old_logit_scale_rule_accepts_zero": true,
+      "new_gradient_rule_rejects_zero": true,
+      "cpu_l2_norm": 9.567188255852856e-05,
+      "relative_l2_error_if_zero": 1.0
+    },
+    "feature_gradient": {
+      "old_logit_scale_rule_accepts_zero": true,
+      "new_gradient_rule_rejects_zero": true,
+      "cpu_l2_norm": 0.00014002284430968945,
+      "relative_l2_error_if_zero": 1.0
+    },
+    "first_weight_gradient": {
+      "old_logit_scale_rule_accepts_zero": true,
+      "new_gradient_rule_rejects_zero": true,
+      "cpu_l2_norm": 0.0026304977651175326,
+      "relative_l2_error_if_zero": 1.0
     }
   }
 }

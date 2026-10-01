@@ -28,7 +28,10 @@ supported.
 MPS kNN supports at most 256 neighbors. CPU kNN uses a chunked stable sort,
 and MPS uses the package's Metal kNN kernel. Equal-distance ordering matches
 between CPU and MPS in the focused grid fixture; the upstream CUDA heap's
-tie order is not guaranteed to match. The upstream plain `interpolation`
+tie order is not guaranteed to match. Like the pinned CUDA heap, a candidate
+is accepted only when its squared distance is **strictly less than `1e10`**;
+the exact 100,000-unit boundary and farther points retain `-1`/`100000`
+padding on both CPU and MPS. The upstream plain `interpolation`
 function can index the last feature row through `-1` padding and assign it a
 small nonzero weight. This shim deliberately treats missing neighbors as
 absent and renormalizes valid weights, so CUDA interpolation values need not
@@ -54,18 +57,29 @@ imported. The official Seg26 source SHA-256 is
 `1697a1d74af918f08c4c15415a3e31345921ec0254e58063e7d23d3700a37a75`;
 the temporary one-substitution source SHA-256 is
 `3b79a8e79f9991ccd039fea4157b56a7fd18977c64e0e801a2e6dbe1e5666111`.
-The shim/probe source commit is `a49874a1e4cbaa435305091c19277a20d25395af`;
+The harness rejects a dirty pinned checkout, including untracked files, and
+records SHA-256 values for all four unchanged official files that it loads.
+The shim/probe source commit is `86a96cf2791d9ac3f298d6798d49cb3827424288`;
 their SHA-256 values are
-`5a7e5abdf45fa154cb194655b70f07956bce6b543cfd87ed959a909f1117daa6`
-and `8e081b982217f005ab773e149c9741286ced91f613f16bc4414658540374f08a`.
+`7118a712592f289551d08e0714605eda7fe6dfb3b5cf13f0534582e8b8d51aa1`
+and `b78678c76ceeac5ab015d23963839182468ef73019dc11e84fddcb6ba0341163`.
 
 The fixed probe has two 256-point batches, six input channels, 13 classes,
 seed `2701`, and a mean-square-logit loss. The model is in **eval mode with
 autograd enabled** so BatchNorm uses its initial running statistics while
 forward and backward are both exercised. CPU and MPS receive the same initial
-weights and inputs. The acceptance rule for each tensor is
-`abs(cpu-mps) <= 0.002 + 0.005 * abs(cpu)`. `PYTORCH_ENABLE_MPS_FALLBACK=0` is
-mandatory; Safe and Fast Math run in separate processes.
+weights and inputs. The acceptance rule for logits is
+`abs(cpu-mps) <= 0.002 + 0.005 * abs(cpu)`. Each gradient has a separate
+pointwise rule, `abs(cpu-mps) <= 1e-7 + 0.005 * abs(cpu)`, and must have
+nonzero CPU and MPS L2 norms with relative L2 error at most `0.01`.
+The CPU coordinate, feature, and first-weight gradients have maximum absolute
+values around `2.01e-5`, `1.83e-5`, and `6.36e-4` in the random fixture;
+zero MPS gradients fail the new gate. A focused regression explicitly checks
+this failure case. The seeded probe also replaces each actual CPU gradient
+with zeros and asserts that the old logit-scale tolerance would pass all three
+while the new gradient rule rejects all three. Every raw JSON records both
+outcomes. `PYTORCH_ENABLE_MPS_FALLBACK=0` is mandatory; Safe and Fast Math run
+in separate processes.
 
 On a physical Apple M5 Pro, macOS 26.5.2, Python 3.12.13, PyTorch 2.14.1,
 einops 0.8.1, the [Safe](pointcept-ptv1-seg26-m5pro-safe-2026-10-02.json)
@@ -76,16 +90,20 @@ probes both passed. Maximum absolute CPU/MPS differences were:
 | --- | ---: | ---: |
 | Logits `(512,13)` | `1.04e-7` | `8.94e-8` |
 | Coordinate gradient `(512,3)` | `4.55e-12` | `5.46e-12` |
-| Feature gradient `(512,6)` | `3.64e-12` | `3.64e-12` |
-| First encoder weight gradient `(32,6)` | `1.75e-10` | `1.16e-10` |
+| Feature gradient `(512,6)` | `3.64e-12` | `3.52e-12` |
+| First encoder weight gradient `(32,6)` | `1.16e-10` | `1.16e-10` |
 
 A second, tie-heavy line-grid fixture also passed in
-[Safe Math](pointcept-ptv1-seg26-m5pro-line-safe-2026-10-02.json), with maximum
-logit difference `1.19e-7`. This fixture exposed an earlier CPU top-k tie
+[Safe](pointcept-ptv1-seg26-m5pro-line-safe-2026-10-02.json) and
+[Fast](pointcept-ptv1-seg26-m5pro-line-fast-2026-10-02.json) Math, with
+maximum logit difference `1.19e-7` in both. Across all four probes, the
+largest gradient relative L2 error was `3.59e-7`, well below `0.01`.
+This fixture exposed an earlier CPU top-k tie
 ordering mismatch; the final shim uses stable CPU sorting to make its stated
-smaller-index rule explicit. The focused CPU/MPS tests in
-[`tests/test_pointcept.py`](../tests/test_pointcept.py), together with existing
-`tests/test_compat.py`, passed **25/25** in each Safe and Fast process.
+smaller-index rule explicit. The focused CPU/MPS shim and probe tests in
+[`tests/test_pointcept.py`](../tests/test_pointcept.py) and
+[`tests/test_pointcept_probe.py`](../tests/test_pointcept_probe.py) passed
+**19/19** in each Safe and Fast process.
 
 Reproduce with the official tag checkout and `einops==0.8.1` available on
 `PYTHONPATH` or installed in the test environment:
@@ -99,6 +117,14 @@ PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=1 \
   python bench/probe_pointcept_ptv1.py \
   --pointcept-root /private/tmp/pointcept-v121 \
   --output docs/pointcept-ptv1-seg26-m5pro-fast-2026-10-02.json
+PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=0 \
+  python bench/probe_pointcept_ptv1.py \
+  --pointcept-root /private/tmp/pointcept-v121 --fixture line \
+  --output docs/pointcept-ptv1-seg26-m5pro-line-safe-2026-10-02.json
+PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=1 \
+  python bench/probe_pointcept_ptv1.py \
+  --pointcept-root /private/tmp/pointcept-v121 --fixture line \
+  --output docs/pointcept-ptv1-seg26-m5pro-line-fast-2026-10-02.json
 ```
 
 These are one-run functional probes, not performance benchmarks. Training-mode
