@@ -22,7 +22,7 @@ def test_graph_wrappers_edge_orientation_and_self_loop(device):
     assert flat.radius_graph(x, 0.5, loop=True).shape == (2, len(x))
 
 
-def test_pyg_import_only_stubs_report_unsupported_operations():
+def test_pyg_import_compat_exposes_graph_and_cluster_ops():
     import sys
 
     original = {name: sys.modules.get(name) for name in (
@@ -37,8 +37,8 @@ def test_pyg_import_only_stubs_report_unsupported_operations():
             grid_cluster(torch.zeros((1, 3)), torch.ones(3)),
             torch.zeros(1, dtype=torch.long),
         )
-        with pytest.raises(NotImplementedError, match="graclus_cluster"):
-            graclus_cluster(torch.empty(2, 0, dtype=torch.long))
+        with pytest.raises(ValueError, match="num_nodes is required"):
+            graclus_cluster(torch.empty(0, dtype=torch.long), torch.empty(0, dtype=torch.long))
     finally:
         for name in names:
             if original[name] is None:
