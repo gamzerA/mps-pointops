@@ -108,6 +108,32 @@ pooling, but does not identify the internal cause of the MPS Linear behavior.
 The portable integration fixture therefore uses a bias-free projection.
 Bias-bearing model parity across MPS environments remains unverified.
 
+### Standalone framework probe
+
+The earlier hosted probe ran inside a PyG integration test process. The
+[standalone diagnostic](../tools/diagnose_mps_linear.py) starts a fresh process
+that imports only PyTorch. It fixes the same four input rows, `3 × 4` weight,
+and three bias values; records `xWᵀ`, explicit `xWᵀ+b`, `torch.addmm`,
+`torch.nn.functional.linear`, and `nn.Linear`; calls
+`torch.mps.synchronize()` before every MPS-to-CPU readback; and prints the
+elementwise and maximum differences. It makes no numerical assertion, so a
+framework discrepancy cannot fail the package's product tests. The
+[diagnostic workflow](../.github/workflows/diagnose-mps-linear.yml) pins Torch
+2.12.0 on hosted macOS and runs Safe and Fast Math in separate Python
+processes, without installing this package or PyG.
+
+On the local M5 Pro, macOS 26.5.2, Python 3.12.13, and Torch 2.12.0, both
+[Safe Math](diagnostics/mps-linear-m5-pro-torch212-safe-2026-10-01.json) and
+[Fast Math](diagnostics/mps-linear-m5-pro-torch212-fast-2026-10-01.json) fresh
+processes gave `max|nn.Linear-(xWᵀ+b)| = 0`,
+`max|functional.linear-(xWᵀ+b)| = 0`, and exact CPU/MPS equality for every
+reported tensor. The same fixed input in the previous hosted integration
+process had `max|nn.Linear-(xWᵀ+b)| = 0.75`; its
+`functional.linear` result was not recorded. These observations establish
+environment or process variability, without identifying a cause or assigning
+responsibility to PyTorch internals. A fresh hosted process is required to
+separate those possibilities further.
+
 The following independent snippet reproduces the projection comparison.
 It passed on the M5 Pro with pinned Torch 2.12.0; the hosted job's full probe
 used this same model and weights alongside a pooled-input case:

@@ -1,0 +1,43 @@
+name: MPS Linear diagnostic
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/diagnose-mps-linear.yml
+      - tools/diagnose_mps_linear.py
+      - docs/pyg28-voxel-avg-pool.md
+  workflow_dispatch:
+
+# This workflow is evidence collection. Its numerical result is never used as
+# a product-test assertion or a required main-branch status check.
+jobs:
+  fixed-linear-probe:
+    name: Fixed Linear probe (Torch 2.12, macOS)
+    runs-on: macos-latest
+    env:
+      PYTORCH_ENABLE_MPS_FALLBACK: "0"
+      MPS_POINTOPS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install pinned PyTorch only
+        run: python -m pip install "torch==2.12.0"
+      - name: Fixed tensors, Safe Math, fresh process
+        env:
+          PYTORCH_MPS_FAST_MATH: "0"
+        run: python tools/diagnose_mps_linear.py --output "$RUNNER_TEMP/linear-safe.json"
+      - name: Fixed tensors, Fast Math, fresh process
+        env:
+          PYTORCH_MPS_FAST_MATH: "1"
+        run: python tools/diagnose_mps_linear.py --output "$RUNNER_TEMP/linear-fast.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mps-linear-bias-diagnostic
+          path: |
+            ${{ runner.temp }}/linear-safe.json
+            ${{ runner.temp }}/linear-fast.json
+          if-no-files-found: warn
+          retention-days: 30
