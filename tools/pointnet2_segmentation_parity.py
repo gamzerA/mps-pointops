@@ -68,6 +68,13 @@ def upstream_identity(root: Path) -> dict:
         raise RuntimeError(f"upstream model/extension source changed: {dirty}")
     return {
         "commit": revision,
+        # The Git blobs are identical on Windows and macOS even when the
+        # checked-out source files have different CRLF/LF line endings.
+        "source_git_blob_sha1": {
+            p: subprocess.check_output(
+                ["git", "-C", str(root), "rev-parse", f"HEAD:{p}"], text=True
+            ).strip() for p in relpaths
+        },
         "source_sha256": {p: digest(root / p) for p in relpaths},
         "build_only_setup_diff": subprocess.check_output(
             ["git", "-C", str(root), "diff", "--", "pointnet2_ops_lib/setup.py"],
@@ -321,6 +328,10 @@ def compare(left: Path, right: Path, *, atol: float, rtol: float) -> dict:
         raise RuntimeError("fixture bytes differ")
     if m_left["upstream"]["commit"] != m_right["upstream"]["commit"]:
         raise RuntimeError("upstream commits differ")
+    if ("source_git_blob_sha1" in m_left["upstream"] and
+            "source_git_blob_sha1" in m_right["upstream"] and
+            m_left["upstream"]["source_git_blob_sha1"] != m_right["upstream"]["source_git_blob_sha1"]):
+        raise RuntimeError("upstream source Git blobs differ")
     with np.load(left, allow_pickle=False) as a, np.load(right, allow_pickle=False) as b:
         if set(a.files) != set(b.files):
             raise RuntimeError(f"array names differ: {set(a.files) ^ set(b.files)}")

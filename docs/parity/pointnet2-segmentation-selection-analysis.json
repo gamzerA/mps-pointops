@@ -1,0 +1,169 @@
+{
+  "ball_query": [
+    {
+      "common_query_points": 1024,
+      "different_neighbor_rows": 0,
+      "level": 1,
+      "query_set_symmetric_difference": 0
+    },
+    {
+      "common_query_points": 256,
+      "different_neighbor_rows": 1,
+      "first_different_row": {
+        "cuda_neighbor_original_ids": [
+          797,
+          898,
+          1017,
+          395,
+          422,
+          303,
+          91,
+          148,
+          252,
+          29,
+          243,
+          847,
+          155,
+          1013,
+          568,
+          481,
+          363,
+          841,
+          59,
+          687,
+          335,
+          319,
+          820,
+          665,
+          695,
+          87,
+          440,
+          135,
+          115,
+          848,
+          651,
+          216
+        ],
+        "mps_neighbor_original_ids": [
+          797,
+          898,
+          1017,
+          395,
+          422,
+          303,
+          91,
+          148,
+          252,
+          29,
+          243,
+          847,
+          155,
+          1013,
+          568,
+          481,
+          363,
+          841,
+          59,
+          687,
+          335,
+          319,
+          820,
+          665,
+          695,
+          87,
+          440,
+          135,
+          115,
+          848,
+          651,
+          33
+        ],
+        "query_original_id": 148
+      },
+      "level": 2,
+      "query_set_symmetric_difference": 0
+    },
+    {
+      "common_query_points": 64,
+      "different_neighbor_rows": 0,
+      "level": 3,
+      "query_set_symmetric_difference": 0
+    },
+    {
+      "common_query_points": 16,
+      "different_neighbor_rows": 0,
+      "level": 4,
+      "query_set_symmetric_difference": 0
+    }
+  ],
+  "cuda_result_sha256": "05de08ca103596eec35f6b0397a5b418fb39d73b3aa2c850f4a7194e04a2ed08",
+  "first_fps_mismatch": {
+    "cuda_candidate_min_squared_distance_float64": 0.0033321380615234375,
+    "cuda_original_id": 752,
+    "global_max_min_squared_distance_float64": 0.0033321380615234375,
+    "gpu_internal_distance_bits_observed": false,
+    "maximizing_candidate_original_ids_float64": [
+      41,
+      752
+    ],
+    "mps_candidate_min_squared_distance_float64": 0.0033321380615234375,
+    "mps_original_id": 41,
+    "prefix_identical": true,
+    "step": 252
+  },
+  "fixture_sha256": "e3998b2eb58c9b9a410ef2a081b539e65aca5d15fcdb72a203849ade0be511f1",
+  "fps": [
+    {
+      "first_mismatch_position": 252,
+      "level": 1,
+      "ordered_index_mismatches": 177,
+      "selected_set_symmetric_difference": 0
+    },
+    {
+      "first_mismatch_position": 252,
+      "level": 2,
+      "ordered_index_mismatches": 2,
+      "selected_set_symmetric_difference": 0
+    },
+    {
+      "first_mismatch_position": null,
+      "level": 3,
+      "ordered_index_mismatches": 0,
+      "selected_set_symmetric_difference": 0
+    },
+    {
+      "first_mismatch_position": null,
+      "level": 4,
+      "ordered_index_mismatches": 0,
+      "selected_set_symmetric_difference": 0
+    }
+  ],
+  "meaning": "Original-ID normalization removes local-index changes caused by FPS ordering; it does not prove bitwise model parity.",
+  "mps_result_sha256": "e37926c82a9b0f0ab622792e76447ccec235dd97b448f230923fc0b8d00e053d",
+  "three_nn": [
+    {
+      "common_query_points": 64,
+      "different_neighbor_rows": 0,
+      "index": 8,
+      "query_set_symmetric_difference": 0
+    },
+    {
+      "common_query_points": 256,
+      "different_neighbor_rows": 0,
+      "index": 9,
+      "query_set_symmetric_difference": 0
+    },
+    {
+      "common_query_points": 1024,
+      "different_neighbor_rows": 0,
+      "index": 10,
+      "query_set_symmetric_difference": 0
+    },
+    {
+      "common_query_points": 1152,
+      "different_neighbor_rows": 0,
+      "index": 11,
+      "query_set_symmetric_difference": 0
+    }
+  ]
+}
