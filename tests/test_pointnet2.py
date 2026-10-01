@@ -6,11 +6,19 @@ import numpy as np
 import pytest
 import torch
 
-from mps_pointops import reference
 from mps_pointops.pointnet2 import three_interpolate, three_nn
 
 
 DEVICES = ["cpu"] + (["mps"] if torch.backends.mps.is_available() else [])
+
+
+def interpolate_oracle(features: torch.Tensor, indices: torch.Tensor, weights: torch.Tensor) -> torch.Tensor:
+    """Independent PyTorch gather expression for values and autograd."""
+    batch, channels, _ = features.shape
+    queries = indices.shape[1]
+    gather_idx = indices.to(torch.long).reshape(batch, 1, queries * 3).expand(-1, channels, -1)
+    selected = features.gather(2, gather_idx).reshape(batch, channels, queries, 3)
+    return torch.sum(selected * weights[:, None], dim=-1)
 
 
 @pytest.mark.parametrize("device", DEVICES)
@@ -88,7 +96,7 @@ def test_three_interpolate_matches_reference_on_noncontiguous_inputs(device: str
     features = torch.from_numpy(rng.normal(size=(2, 5, 23)).astype("float32"))[:, :, ::2]
     indices = torch.from_numpy(rng.integers(0, features.shape[-1], size=(2, 7, 3), dtype="int64"))
     weights = torch.from_numpy(rng.normal(size=(2, 7, 3)).astype("float32"))
-    want = reference.three_interpolate(features, indices, weights)
+    want = interpolate_oracle(features, indices, weights)
     out = three_interpolate(features.to(device), indices.to(device), weights.to(device))
     torch.testing.assert_close(out.cpu(), want, rtol=2e-6, atol=1e-6)
 
@@ -101,7 +109,7 @@ def test_three_interpolate_backward_random_oracle(device: str) -> None:
     weights = torch.randn(2, 11, 3, generator=generator)
     upstream = torch.randn(2, 4, 11, generator=generator)
     oracle_features = features.clone().requires_grad_()
-    reference.three_interpolate(oracle_features, indices, weights).backward(upstream)
+    interpolate_oracle(oracle_features, indices, weights).backward(upstream)
     actual_features = features.to(device).requires_grad_()
     three_interpolate(actual_features, indices.to(device), weights.to(device)).backward(upstream.to(device))
     torch.testing.assert_close(actual_features.grad.cpu(), oracle_features.grad, rtol=2e-6, atol=2e-6)

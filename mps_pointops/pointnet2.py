@@ -13,11 +13,11 @@ import torch
 from torch import Tensor
 from torch.autograd.function import once_differentiable
 
-from . import reference
 from ._ball_query_mps import _require_compile_shader
 
 _GROUP_SIZE = 256
 _MAX_INDEX = (1 << 31) - 1
+_REFERENCE_PAIRS_PER_CHUNK = 1 << 24
 
 
 @cache
@@ -51,6 +51,27 @@ def _validate_three_nn(unknown: Tensor, known: Tensor) -> tuple[int, int, int]:
     return batch, queries, points
 
 
+def _three_nn_reference(unknown: Tensor, known: Tensor) -> tuple[Tensor, Tensor]:
+    """Chunked PyTorch reference with stable input-index tie order."""
+    batch, queries, _ = unknown.shape
+    points = known.shape[1]
+    distances = torch.empty((batch, queries, 3), dtype=torch.float32, device=unknown.device)
+    indices = torch.empty((batch, queries, 3), dtype=torch.int32, device=unknown.device)
+    if not batch or not queries:
+        return distances, indices
+    step = max(1, _REFERENCE_PAIRS_PER_CHUNK // max(1, batch * points))
+    with torch.no_grad():
+        for lo in range(0, queries, step):
+            delta = unknown[:, lo:lo + step, None] - known[:, None]
+            d2 = delta[..., 0] * delta[..., 0]
+            d2 = d2 + delta[..., 1] * delta[..., 1]
+            d2 = d2 + delta[..., 2] * delta[..., 2]
+            order = torch.argsort(d2, dim=-1, stable=True)[..., :3]
+            indices[:, lo:lo + step] = order.to(torch.int32)
+            distances[:, lo:lo + step] = d2.gather(-1, order).sqrt()
+    return distances, indices
+
+
 def three_nn(unknown: Tensor, known: Tensor) -> tuple[Tensor, Tensor]:
     """Return three nearest known points for every unknown point.
 
@@ -67,7 +88,7 @@ def three_nn(unknown: Tensor, known: Tensor) -> tuple[Tensor, Tensor]:
     """
     batch, queries, points = _validate_three_nn(unknown, known)
     if unknown.device.type != "mps":
-        return reference.three_nn(unknown, known)
+        return _three_nn_reference(unknown, known)
     distances = torch.empty((batch, queries, 3), dtype=torch.float32, device=unknown.device)
     indices = torch.empty((batch, queries, 3), dtype=torch.int32, device=unknown.device)
     count = batch * queries
@@ -109,6 +130,16 @@ def _validate_interpolate(features: Tensor, indices: Tensor, weights: Tensor) ->
     if indices.numel() and torch.any((indices < 0) | (indices >= points)).item():
         raise IndexError(f"indices must lie in [0, {points})")
     return batch, channels, points, queries
+
+
+def _three_interpolate_reference(features: Tensor, indices: Tensor, weights: Tensor) -> Tensor:
+    """PyTorch gather reference; only source features receive gradients."""
+    batch, channels, _ = features.shape
+    queries = indices.shape[1]
+    selected = features.gather(
+        2, indices.to(torch.long).reshape(batch, 1, queries * 3).expand(-1, channels, -1)
+    ).reshape(batch, channels, queries, 3)
+    return (selected * weights.detach().unsqueeze(1)).sum(dim=-1)
 
 
 class _ThreeInterpolate(torch.autograd.Function):
@@ -166,7 +197,7 @@ def three_interpolate(features: Tensor, indices: Tensor, weights: Tensor) -> Ten
     """
     _validate_interpolate(features, indices, weights)
     if features.device.type != "mps":
-        return reference.three_interpolate(features, indices, weights)
+        return _three_interpolate_reference(features, indices, weights)
     index32 = indices.contiguous() if indices.dtype == torch.int32 else indices.to(torch.int32)
     return _ThreeInterpolate.apply(features, index32, weights.contiguous())
 
