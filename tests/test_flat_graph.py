@@ -33,8 +33,10 @@ def test_pyg_import_only_stubs_report_unsupported_operations():
         from torch_cluster import graclus_cluster, grid_cluster, knn_graph
 
         assert knn_graph is flat.knn_graph
-        with pytest.raises(NotImplementedError, match="grid_cluster"):
-            grid_cluster(torch.empty(0, 3), 1.0)
+        assert torch.equal(
+            grid_cluster(torch.zeros((1, 3)), torch.ones(3)),
+            torch.zeros(1, dtype=torch.long),
+        )
         with pytest.raises(NotImplementedError, match="graclus_cluster"):
             graclus_cluster(torch.empty(2, 0, dtype=torch.long))
     finally:
