@@ -851,8 +851,12 @@ original implementation.
       [contract and differential tests](docs/pointnet2-propagation.md).
 - [ ] Validate PointNet++ segmentation end to end on MPS and compare model
       outputs with the original implementation.
-- [ ] Open issues upstream (`pyg-lib`, `torch_cluster`, `PyTorch3D`) to ask
-      whether MPS support would be accepted and in what form.
+- [x] Ask upstream maintainers whether and how they would accept MPS support:
+  [pyg-lib #733](https://github.com/pyg-team/pyg-lib/issues/733),
+  [torch_cluster #172](https://github.com/rusty1s/pytorch_cluster/issues/172#issuecomment-5930622245),
+  and [PyTorch3D #2049](https://github.com/facebookresearch/pytorch3d/issues/2049).
+  These are requests for guidance; no upstream acceptance or integration is
+  claimed.
 
 ### Phase 3: Graph and grid infrastructure (target 0.6.0 to 0.7.0)
 
