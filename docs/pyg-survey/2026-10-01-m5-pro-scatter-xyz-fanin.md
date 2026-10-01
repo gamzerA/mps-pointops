@@ -112,4 +112,7 @@ PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=1 \
 PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=0 \
   python3 bench/bench_scatter_xyz_fanin_mps.py --edges 262144 --batches 2 \
   --output bench/results/local-scatter-xyz-b2-safe.json
+PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=1 \
+  python3 bench/bench_scatter_xyz_fanin_mps.py --edges 262144 --batches 2 \
+  --output bench/results/local-scatter-xyz-b2-fast.json
 ```
