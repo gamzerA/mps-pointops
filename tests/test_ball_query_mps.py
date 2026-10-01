@@ -9,6 +9,7 @@ import struct
 import pytest
 import torch
 
+import mps_pointops._ball_query_mps as ball_query_module
 from mps_pointops._ball_query_mps import ball_query
 
 
@@ -92,6 +93,138 @@ def test_first_k_not_nearest_and_strict_boundary() -> None:
     torch.testing.assert_close(
         result.distances.cpu(), torch.tensor([[[0.64, 0.01]]]), atol=1e-6, rtol=0
     )
+
+
+@requires_mps
+@pytest.mark.mps
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
+@pytest.mark.parametrize("k", [1, 7, 31, 33, 65])
+def test_sorted_input_preserves_first_k_across_simd_blocks(dtype: torch.dtype, k: int) -> None:
+    # The first hit can be in the middle of a SIMD block, K can end in a
+    # later block, and the final point block is only partially populated.
+    positions = [0, 1, 31, 32, 64, 128, 224, 250, 256]
+    points = torch.zeros((1, 257, 3), dtype=dtype)
+    points[0, :, 0] = torch.arange(257, dtype=dtype)
+    queries = points[:, positions].clone()
+    result = ball_query(queries.to("mps"), points.to("mps"), radius=20.5, k=k)
+
+    expected_i = torch.full((1, len(positions), k), -1, dtype=torch.int64)
+    expected_d = torch.zeros((1, len(positions), k), dtype=torch.float32)
+    for q, center in enumerate(positions):
+        hits = [j for j in range(257) if abs(center - j) < 20.5][:k]
+        expected_i[0, q, : len(hits)] = torch.tensor(hits, dtype=torch.int64)
+        expected_d[0, q, : len(hits)] = torch.tensor(
+            [(center - j) ** 2 for j in hits], dtype=torch.float32
+        )
+    torch.testing.assert_close(result.indices.cpu(), expected_i, rtol=0, atol=0)
+    torch.testing.assert_close(result.distances.cpu(), expected_d, rtol=0, atol=0)
+
+
+@requires_mps
+@pytest.mark.mps
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
+@pytest.mark.parametrize("k", [1, 31, 32, 33, 65])
+def test_simd_kernel_writes_every_output_slot_and_public_contract(
+    dtype: torch.dtype, k: int
+) -> None:
+    # Prefilled buffers expose any slot the native kernel leaves unwritten.
+    # P=65 gives a partial final SIMD block, Q=9 crosses the 8-query group
+    # boundary, and the second batch has shorter valid lengths. Binary-fraction
+    # coordinates make every valid squared distance exact in float32.
+    batch, query_count, point_count = 2, 9, 65
+    queries_cpu = torch.zeros((batch, query_count, 3), dtype=dtype)
+    points_cpu = torch.zeros((batch, point_count, 3), dtype=dtype)
+    for j in range(point_count):
+        points_cpu[:, j, 0] = 2.0 if j % 5 == 1 else (0.25 if j % 3 == 0 else 0.5)
+    points_cpu[:, 31, 0] = float("nan")
+    points_cpu[:, 32, 0] = float("inf")
+    queries_cpu[:, 2, 0] = 0.5
+    queries_cpu[:, 4, 0] = 20.0  # No neighbors: all K output slots need padding.
+    query_lengths = [9, 7]  # The final two queries of batch 1 need padding.
+    point_lengths = [65, 49]
+    expected_d, expected_i = reference(
+        queries_cpu, points_cpu, query_lengths, point_lengths, radius=1.0, k=k
+    )
+
+    queries = queries_cpu.to("mps")
+    points = points_cpu.to("mps")
+    query_lengths_mps = torch.tensor(query_lengths, device="mps", dtype=torch.int64)
+    point_lengths_mps = torch.tensor(point_lengths, device="mps", dtype=torch.int64)
+    indices = torch.full(
+        (batch, query_count, k), -777, device="mps", dtype=torch.int64
+    )
+    distances = torch.full(
+        (batch, query_count, k), float("nan"), device="mps", dtype=torch.float32
+    )
+    radius_f32, radius_sq = ball_query_module._checked_radius_and_k(1.0, k)
+    kernel = (
+        ball_query_module._shader_library().ball_query_f32
+        if dtype == torch.float32
+        else ball_query_module._shader_library().ball_query_f16
+    )
+    group_size = ball_query_module._SIMD_WIDTH * ball_query_module._QUERIES_PER_GROUP
+    groups = (
+        batch * query_count + ball_query_module._QUERIES_PER_GROUP - 1
+    ) // ball_query_module._QUERIES_PER_GROUP
+    kernel(
+        queries,
+        points,
+        query_lengths_mps,
+        point_lengths_mps,
+        indices,
+        distances,
+        batch,
+        query_count,
+        point_count,
+        k,
+        radius_sq,
+        radius_f32,
+        threads=[groups * group_size, 1, 1],
+        group_size=[group_size, 1, 1],
+    )
+    torch.mps.synchronize()
+
+    assert indices.shape == distances.shape == (batch, query_count, k)
+    assert indices.dtype == torch.int64
+    assert distances.dtype == torch.float32
+    actual_i, actual_d = indices.cpu(), distances.cpu()
+    torch.testing.assert_close(actual_i, expected_i, rtol=0, atol=0)
+    # Bitwise comparison is justified here because all accepted distances are
+    # exactly representable binary fractions; it is not a general CPU/Metal
+    # float32 equivalence claim near the radius boundary.
+    torch.testing.assert_close(
+        actual_d.view(torch.int32), expected_d.view(torch.int32), rtol=0, atol=0
+    )
+
+    result = ball_query(
+        queries,
+        points,
+        radius=1.0,
+        k=k,
+        query_lengths=query_lengths_mps,
+        point_lengths=point_lengths_mps,
+    )
+    assert result.indices.shape == result.distances.shape == (batch, query_count, k)
+    assert result.indices.dtype == torch.int64
+    assert result.distances.dtype == torch.float32
+    torch.testing.assert_close(result.indices.cpu(), actual_i, rtol=0, atol=0)
+    torch.testing.assert_close(
+        result.distances.cpu().view(torch.int32), actual_d.view(torch.int32), rtol=0, atol=0
+    )
+
+
+@requires_mps
+@pytest.mark.mps
+def test_simd_blocks_mask_nonfinite_points_and_pad_after_partial_block() -> None:
+    points = torch.full((1, 97, 3), 2.0, device="mps")
+    hit_positions = [0, 31, 32, 63, 64, 95, 96]
+    points[0, hit_positions, :] = 0.0
+    points[0, 31, 0] = float("nan")
+    points[0, 64, 0] = float("inf")
+    query = torch.zeros((1, 1, 3), device="mps")
+    result = ball_query(query, points, radius=0.5, k=7)
+    assert result.indices.cpu().tolist() == [[[0, 32, 63, 95, 96, -1, -1]]]
+    assert result.distances.cpu().tolist() == [[[0.0] * 7]]
 
 
 @requires_mps

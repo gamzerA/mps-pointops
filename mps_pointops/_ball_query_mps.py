@@ -11,13 +11,17 @@ from __future__ import annotations
 from functools import lru_cache
 from importlib.resources import files
 import math
+import platform
 import struct
+import sys
 from typing import NamedTuple
 
 import torch
 
 
 _MIN_SUPPORTED_RADIUS_F32 = 2.0**-112
+_SIMD_WIDTH = 32
+_QUERIES_PER_GROUP = 8
 
 
 class BallQueryResult(NamedTuple):
@@ -28,15 +32,40 @@ class BallQueryResult(NamedTuple):
 
 
 def _require_compile_shader() -> None:
-    if not hasattr(torch.mps, "compile_shader"):
+    """Check the native Metal runtime on first kernel use, not on CPU import."""
+    if not hasattr(getattr(torch, "mps", None), "compile_shader"):
         raise RuntimeError(
             f"mps_pointops needs PyTorch 2.7 or later (torch.mps.compile_shader); found {torch.__version__}"
+        )
+    if sys.platform != "darwin" or platform.machine() != "arm64":
+        raise RuntimeError(
+            "mps_pointops native Metal kernels require Apple Silicon macOS "
+            f"(Darwin/arm64); found {sys.platform}/{platform.machine()}. "
+            "CPU tensors can use the PyTorch reference path."
+        )
+    if not torch.backends.mps.is_available():
+        raise RuntimeError("PyTorch MPS is unavailable on this host")
+
+
+@lru_cache(maxsize=1)
+def _check_simd_width() -> None:
+    """The dense prefix ranks and other native kernels require 32 lanes."""
+    _require_compile_shader()
+    lib = torch.mps.compile_shader(
+        "kernel void width(device long* out, uint w [[threads_per_simdgroup]]) { out[0] = w; }"
+    )
+    out = torch.zeros(1, dtype=torch.long, device="mps")
+    lib.width(out, threads=1, group_size=1)
+    width = int(out.item())
+    if width != _SIMD_WIDTH:
+        raise RuntimeError(
+            f"mps_pointops kernels need {_SIMD_WIDTH}-wide simdgroups, this GPU uses {width}"
         )
 
 
 @lru_cache(maxsize=1)
 def _shader_library():
-    _require_compile_shader()
+    _check_simd_width()
     source = files(__package__).joinpath("kernels", "ball_query.metal").read_text()
     return torch.mps.compile_shader(source)
 
@@ -113,6 +142,8 @@ class _BallQuery(torch.autograd.Function):
                 if queries.dtype == torch.float32
                 else _shader_library().ball_query_f16
             )
+            group_size = _SIMD_WIDTH * _QUERIES_PER_GROUP
+            groups = (batch * query_count + _QUERIES_PER_GROUP - 1) // _QUERIES_PER_GROUP
             kernel(
                 queries,
                 points,
@@ -126,8 +157,8 @@ class _BallQuery(torch.autograd.Function):
                 k,
                 radius_sq,
                 radius_f32,
-                threads=[batch * query_count, 1, 1],
-                group_size=[256, 1, 1],
+                threads=[groups * group_size, 1, 1],
+                group_size=[group_size, 1, 1],
             )
 
         ctx.save_for_backward(queries, points, indices)
@@ -212,7 +243,9 @@ def ball_query(
 
     batch, query_count, _ = queries.shape
     point_count = points.shape[1]
-    if batch * query_count > (1 << 32) - 1:
+    if ((batch * query_count + _QUERIES_PER_GROUP - 1) // _QUERIES_PER_GROUP) * (
+        _SIMD_WIDTH * _QUERIES_PER_GROUP
+    ) > (1 << 32) - 1:
         raise ValueError("B * Q exceeds the Metal 1-D dispatch limit")
     if batch * query_count * 3 > (1 << 63) - 1 or batch * point_count * 3 > (1 << 63) - 1:
         raise ValueError("coordinate element count exceeds int64 indexing")

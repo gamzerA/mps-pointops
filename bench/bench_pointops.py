@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import os
 import platform
@@ -100,6 +101,15 @@ def cmd(*args: str) -> str:
 
 def environment() -> dict:
     mem = cmd("sysctl", "-n", "hw.memsize")
+    source_hashes = {
+        str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in (
+            ROOT / "bench" / "bench_pointops.py",
+            ROOT / "mps_pointops" / "ops.py",
+            ROOT / "mps_pointops" / "_ball_query_mps.py",
+            ROOT / "mps_pointops" / "kernels" / "ball_query.metal",
+        )
+    }
     return {
         "chip": cmd("sysctl", "-n", "machdep.cpu.brand_string"),
         "memory_gb": round(int(mem) / 2**30) if mem.isdigit() else "?",
@@ -110,6 +120,7 @@ def environment() -> dict:
         "scipy": getattr(scipy, "__version__", None),
         "fpsample": getattr(fpsample, "__version__", "installed" if fpsample else None),
         "mps_fallback": os.environ.get("PYTORCH_ENABLE_MPS_FALLBACK", "unset"),
+        "source_sha256": source_hashes,
     }
 
 

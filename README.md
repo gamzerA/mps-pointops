@@ -25,8 +25,11 @@ Compatibility stand-ins cover supported `pointnet2_ops`, `knn_cuda`, and
 
 ## Quick start
 
-Requires an Apple Silicon Mac, Python 3.10 or later, and PyTorch 2.7 or later
-with MPS. The Metal kernels compile on first use.
+Native Metal execution requires an Apple Silicon Mac, Python 3.10 or later,
+PyTorch 2.7 or later, and an available MPS device. On other systems the package
+can be installed and CPU tensors use the PyTorch reference implementations;
+requesting an unavailable MPS device does not silently switch to CPU. The Metal
+kernels compile on first use.
 
 ### Install
 
@@ -40,11 +43,22 @@ python -m pip install mps-pointops
 import torch
 from mps_pointops import ball_query, furthest_point_sample, knn
 
-xyz = torch.randn(1, 100_000, 3, device="mps")
-centers_idx = furthest_point_sample(xyz, 1024)
+if not torch.backends.mps.is_available():
+    raise SystemExit("PyTorch MPS is unavailable; use CPU tensors for the reference path")
+
+xyz = torch.tensor(
+    [[[0., 0., 0.], [1., 0., 0.], [0., 1., 0.], [1., 1., 0.]]],
+    device="mps",
+)
+centers_idx = furthest_point_sample(xyz, 2, start_idx=0)
 centers = xyz.gather(1, centers_idx[..., None].expand(-1, -1, 3))
-distance, neighbor_idx = knn(centers, xyz, 128)
-distance2, radius_idx = ball_query(centers, xyz, 0.1, 64)
+distance, neighbor_idx = knn(centers, xyz, 2)
+distance2, radius_idx = ball_query(centers, xyz, 1.1, 2)
+
+assert centers_idx.tolist() == [[0, 3]]
+assert neighbor_idx.tolist() == [[[0, 1], [3, 1]]]
+assert radius_idx.tolist() == [[[0, 1], [1, 2]]]
+print("MPS point ops OK")
 ```
 
 | Operator | Selection rule | Native result |
@@ -59,10 +73,11 @@ different rule. [The equations](#the-operators-in-equations) give the full
 selection and gradient formulas. On MPS, Ball Query supports coordinate
 gradients for its squared distances; FPS and kNN do not implement backward.
 
-**Measured on one M5 Pro, with 100k randomly ordered reference points:** FPS
+**v0.3.0 measured on one M5 Pro, with 100k randomly ordered reference points:** FPS
 **5.2×**, kNN **2.9×**, and Ball Query **1.6×** faster than the fastest tested
-CPU library for each operation. Ball Query is slower on spatially sorted input
-(32.5 ms versus SciPy's 23.2 ms at 100k points). The
+CPU library for each operation. Its dense Ball Query was slower on spatially
+sorted input (32.5 ms versus SciPy's 23.2 ms at 100k points). A newer SIMD
+Ball Query experiment is reported [below](#dense-ball-query-simd-experiment). The
 [benchmark](#benchmark) states the setup and links the raw results.
 
 For existing CUDA-oriented imports, call `mps_pointops.compat.install()`
@@ -144,9 +159,9 @@ weights and has not been run yet.
 
 ## Benchmark
 
-![M5 Pro measured speedups at 100,000 randomly ordered reference points: FPS 5.2 times, kNN 2.9 times, Ball Query 1.6 times faster than the fastest tested CPU libraries](docs/assets/m5-pro-speedup.svg)
+![M5 Pro v0.3.0 measured speedups at 100,000 randomly ordered reference points: FPS 5.2 times, kNN 2.9 times, Ball Query 1.6 times faster than the fastest tested CPU libraries](docs/assets/m5-pro-speedup.svg)
 
-The figure compares each Metal kernel with the fastest tested CPU library for
+The v0.3.0 figure compares each Metal kernel with the fastest tested CPU library for
 that operation on the **same M5 Pro**. It uses batch 1, 100,000 reference
 points, 1,024 samples or queries, random input order, and the median of five
 runs. SciPy times include KD-tree construction; device transfer is excluded.
@@ -162,7 +177,7 @@ result tables: [FPS/kNN random order](bench/results/2026-10-01-apple-m5-pro.md),
 [Ball Query random order](bench/results/2026-10-01-apple-m5-pro-ball-query-port.md),
 and [Ball Query sorted order](bench/results/2026-10-01-apple-m5-pro-ball-query-port-sorted.md).
 
-Apple M5 Pro, 48 GB, macOS 26.5.2, torch 2.14.1, random point order:
+v0.3.0, Apple M5 Pro, 48 GB, macOS 26.5.2, torch 2.14.1, random point order:
 
 | op | points | **mps-pointops (Metal)** | torch on MPS | torch on CPU | best CPU library |
 |---|---:|---:|---:|---:|---:|
@@ -203,6 +218,68 @@ The scipy times include building the KD-tree. fpsample's QuickFPS
 (`bucket_fps_kdline_sampling`) is absent because in fpsample 1.0.2 it ignores
 `start_idx` and returns a different, sorted sample set.
 
+### Dense Ball Query SIMD experiment
+
+The current source assigns one SIMD group to each dense Ball Query and ranks
+matches with an exclusive prefix scan, retaining the first `K` point indices
+in input order. On the same M5 Pro, a paired Safe Math ablation compiled the
+v0.3.0 dense kernel and the SIMD kernel in one process. It alternated their
+execution order, used 3 warmups and 12 timed runs per kernel, and synchronized
+MPS immediately before and after each dispatch. Both used resident float32
+inputs, 1,024 queries, `K=64`, and `r=0.1`; allocation, transfer, and shader
+compilation were outside the timer.
+
+| Input order | Points | v0.3.0 dense median | SIMD median | Speedup |
+|:--|--:|--:|--:|--:|
+| x-sorted | 20,000 | 4.28 ms | 1.08 ms | 3.96× |
+| x-sorted | 100,000 | 21.43 ms | 2.91 ms | 7.37× |
+| random | 20,000 | 4.24 ms | 1.06 ms | 4.01× |
+| random | 100,000 | 7.66 ms | 1.40 ms | 5.48× |
+
+For those four inputs, the two kernels produced byte-identical `int64`
+indices and `float32` squared distances, including padding. This is an
+observed baseline-to-SIMD result, not a general promise of bitwise agreement
+with a CPU implementation near floating-point boundaries. The
+[paired benchmark](bench/bench_ball_query_simd_ablation.py) and
+[raw results](bench/results/2026-10-01-apple-m5-pro-ball-query-simd-ablation.json)
+record the source hashes, inputs, and individual timings. The old chart and
+table above remain the v0.3.0 release baseline; this paired experiment does
+not measure SciPy.
+
+A separate run of the existing full benchmark measured the current SIMD
+kernel against SciPy cKDTree build plus query: **2.9 versus 19.5 ms** on
+x-sorted 100k points and **1.4 versus 20.0 ms** on randomly ordered 100k
+points. Both runs had **0 mismatched indices out of 65,536** against the CPU
+first-K reference; the largest reported squared-distance difference was
+`1.9e-9`. These SciPy numbers are from separate runs and are not the paired
+old-versus-new speedup above. See the [sorted](bench/results/dense-simd/2026-10-01-apple-m5-pro-sorted.md)
+and [random](bench/results/dense-simd/2026-10-01-apple-m5-pro.md)
+reports and their adjacent JSON files.
+
+For output completeness, a separate [differential checker](bench/verify_ball_query_simd_contract.py)
+passed 48 Safe and 40 Fast Math cases using output buffers prefilled with
+sentinel values. It compared every output byte with the previous Metal
+kernel and compared first-K `int64` indices with an independent CPU oracle.
+It covered both coordinate dtypes, lengths, empty references, 32-lane and
+8-query dispatch boundaries, `K=1/31/33/65`, and a small-radius path. Safe
+Math also included NaN and Inf inputs. Its [Safe](bench/results/2026-10-01-apple-m5-pro-ball-query-simd-contract-safe.json)
+and [Fast](bench/results/2026-10-01-apple-m5-pro-ball-query-simd-contract-fast.json)
+JSON files identify the exact inputs and shader hashes.
+
+### Large single-cloud FPS experiment
+
+The public FPS kernel uses one threadgroup per cloud. A separate experiment
+splits a single cloud over multiple threadgroups and performs a global
+reduction at each sampling step. The paired B=1, Safe Math measurements on
+this M5 Pro showed no clear win at 32,768 points, then a gain at 65,536 and
+larger sizes. With 1,024 samples, the random-order 500,000-point case measured
+194.15 → 29.49 ms, and 1,000,000 points measured 433.28 → 49.81 ms. All
+25,600 sampled indices in the 40 tested conditions matched the public FPS
+kernel. This is [benchmark-only code](bench/bench_fps_multigroup.py); choosing
+a production switch requires more hardware and batch-size measurements.
+See the [experiment report](bench/results/2026-10-01-apple-m5-pro-fps-multigroup.md)
+and [raw timings](bench/results/2026-10-01-apple-m5-pro-fps-multigroup.json).
+
 ### Correctness checks
 
 Each benchmark row records counts, not percentages, so a single mismatch stays
@@ -228,6 +305,11 @@ For the flat API implementation at commit `8b060f743b84ad6947daad591948855bcc9ce
 PyTorch 2.7.0 on the same M5 Pro reported **147 passed, 7 skipped** in each
 separate process ([Safe log](docs/pytest-flat-safe-torch27-2026-10-01.log),
 [Fast log](docs/pytest-flat-fast-torch27-2026-10-01.log)).
+The current dense SIMD source with PyTorch 2.14.1 reported **168 passed,
+12 skipped** in separate [Safe](docs/pytest-dense-simd-safe-torch214-2026-10-01.log)
+and [Fast](docs/pytest-dense-simd-fast-torch214-2026-10-01.log) processes.
+Seven skips are the existing kNN `k > n` cases and five are PyG 2.8 tests
+whose optional `pyg-lib` dependency is absent from this environment.
 
 ### Run it
 
@@ -493,8 +575,9 @@ an explicit FMA sequence and a documented policy for very small radii.
 - Each step finds the farthest point with a `simd_max` / `simd_min` reduction
   inside simdgroups, then across simdgroups through threadgroup memory. Ties go
   to the smaller index, like `torch.argmax`.
-- A batch of B clouds uses B threadgroups. With batch 1 only one GPU core is
-  busy, so there is room left for a multi-threadgroup version.
+- A batch of B clouds uses B threadgroups. Batch 1 therefore launches only
+  one threadgroup, which limits device-wide parallelism; this does not establish
+  that exactly one GPU core is busy.
 
 **kNN** ([knn.metal](mps_pointops/kernels/knn.metal))
 
@@ -511,13 +594,14 @@ an explicit FMA sequence and a documented policy for very small radii.
   The result does not depend on the order, since the list is sorted by
   (distance, index).
 
-FPS and kNN assume 32-wide simdgroups, as on Apple GPUs so far. The first
+FPS, kNN, and dense Ball Query assume 32-wide simdgroups. The first
 call checks the width on the GPU and raises an error if it is different.
 
 **Ball Query** ([ball_query.metal](mps_pointops/kernels/ball_query.metal))
 
-- One lane scans reference points for each query in input order, keeping the
-  first K matches and stopping once K are found.
+- One simdgroup scans reference points for each query in consecutive 32-point
+  blocks. An exclusive prefix rank within each block preserves the first K
+  matches in input order, and the scan stops once K are found.
 - The native output is squared distance plus `int64` index with `-1` padding.
   The PointNet2 stand-in converts indices to `int32` and repeats the first
   neighbor for padding. The Metal kernel supports float32/float16 coordinates
@@ -550,14 +634,15 @@ Ball Query is specified separately in the numerical contract.
 
 ## Roadmap
 
-1. ~~Metal kernel for FPS~~ — benchmark a tiled, multi-threadgroup reduction
-   for very large single-cloud inputs against the current single-kernel path
+1. ~~Metal kernel for FPS~~ — benchmark-only multi-threadgroup reduction has
+   been measured for large single-cloud inputs; validate other chips and
+   batch sizes before selecting a production dispatch strategy
 2. ~~Metal kernel for kNN~~
 3. ~~Drop-in stand-ins for `pointnet2_ops` and `knn_cuda`, checked on real
    MulSen-AD data~~
-4. ~~Metal kernel for ball query~~ — compare the existing dense scan with an
-   order-preserving simdgroup prefix scan on spatially sorted inputs, and
-   finish the PyTorch3D API compatibility surface
+4. ~~Metal kernel for ball query~~ — dense order-preserving SIMD prefix scan
+   and paired sorted-input ablation are implemented; finish the PyTorch3D API
+   compatibility surface
 5. ~~MulSen-AD Point-MAE 3D detector on MPS, matching the CUDA runs~~ — the
    full TripleAD pipeline (RGB + IR + 3D) is next
 6. `torch_cluster`-style flat/ragged `radius`, `knn` and `fps` — the 3D
