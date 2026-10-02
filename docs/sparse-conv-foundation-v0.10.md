@@ -170,8 +170,16 @@ cap, and int32 coordinate/dilation boundaries. The [M5 Pro evidence](evidence/su
 contains the tested source hash, synchronized 1,024/10,000-row timings, and
 [Safe](evidence/subm-scalable-m5pro-2026-10-02/pytest-safe.log) and
 [Fast](evidence/subm-scalable-m5pro-2026-10-02/pytest-fast.log) raw pytest logs.
-Direct `spconv` runtime parity has **not** been run because it is not installed
-in this environment.
+The [integrated wrapper evidence](evidence/subm-integrated-m5pro-2026-10-02/README.md)
+adds source-pinned full forward/backward measurements and raw logs: Safe and
+Fast each passed **60 tests**, including 1,025/10,000-row end-to-end
+CPU-rulebook versus MPS-rulebook output and first-gradient parity. The
+M5 Pro 20-repeat synchronized medians for 10,000 randomly selected rows were
+6.288 ms forward and 2.553 ms backward on the MPS rulebook path in Safe mode,
+versus 128.186 ms and 4.737 ms for CPU rulebook construction and transfer.
+These private-case timings do not establish upstream `spconv` performance.
+Direct `spconv` runtime parity has **not** been run on this M5 Pro host because
+`spconv` is not installed here.
 
 Before the sorted builder, the 1,024-row quadratic prototype was independently
 run on a physical Apple M1 (8 GiB, macOS 26.5.2, PyTorch 2.14.1) with MPS CPU
