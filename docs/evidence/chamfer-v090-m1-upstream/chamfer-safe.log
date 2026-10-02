@@ -1,0 +1,14 @@
+{
+  "upstream": "88e182f989c80836f4bd744e0d9cb1852762ce01",
+  "port": "ef07a9337b40065c18a6c950bda4240c789f31f1",
+  "summary": {
+    "mps": {
+      "cases": 480,
+      "checked_tensors": 3240,
+      "failed_tensors": 0,
+      "failed_elements": 0,
+      "max_abs": 1.9073486328125e-06,
+      "max_rel_nonzero": 2.384185791015625
+    }
+  }
+}

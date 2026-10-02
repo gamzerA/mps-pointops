@@ -40,6 +40,11 @@ tests require PyTorch3D, which was absent from that M1 environment. These
 logs establish only this project's internal regression behavior on M1; they
 do **not** establish upstream PyTorch3D parity or close the full Chamfer
 compatibility gate.
+After this spatial archive was produced, the same clean source commit was
+also tested against a pinned PyTorch3D CPU extension on the physical M1.
+That distinct [direct-upstream archive](evidence/chamfer-v090-m1-upstream/README.md)
+has its own environment, case matrix, raw results, and hashes; it does not
+change the meaning of the earlier skipped pytest cases.
 
 Across **13 public kNN-dispatch records**, all BVH and automatic outputs
 matched the native full-scan indices, with zero recorded selected-distance

@@ -142,9 +142,14 @@ from a clean source commit. These finite float32 fixtures do not establish
 every upstream argument/error combination or upstream parity on physical M1,
 so the full-compatibility release gate remains open.
 The [physical M1 internal Chamfer logs](evidence/chamfer-v090-m1/) record
-76 passed and 2 skipped in each math mode. PyTorch3D was absent on that
-machine, so its upstream parity cases were skipped; this does not close the
-full-compatibility gate.
+76 passed and 2 skipped in each math mode. PyTorch3D was absent from that
+initial environment, so its upstream parity cases were skipped. A subsequent
+[direct M1 upstream archive](evidence/chamfer-v090-m1-upstream/README.md)
+from the same clean source commit passed 480 base and 252 extended cases in
+each Safe/Fast mode after a pinned CPU extension was built. This resolves the
+physical M1 parity gap for those finite float32 matrices. It does not cover
+every upstream argument and error combination or close the full-compatibility
+gate.
 
 ### Optional optimal transport research
 
