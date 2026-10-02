@@ -26,8 +26,10 @@ from division by a nearly zero reference value; it is not a failed check.
 
 `chamfer-{safe,fast}.json` and `chamfer-extended-{safe,fast}.json` contain all
 case records. Corresponding `.log` files record process summaries. The
-`SHA256SUMS` manifest covers the original ten files copied from the M1, while
-this README is an explanatory addition. Verify the archive from this
+The JSON and log bytes were copied from the M1 without alteration. The
+build-flags diff was stripped of blank-line trailing spaces for the repository;
+its SHA-256 in `SHA256SUMS` covers the archived form. The manifest covers ten
+evidence files, while this README is an explanatory addition. Verify from this
 directory with `shasum -a 256 -c SHA256SUMS`, or from the repository root
 with `python3 bench/validate_chamfer_m1_evidence.py`. The latter also checks
 all case statuses and measured source-file hashes against the Git commit.
