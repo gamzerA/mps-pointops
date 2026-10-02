@@ -1,9 +1,10 @@
 # Morton-ordered AABB hierarchy: exact CPU contract and Metal gates
 
-This design accompanies the **experimental**, CPU-only
-[`HierarchicalMortonReference`](../bench/spatial_hierarchy_reference.py). It is
-not wired into the public package and has no measured GPU speed claim. The
-physical M1 is currently unavailable; its gate remains pending.
+This design accompanies the **experimental** exact CPU
+[`HierarchicalMortonReference`](../bench/spatial_hierarchy_reference.py) and
+private Metal [`MortonTwoLevelBVH`](../bench/spatial_bvh.py). Neither is wired
+into the public package. M5 Pro results below are fixture-specific; the
+physical M1 is currently unavailable and its gate remains pending.
 
 ## Structure and contracts
 
@@ -76,8 +77,11 @@ near-tie, AABB-face, radius-boundary, subnormal and extreme finite inputs in
 both math modes. Every prune can additionally be audited during development:
 for each pruned node, brute-check all descendant points and assert that none
 could change the result. This differential evidence can find faults but
-cannot replace the conservative-bound proof for arbitrary inputs. **Metal
-AABB pruning is not enabled or claimed correct by this CPU prototype.**
+cannot replace the conservative-bound proof for arbitrary inputs. The CPU
+reference alone does not prove a Metal implementation. The private Metal BVH
+uses the conditional Safe Math contract in the
+[spatial prototype report](spatial-1m-v0.9-prototype.md) and rejects Fast
+Math until that mode has an independently justified pruning bound.
 
 ## Work and memory
 
@@ -90,35 +94,89 @@ matches in `O(E log E)`. In the worst case `V=O(M)` and `C=N`; fallback is
 another `O(N)` scan. Exact-rational CPU arithmetic is intentionally slow and
 is excluded from GPU speed comparisons.
 
-The Metal mapping is: Morton key generation; stable key/index sort; per-brick
-actual-coordinate AABB reduction; bottom-up internal AABB reduction; then
-query traversal with bounded per-query state. Queries that overflow the node
-or candidate budget must return a visible status and enter an exact fallback
-path. Large `Q` requires enough query parallelism; a single serial traversal
-per query and a giant cluster may still cause SIMD divergence. Keep build,
-query, transfers and fallback count separate in measurements.
+The private Metal prototype implements Morton key generation, stable
+key/index sorting, per-brick actual-coordinate AABB reduction, bottom-up
+microtree and macro-tree union, and bounded per-query traversal. A stack
+overflow returns a visible status and performs a full exact scan instead of
+returning a partial row. It has no public routing or Fast Math traversal.
+Keep build, query, transfers and fallback count separate in measurements.
 
 ### Concrete two-level experiment
 
-At one million points and 128 points per brick, pad the 7,813 bricks to 8,192
-leaves. Group them into 128 microtrees of 64 bricks each, and build a macro
-tree over those 128 roots. A Metal build pass can reduce actual-coordinate
-leaf boxes and original-index minima within each microtree; a second pass
-unions the macro nodes. The padded leaves are marked empty. This gives at
-most 16,383 nodes and avoids quantized cell faces as pruning bounds.
+At one million points and 128 points per brick, the implementation pads the
+7,813 bricks to 8,192 leaves. It groups them into 128 microtrees of 64 bricks
+each and builds a macro tree over those roots. One Metal pass reduces
+actual-coordinate leaf boxes and original-index minima within each
+microtree; a second pass unions the macro nodes. Padded leaves are marked
+empty. The tree has at most 16,383 nodes; its AABB and minimum-index buffers
+occupy 458,752 bytes at this size.
 
-For `Q >= 256`, first measure one query per worker with near-child-first
-depth-first traversal and a bounded local stack. A node can be skipped when
-its certified float32 lower bound exceeds the current Kth distance. At equal
-distance it can also be skipped when its minimum original index is no smaller
-than the Kth chosen index; this rule requires a correct subtree index
-minimum. Safe and Fast Math need separate proofs or a full-scan fallback.
-For `Q = 16`, compare that serial traversal with a split by microtree:
-`Q × 128` independent tasks produce local top-K lists, followed by one
-deterministic `(distance, original index)` merge per query. The extra buffer
-for `Q=16, K=16` is roughly 262 KiB for 64-bit pairs before alignment, and
-its extra dispatch may outweigh the parallelism. These are proposed Metal
-experiments, not results from the CPU reference or an enabled public path.
+The serial path assigns one query to one worker and visits nearer child boxes
+first. Its strict `LB > Kth_distance` rule preserves exact-distance ties.
+The optional split path supports `Q <= 256`: a seed leaf supplies a valid
+Kth-distance upper bound, `Q × 128` microtree tasks each produce a local
+top-K list, and a final kernel merges by `(distance, original index)`.
+For `Q=16, K=16`, the local distance/index buffer is about 262 KiB before
+other counters and alignment. The stronger equality prune
+`LB == Kth_distance && min_original_index >= Kth_original_index` is safe if
+the subtree minimum and bound are certified, but is not implemented here.
+
+### M5 Pro clean-commit feasibility measurements
+
+The [raw JSON matrix](../bench/results/spatial-bvh-v090-m5pro-clean/) was
+generated from clean commit `5d2cf5986dcee43351e3c95d3a4a987a48ed3a4d`.
+Each row is the median of five synchronized Safe Math runs at `N=1,000,000`,
+`K=16`, seed `20261002`; inputs are resident before timing and shader
+compilation is excluded. Uniform points span `[0,1024)^3` with Morton cell
+size 16. Mixed data put 90% in a side-1 cube near `(512,512,512)` and 10%
+uniformly in the larger cube, with cell size `1/64`. Sampled queries come
+from references; independent mixed queries draw half from the cluster range
+and half from the full cube. The collapsed fixture sets every coordinate to
+the same value. All times below are **query-only milliseconds**.
+
+| Input | Q | Split BVH | Serial BVH | Bricks | Metal full scan | cKDTree |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Uniform, sampled | 16 | 6.14 | 18.04 | 20.59 | 15.06 | 0.02 |
+| Uniform, sampled | 256 | 9.62 | 31.52 | 50.97 | 14.32 | 0.38 |
+| Uniform, sampled | 2,048 | — | 29.99 | 67.66 | 40.19 | 6.15 |
+| Uniform, sampled | 4,096 | — | 29.89 | 58.93 | 75.64 | 11.20 |
+| Uniform, sampled | 8,192 | — | 31.98 | 70.45 | 143.62 | 26.87 |
+| Uniform, sampled | 65,536 | — | 167.87 | 200.37 | 1,086.47 | 211.21 |
+| Mixed, sampled | 16 | 5.97 | 30.87 | 61.94 | 15.48 | 0.02 |
+| Mixed, sampled | 256 | 11.33 | 53.59 | 132.35 | 15.36 | 0.77 |
+| Mixed, sampled | 2,048 | — | 54.01 | 132.95 | 42.36 | 5.48 |
+| Mixed, sampled | 4,096 | — | 57.09 | 126.82 | 75.09 | 12.07 |
+| Mixed, sampled | 8,192 | — | 53.44 | 132.01 | 145.49 | 23.37 |
+| Mixed, sampled | 65,536 | — | 218.07 | 355.57 | 1,090.18 | 188.76 |
+| Mixed, independent | 16 | 6.68 | 28.64 | 80.70 | 14.40 | 0.02 |
+| Mixed, independent | 2,048 | — | 55.00 | 125.54 | 41.09 | 7.15 |
+| Mixed, independent | 65,536 | — | 218.46 | 366.35 | 1,094.09 | 237.44 |
+| Uniform, independent | 16 | 5.50 | 14.91 | 29.64 | 15.48 | 0.02 |
+| Collapsed | 16 | 2.96 | 229.15 | 224.19 | 15.45 | 19.18 |
+| Collapsed | 256 | 9.46 | 235.52 | 231.20 | 14.57 | 254.13 |
+
+The split path reverses the low-Q brick regression on these M5 fixtures.
+For the mixed sampled fixture, the **serial** hierarchy first beats Metal
+full scan at Q=4,096, while it still loses at Q=2,048; the optional split
+path currently stops at Q=256. cKDTree query-only remains faster for most
+rows and can reuse a previously built tree. GPU build median is roughly
+2.4–3.0 ms in this matrix; cKDTree build is recorded separately in each
+JSON. A sum of build and query medians is not a directly timed end-to-end
+sample, and CPU-to-MPS transfer is excluded. The mixed Q=65,536 sampled
+query-only row still favors cKDTree over this BVH.
+
+Every row has zero BVH/native and brick/native index mismatches, zero
+BVH/brick squared-distance bit mismatches, and zero recorded stack
+fallbacks; split rows also have zero split/native and split/brick mismatches.
+These are fixture-specific differential checks. In the mixed Q=65,536 row,
+serial traversal visits a median 7,936 points per query, p95 23,296 and
+maximum 36,608, versus one million for full scan. The collapsed serial
+counterexample visits all one million; splitting parallelizes that work but
+does not reduce its total comparisons. The sampled MPS allocator high-water
+at Q=65,536 is about 81.5 MB for live tensors and 1.08 GB for driver
+allocation. It includes process caches, is **not** incremental BVH memory,
+and is **not** a true transient GPU peak. Instruments profiling, M1, Fast
+Math, and wider input-domain proof remain release gates.
 
 ## Measurements required before routing public kNN/radius
 
