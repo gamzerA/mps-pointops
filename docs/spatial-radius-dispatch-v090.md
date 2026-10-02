@@ -97,3 +97,40 @@ PYTHONPATH=. PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=0 \
 ```
 
 The JSON also records input-transfer time, the first BVH call, raw query times, PyTorch allocator peaks, and point-in-time MPS driver-memory readings. At `Q=65,536`, the resident BVH index tensors occupy `8,458,752` bytes. **Allocator peaks are not total GPU physical-memory peaks**, and the fixed measurement order keeps multiple path outputs resident. Use the separate one-path allocator and Instruments procedure in [`spatial-memory-v090.md`](spatial-memory-v090.md) for a memory conclusion.
+
+## Bounded DFS stack and fallback evidence
+
+The [private builder](../mps_pointops/_spatial_bvh.py) rejects `N>1,000,000`
+and stores 128 points per leaf. It pads the leaf count to
+`P = 2^ceil(log2(max(64, ceil(N/128))))`; hence `P≤8,192=2^13` for every
+supported input. The [radius shader](../mps_pointops/kernels/spatial_bvh.metal)
+traverses the complete balanced binary heap from root `1`, with leaves at
+indices `P..2P−1`. Every internal node pushes at most two children and then
+visits one of them. At any time the depth-first stack holds at most one
+pending sibling per completed level plus the next node, so its maximum
+occupancy is `log2(P)+1≤14`. Empty children and pruning only lower it. The
+shader's overflow condition `top + needed > 32` therefore cannot fire for
+the current supported `N≤1M` contract. If the point cap, brick size, tree
+shape, or stack capacity changes, this bound must be recalculated.
+
+The shader still retains the defensive full-scan recovery and writes its
+per-query overflow flag to `stats[:,4]`. The current
+[benchmark script](../bench/bench_spatial_radius_dispatch.py) reads that
+column in one additional untimed query after the timing samples. The four
+later crossover JSONs observe `0/4,096` fallback rows each and confirm the
+diagnostic output's index and squared-distance-bit parity with the scan.
+The earlier nine M5 Pro performance JSONs were produced before that counter
+was archived; their missing field must not be interpreted as a measured zero.
+The twelve physical M1 radius-dispatch JSONs have the same evidence gap.
+
+To close the empirical part without changing old timing records, regenerate
+the fixed independent-query fixtures with seed `20261002` in a clean Safe-Math
+process on each chip. For the original M5 matrix, use `N=1M`, `K=16`, and
+`Q∈{4,096,8,192,65,536}` for uniform (`r=12`), cluster–sparse (`r=0.03`),
+and collapsed (`r=0.5`) inputs. For M1, also include its 20k, 100k, and 1M
+collapsed `Q=256` staging fixtures. Run one private `radius()` query per
+fixture, synchronize MPS, and archive `count_nonzero(stats[:,4])`, `Q`, exact
+fixture parameters, device/runtime versions, source commit and shader hashes.
+The collapsed fixture must keep half its queries at the common point and move
+the other half by `+1` on x, as in the benchmark. This diagnostic is not a
+latency sample and should not be appended to the earlier JSONs.

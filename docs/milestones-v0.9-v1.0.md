@@ -65,9 +65,17 @@ It does not provide an Instruments physical-memory trace or close the full
 release gate.
 The [M5 Pro branch regression logs](evidence/spatial-v090/README.md) preserve
 separate Safe and Fast runs with CPU fallback disabled; Fast Math skips the
-Safe-only BVH contract tests. The current radius-performance JSONs check
-output parity but do not include a per-query stack-fallback frequency;
-measure that status before closing the v0.9 performance gate.
+Safe-only BVH contract tests. The original
+[nine M5 Pro radius-performance JSONs](../bench/results/spatial-radius-dispatch-v090-m5pro-clean/)
+and [twelve M1 radius-dispatch JSONs](../bench/results/spatial-v090-m1/)
+check output parity but predate per-query stack-fallback reporting. Four later
+[M5 Pro radius-crossover records](../bench/results/spatial-radius-crossover-v090-m5pro/)
+do report an untimed diagnostic count: zero fallback rows among 4,096 queries
+at each tested radius. The [bounded-stack argument](spatial-radius-dispatch-v090.md#bounded-dfs-stack-and-fallback-evidence)
+shows overflow is unreachable with the present balanced tree and `N≤1M`
+limit; this is a source-constant-dependent claim, not a measurement for the
+legacy fixtures. Archive their per-query diagnostic counts, including a
+physical M1 run, before calling that measurement gate complete.
 
 For the original grid radius path, inspect every cell intersecting the query
 ball and check the original coordinates with the existing radius comparison policy. Cell
