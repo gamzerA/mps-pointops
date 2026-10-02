@@ -1,10 +1,11 @@
 """Experimental MPS construction of a SubM sparse rulebook.
 
-Four stable device sorts make a lexicographic index over the full int32
-coordinate tuple. Each Metal lookup then uses O(log N) binary-search
-comparisons instead of scanning N rows. Total work also includes four MPS
-sorts, whose algorithm and complexity depend on the PyTorch backend, and
-linear pair compaction. The logical count remains on the MPS device.
+Four stable device sorts (eight 16-bit chunk sorts on PyTorch 2.7 MPS) make a
+lexicographic index over the full int32 coordinate tuple. Each Metal lookup
+then uses O(log N) binary-search comparisons instead of scanning N rows.
+Total work also includes the MPS sorts, whose algorithm and complexity depend
+on the PyTorch backend, and linear pair compaction. The logical count remains
+on the MPS device.
 """
 
 from __future__ import annotations
@@ -27,6 +28,15 @@ _GROUP_SIZE = 256
 # needs several temporary/padded tensors, so the device allocator may reject
 # large requests well before this dispatch limit.
 _MAX_SLOTS = 2**32 - 2
+
+# PyTorch 2.7's MPS stable argsort can lose the ordering of nearby large
+# int32 values. Sorting signed high and unsigned low 16-bit chunks separately
+# keeps every sort key exactly representable even on that backend. Later
+# versions use the faster full-width path, verified by the boundary tests.
+_TORCH_MAJOR_MINOR = tuple(
+    int(part) for part in torch.__version__.split("+", 1)[0].split(".")[:2]
+)
+_SPLIT_INT32_SORT = _TORCH_MAJOR_MINOR < (2, 8)
 
 
 @dataclass(frozen=True)
@@ -110,14 +120,25 @@ def generate_subm_rulebook_mps(
         )
 
     # Stable sorts from the last coordinate field to the first produce a
-    # lexicographic row permutation. The input is a snapshot, and sorting
-    # only row IDs leaves both the output order and source row IDs unchanged.
+    # lexicographic row permutation. For PyTorch 2.7 MPS, stable-sort 16-bit
+    # chunks (low unsigned, then high signed) so nearby int32 extremes cannot
+    # collapse to one float32 key inside the backend. The signed high chunk
+    # preserves the order of negative as well as nonnegative coordinates.
+    # Sorting only row IDs leaves output order and source row IDs unchanged.
     sorted_rows = torch.arange(rows, dtype=torch.int64, device=device)
     for axis in (3, 2, 1, 0):
         axis_values = stable_indices.index_select(0, sorted_rows)[:, axis]
-        sorted_rows = sorted_rows.index_select(
-            0, torch.argsort(axis_values, stable=True)
-        )
+        if _SPLIT_INT32_SORT:
+            low_order = torch.argsort(axis_values & 0xFFFF, stable=True)
+            sorted_rows = sorted_rows.index_select(0, low_order)
+            high_values = stable_indices.index_select(0, sorted_rows)[:, axis] >> 16
+            sorted_rows = sorted_rows.index_select(
+                0, torch.argsort(high_values, stable=True)
+            )
+        else:
+            sorted_rows = sorted_rows.index_select(
+                0, torch.argsort(axis_values, stable=True)
+            )
 
     dense_sources = torch.empty((slots,), dtype=torch.int64, device=device)
     valid_offset = torch.empty((slots,), dtype=torch.int32, device=device)

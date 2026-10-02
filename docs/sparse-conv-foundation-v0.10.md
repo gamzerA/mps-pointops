@@ -106,7 +106,10 @@ practical inputs earlier. These are private implementation limits, not
 `spconv` limits.
 
 1. Four stable MPS sorts of row IDs, from the last coordinate field to the
-   first, produce a lexicographic index. A Metal thread for each
+   first, produce a lexicographic index on current PyTorch. PyTorch 2.7 MPS
+   instead uses eight stable 16-bit chunk sorts, because full-width `int32`
+   sorting did not preserve nearby values at the upper bound in CI. A Metal
+   thread for each
    `(kernel_offset, output_row)` computes the target and binary-searches that
    index. Lookup needs `O(log N)` comparisons per target; the previous
    prototype scanned all `N` rows, taking `O(kernel_volume * N²)` lookup
