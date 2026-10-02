@@ -1,0 +1,74 @@
+{
+  "schema": "mps-pointops-spatial-radius-overflow-diagnostic-v1",
+  "utc": "2026-10-02T16:17:15.694778+00:00",
+  "matrix": "m5",
+  "case": "cluster-sparse-n1m-q4096-r0p03-safe",
+  "legacy_record": "bench/results/spatial-radius-dispatch-v090-m5pro-clean/cluster-sparse-n1m-q4096-r0p03-safe.json",
+  "legacy_record_sha256": "4d407ecc85069028fb9070ba46b280e1ebeae86b0a542bd23ceb55d5064b244a",
+  "legacy_source_commit": "62fcc0f295e127be47a475fbc122d4de686b4c58",
+  "source_commit": "4bfcb9192c468f0928842a7332fa84bde465e29c",
+  "source_dirty": false,
+  "source_sha256": {
+    "bench/probe_spatial_radius_fallback.py": "7a93e1c8678f91776468cb552fec8686b7bd3490c7d1948edfb21d503bfabcfb",
+    "bench/bench_spatial_bvh.py": "241de2b5972612242533ecae4ad24f49f1cfa96e9094af933b3015a4f51dc667",
+    "bench/bench_spatial_radius_dispatch.py": "d611e4e6d7dea1dca53e25d45df9c63ebb8ffa30b78dc1dec9948c92651f41f6",
+    "mps_pointops/spatial.py": "804756afa02c16bc89127a8e541a3b985e549be2502dadb44833d07406993a02",
+    "mps_pointops/_spatial_bvh.py": "c5aa3761b30ad0d42c4f5d16faafd400c61092075661beea48e7f7a9de9420a0",
+    "mps_pointops/_spatial_keys.py": "971b4c67681f52a052b99a4e875d0a201d6314d8a7429acb73722a9ffc022764",
+    "mps_pointops/_ball_query_mps.py": "d2fb88bc22ed80bcea9a17906427192777fe468b6875a5beb2cb2ff4add3e8b6",
+    "mps_pointops/ops.py": "6e3d01426a43286ece66941571bbae3e0489e81cf3090cbcf087121af6e3d1b0",
+    "mps_pointops/kernels/spatial_bvh.metal": "e466dd2880136a504106c8fba7e303117a9f2cdd4924dbf5bb3f636f9875c345",
+    "mps_pointops/kernels/spatial_keys.metal": "e26bc20df349611bc7502aa7038e5692d434286600e4f454a6d273e1b6b7a8bf",
+    "mps_pointops/kernels/ball_query.metal": "2856fa046cbbafb71ec0cd688f071c7dc5d2280e9f04d00471241e24d6f85ba3"
+  },
+  "hardware": "Apple M5 Pro",
+  "physical_ram_bytes": 51539607552,
+  "macos": "26.5.2",
+  "platform": "macOS-26.5.2-arm64-arm-64bit",
+  "python": "3.12.13",
+  "torch": "2.14.1",
+  "numpy": "2.5.3",
+  "mps_fast_math": "0",
+  "mps_fallback": "0",
+  "fixture": {
+    "distribution": "cluster-sparse",
+    "points": 1000000,
+    "queries": 4096,
+    "limit": 16,
+    "radius_python_float_repr": "0.03",
+    "radius_float32": 0.029999999329447746,
+    "radius_squared_float32": 0.0008999999845400453,
+    "extent": 1024.0,
+    "cell_size": 0.015625,
+    "seed": 20261002,
+    "query_source": "independent",
+    "cluster_fraction": 0.9,
+    "cluster_side": 1.0,
+    "cluster_queries": 2048,
+    "background_queries": 2048
+  },
+  "input_sha256": {
+    "points_float32_xyz": "c60cfa2ae50a5d772677e1a6406ab3903f2724fc9db94b6de2d9f6e223939cd8",
+    "query_float32_xyz": "520d56a99f15cb49b66746ca07f418e5a309afa21ed9b35e087feb440922faee"
+  },
+  "scope": "one untimed private BVH radius query and one untimed native Metal scan; no latency claim",
+  "bvh_stack_fallback": {
+    "rows": 0,
+    "row_indices": [],
+    "query_count": 4096,
+    "fraction": 0.0
+  },
+  "parity": {
+    "index_mismatches": 0,
+    "squared_distance_bit_mismatches": 0,
+    "original_index_order_violations": 0,
+    "row_counts_match_legacy": true
+  },
+  "row_counts": {
+    "zero_neighbor_rows": 2048,
+    "partially_filled_rows": 0,
+    "first_k_full_rows": 2048,
+    "total_valid_slots": 32768
+  },
+  "status": "pass"
+}
