@@ -1,8 +1,8 @@
 # Experimental sparse convolution coordinate oracle (v0.10 groundwork)
 
 Status: **CPU rulebook, private bounded CPU stride/inverse reference,
-experimental Metal SubM forward and first-order backward, and a sorted MPS
-rulebook construction prototype.** These private modules are not exported by
+experimental Metal SubM forward and first-order backward with an integrated
+sorted MPS rulebook path.** These private modules are not exported by
 `mps_pointops` and are not an `spconv` replacement. The v0.10 release gate
 remains open. The [CPU stride/inverse contract](sparse-conv-stride-inverse-cpu.md)
 documents the new reference and its remaining gaps.
@@ -53,10 +53,12 @@ the input. The prototype restricts SubM to odd kernels, unit stride, and
 implicit center padding. Its source position is
 `output_position + (offset - floor(kernel_size/2))*dilation`.
 
-The convolution wrapper's rulebook is generated and sorted into output CSR on
-the CPU. The optional private `subm_conv3d_forward_mps(indices, features, weights, spatial_shape,
-batch_size, dilation=1, bias=None)` transfers that CSR to MPS and uses one
-Metal writer per output scalar to gather and reduce features. Coordinates are
+The private `subm_conv3d_forward_mps(indices, features, weights, spatial_shape,
+batch_size, dilation=1, bias=None, rulebook_backend="mps")` validates its CPU
+coordinates, transfers them to MPS, constructs the sorted rulebook there,
+and uses one Metal writer per output scalar to gather and reduce features.
+`rulebook_backend="cpu"` retains CPU rulebook construction and CSR transfer as
+a reference and small-input comparison path. Coordinates are
 CPU int32 `[N,4]`; features and weights are MPS float32 `[N,Cin]` and
 `[Cout,Cin,K0,K1,K2]`, with optional MPS float32 bias `[Cout]`. The output
 is MPS float32 `[N,Cout]` in input coordinate row order. The weight layout is
@@ -75,19 +77,26 @@ dW[d,c,k]   = sum_{(k,i,o)} G[o,d] * X[i,c]
 db[d]       = sum_o G[o,d]
 ```
 
-The implementation groups pairs by kernel offset, gathers the corresponding
-source features and output gradients, computes matrix products for each
-weight slice, and uses native MPS `index_add_` for feature gradients. Bias is
+The default MPS path uses the GPU-resident output CSR in reverse: for odd
+centered kernels, `(k,i,o)` has a reverse pair `(V-1-k,o,i)`, where `V` is
+kernel volume. One Metal thread owns each `dX[i,c]` and visits the reverse
+output CSR, so no float atomics are needed. The GPU rulebook also provides an
+offset-major `offset_ptr`; one thread owns each `dW[d,c,k]` and reduces its
+valid pair range without reading `pair_count` on the host. The CPU baseline
+continues to group pairs by kernel offset, use matrix products for `dW`, and
+use native MPS `index_add_` for `dX`. Bias is
 added once per output, including outputs with no active input pairs. Empty
 input returns empty output and zero first-order weight/bias gradients. The
 integer pair mapping and output coordinate row order are exact; floating-point
-gradient bits are **not** claimed to match dense CPU `Conv3d` because MPS
-matrix reduction and `index_add_` accumulation order can differ, especially
-when one input contributes to several outputs. Tests use `rtol=1e-4,
-atol=1e-5` for float32 forward and backward. The Metal shader's forward
-uses explicit FMA and Safe math, while `PYTORCH_MPS_FAST_MATH` controls the
-PyTorch backward operations in separate processes. Higher-order gradients,
-coordinate gradients, integrated GPU rulebook construction, Metal
+gradient bits are **not** claimed to match dense CPU `Conv3d` because its
+reduction order can differ from Metal FMA; the optional CPU baseline's MPS
+matrix reductions and `index_add_` can also differ. Tests use `rtol=1e-4,
+atol=1e-5` for float32 forward and backward. The Metal forward and GPU
+`dX`/`dW` shaders use explicit FMA and Safe math. `PYTORCH_MPS_FAST_MATH`
+controls the remaining native PyTorch operations, including bias reduction
+and the optional CPU-rulebook baseline backward, in separate processes.
+Higher-order gradients,
+coordinate gradients, GPU-side coordinate validation, Metal
 strided/inverse/transpose convolution, and source-compatible `spconv` APIs
 remain unsupported. The CPU stride/inverse reference has separate tests and
 limits described [here](sparse-conv-stride-inverse-cpu.md).
@@ -129,15 +138,15 @@ practical inputs earlier. These are private implementation limits, not
    every unused element with `-1`. Reading the count on CPU would synchronize,
    but construction and CSR consumption do not require such a readback.
 
-No public SubM API is exported. The callable private
-`subm_conv3d_forward_mps` still uses the CPU-generated rulebook; the sorted
-builder is not integrated into that convolution wrapper. A test feeds the
-GPU-generated CSR directly to its Metal forward
-shader without an intermediate queue synchronization or host readback, then
-compares its floating-point output with dense CPU `Conv3d`. GPU input
-validation, backward consumption of GPU-only pair metadata, full-wrapper
-performance proof, and upstream parity are still
-required before replacing that path or making a compatibility claim.
+No public SubM API is exported. The private wrapper now consumes the
+GPU-generated CSR and GPU offset-major pair metadata in both forward and
+first-order backward. The pair count stays on MPS; queue ordering carries
+rulebook writes to the convolution and gradient kernels without an explicit
+intermediate synchronization. CPU coordinate validation remains mandatory
+because the GPU builder does not reject duplicate or out-of-range inputs.
+The output-coordinate row order is unchanged. The `rulebook_backend="cpu"`
+baseline remains available for a direct full-wrapper comparison. Upstream
+`spconv` parity and a model-level result remain separate release gates.
 
 ## Reproducible local check
 
@@ -161,8 +170,16 @@ cap, and int32 coordinate/dilation boundaries. The [M5 Pro evidence](evidence/su
 contains the tested source hash, synchronized 1,024/10,000-row timings, and
 [Safe](evidence/subm-scalable-m5pro-2026-10-02/pytest-safe.log) and
 [Fast](evidence/subm-scalable-m5pro-2026-10-02/pytest-fast.log) raw pytest logs.
-Direct `spconv` runtime parity has **not** been run because it is not installed
-in this environment.
+The [integrated wrapper evidence](evidence/subm-integrated-m5pro-2026-10-02/README.md)
+adds source-pinned full forward/backward measurements and raw logs: Safe and
+Fast each passed **60 tests**, including 1,025/10,000-row end-to-end
+CPU-rulebook versus MPS-rulebook output and first-gradient parity. The
+M5 Pro 20-repeat synchronized medians for 10,000 randomly selected rows were
+6.288 ms forward and 2.553 ms backward on the MPS rulebook path in Safe mode,
+versus 128.186 ms and 4.737 ms for CPU rulebook construction and transfer.
+These private-case timings do not establish upstream `spconv` performance.
+Direct `spconv` runtime parity has **not** been run on this M5 Pro host because
+`spconv` is not installed here.
 
 Before the sorted builder, the 1,024-row quadratic prototype was independently
 run on a physical Apple M1 (8 GiB, macOS 26.5.2, PyTorch 2.14.1) with MPS CPU
@@ -177,11 +194,9 @@ convolution wrapper or upstream `spconv` parity.
    2.x CPU and CUDA runs, including its output-order mapping and weight layout.
 2. Specify duplicate-input handling, empty outputs, missing cells, and
    `indice_key` reuse against upstream behavior instead of assuming parity.
-3. Integrate the sorted GPU rulebook into the forward and backward paths
-   without a host pair-count readback, validate its practical memory and
-   scaling limits, and profile the full convolution call against the CPU
-   rulebook path. Implement strided and inverse Metal forward/backward and a
-   separate transpose path.
+3. Profile the integrated SubM path across dense and sparse large clouds and
+   older Apple Silicon devices, including device-memory peaks. Implement
+   strided and inverse Metal forward/backward and a separate transpose path.
 4. Verify at least one pinned sparse 3D backbone end to end on supported
    Apple Silicon hardware. The physical M1 test above covers only small
    operator fixtures, not a backbone or large-cloud workload.
