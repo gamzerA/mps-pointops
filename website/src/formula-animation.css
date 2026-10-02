@@ -1,0 +1,328 @@
+.morton-formula-explainer {
+  min-width: 0;
+  margin-top: 1rem;
+  padding: 1.1rem 1rem 1rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.morton-formula-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: .95rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.morton-formula-equation {
+  margin-top: .5rem;
+  color: var(--ink);
+  font: 570 .82rem/2.05 var(--font-mono);
+  overflow-wrap: anywhere;
+}
+.morton-formula-equation .math-sum { display: inline-block; margin-inline: .1em; font-size: 1.12em; vertical-align: middle; }
+.morton-formula-equation sub,
+.morton-formula-equation sup,
+.morton-formula-expression sup,
+.morton-formula-group-value sub,
+.morton-formula-group-value sup { position: relative; font-size: .67em; line-height: 0; }
+.morton-formula-bit-rule {
+  margin-top: .2rem;
+  padding: .32rem .35rem;
+  color: var(--ink);
+  font: 550 .76rem/1.6 var(--font-mono);
+}
+
+.morton-formula-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: .65rem;
+  margin-top: .95rem;
+}
+
+.morton-formula-bit-control {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  min-width: 0;
+}
+
+.morton-formula-select-label {
+  display: flex;
+  flex: 1 1 9rem;
+  flex-direction: column;
+  gap: .28rem;
+  min-width: 0;
+}
+
+.morton-formula-control-text,
+.morton-formula-input-range,
+.morton-formula-group-label,
+.morton-formula-total-label {
+  color: var(--muted);
+  font: 600 .66rem/1.45 var(--font-mono);
+  letter-spacing: .02em;
+}
+
+.morton-formula-select,
+.morton-formula-play {
+  min-height: 2.3rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  background: var(--surface-raised);
+  color: var(--ink);
+  font: 550 .72rem/1.3 var(--font-mono);
+}
+
+.morton-formula-select { width: 100%; padding: .4rem .5rem; }
+.morton-formula-bit-input { font-variant-numeric: tabular-nums; text-align: center; }
+.morton-formula-play { flex: 0 1 auto; padding: .4rem .65rem; cursor: pointer; }
+.morton-formula-play:disabled { cursor: default; }
+
+.morton-formula-terms {
+  display: grid;
+  gap: .2rem;
+  margin-top: .65rem;
+}
+.morton-formula-progress { min-height: 1.5rem; margin-top: .6rem; color: var(--accent-ink); font-size: .75rem; line-height: 1.5; overflow-wrap: anywhere; }
+
+.morton-formula-term-row {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) minmax(3.7rem, auto);
+  align-items: baseline;
+  gap: .4rem;
+  padding: .42rem .35rem;
+  border-bottom: 1px solid var(--line);
+  font: 500 .79rem/1.45 var(--font-mono);
+}
+
+.morton-formula-axis { font-weight: 700; color: var(--accent-ink); }
+.morton-formula-axis-y .morton-formula-axis,
+.morton-formula-bit.morton-formula-axis-y { color: var(--secondary); }
+.morton-formula-axis-z .morton-formula-axis,
+.morton-formula-bit.morton-formula-axis-z { color: var(--ink); }
+.morton-formula-expression { font: inherit; white-space: nowrap; }
+.morton-formula-value { min-width: 0; font-size: inherit; font-weight: 650; text-align: right; overflow-wrap: anywhere; }
+.morton-formula-explainer[data-playing="true"] .morton-formula-term-row,
+.morton-formula-explainer[data-playing="true"] .morton-formula-bit-rule,
+.morton-formula-explainer[data-playing="true"] .morton-formula-group,
+.morton-formula-explainer[data-playing="true"] .morton-formula-total { opacity: .25; }
+.morton-formula-explainer[data-playing="true"] [data-revealed="true"] { opacity: 1; background: var(--accent-soft); }
+
+.morton-formula-group {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: .3rem .7rem;
+  margin-top: .9rem;
+  padding: .55rem .35rem;
+  border-block: 1px solid var(--line-strong);
+}
+.morton-formula-group-label { grid-column: 1 / -1; }
+.morton-formula-group-bits { display: flex; gap: .22rem; }
+.morton-formula-bit {
+  display: grid;
+  width: 1.65rem;
+  height: 1.65rem;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-raised);
+  font: 700 .8rem/1 var(--font-mono);
+}
+.morton-formula-group-value { align-self: center; color: var(--ink); font: 650 .78rem/1.3 var(--font-mono); overflow-wrap: anywhere; }
+.morton-formula-total { display: grid; gap: .27rem; margin-top: .8rem; }
+.morton-formula-total-expression { color: var(--ink); font: 500 .78rem/1.6 var(--font-mono); overflow-wrap: anywhere; }
+.morton-formula-note,
+.morton-formula-exact { margin: .6rem 0 0; color: var(--muted); font-size: .67rem; line-height: 1.55; }
+.morton-formula-exact { margin-top: .25rem; }
+
+@media (max-width: 390px) {
+  .morton-formula-explainer { padding-inline: .72rem; }
+  .morton-formula-equation { font-size: .74rem; }
+  .morton-formula-term-row { grid-template-columns: 2.6rem minmax(0, 1fr); }
+  .morton-formula-value { grid-column: 2; justify-self: end; }
+  .morton-formula-group { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .morton-formula-explainer *,
+  .morton-formula-explainer *::before,
+  .morton-formula-explainer *::after {
+    scroll-behavior: auto;
+  }
+}
+
+.operator-derivation {
+  min-width: 0;
+  margin-top: .8rem;
+  padding: .8rem .9rem;
+  border: 1px solid var(--line-strong);
+  background: #101b20;
+}
+.operator-derivation-title {
+  margin: 0 0 .5rem;
+  color: var(--ink);
+  font-size: .87rem;
+  font-weight: 680;
+  line-height: 1.3;
+}
+.operator-derivation-stages {
+  display: flex;
+  gap: .25rem;
+  max-width: 100%;
+  padding-bottom: .25rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.operator-stage-option {
+  flex: 0 0 auto;
+  padding: .28rem .45rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font: 620 .65rem/1.35 var(--font-mono);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.operator-stage-option[aria-pressed="true"] {
+  border-bottom-color: var(--obs-cyan);
+  color: var(--obs-cyan);
+}
+.operator-derivation-display {
+  min-width: 0;
+  min-height: 7.8rem;
+  padding: .58rem 0 .38rem;
+}
+.operator-derivation-current {
+  display: block;
+  margin-bottom: .25rem;
+  color: var(--obs-amber);
+  font: 650 .65rem/1.3 var(--font-mono);
+}
+.operator-derivation-formula {
+  display: grid;
+  gap: .2rem;
+  min-width: 0;
+  color: var(--ink);
+  font: 570 .88rem/1.9 var(--font-mono);
+  overflow-wrap: anywhere;
+}
+.operator-derivation-formula > span { display: block; }
+.operator-derivation-formula sub,
+.operator-derivation-formula sup { position: relative; font-size: .67em; line-height: 0; }
+.operator-derivation-formula .math-sum,
+.operator-derivation-formula .math-min {
+  display: inline-block;
+  margin-inline: .12em;
+  vertical-align: middle;
+  font-size: 1.12em;
+}
+.operator-derivation-note {
+  max-width: 76ch;
+  margin: .45rem 0 0;
+  color: var(--muted);
+  font-size: .69rem;
+  line-height: 1.5;
+}
+.operator-derivation-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .35rem;
+  margin-top: .35rem;
+}
+.operator-derivation-controls button {
+  min-height: 2rem;
+  padding: .24rem .48rem;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-raised);
+  color: var(--ink);
+  font: 600 .65rem/1.3 var(--font-mono);
+  cursor: pointer;
+}
+.operator-derivation-controls button:disabled { opacity: .45; cursor: default; }
+.operator-derivation-progress {
+  margin-left: auto;
+  color: var(--muted);
+  font: 590 .65rem/1.4 var(--font-mono);
+}
+.operator-derivation :is(button):focus-visible { outline: 2px solid var(--obs-cyan); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .operator-stage-option:not([aria-pressed="true"]):hover { color: var(--ink); }
+  .operator-derivation-controls button:not(:disabled):hover { background: #1b3439; }
+}
+@media (max-width: 390px) {
+  .operator-derivation { padding-inline: .65rem; }
+  .operator-derivation-formula { font-size: .77rem; line-height: 2; }
+  .operator-derivation-controls { gap: .27rem; }
+  .operator-derivation-controls button { padding-inline: .36rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .operator-derivation-display { scroll-behavior: auto; }
+}
+
+/* The derivation shows one causal step at a time; the full identity stays visible. */
+.morton-formula-explainer { padding: .8rem .8rem .65rem; }
+.morton-formula-equation { margin-top: .45rem; font-size: .82rem; line-height: 1.8; }
+.morton-formula-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .14rem;
+  align-items: center;
+  margin-top: .38rem;
+}
+.morton-formula-select-label {
+  display: inline-flex;
+  flex: none;
+  flex-direction: row;
+  align-items: center;
+  gap: .3rem;
+  min-width: 0;
+}
+.morton-formula-control-text { white-space: nowrap; }
+.morton-formula-input-range { white-space: nowrap; }
+.morton-formula-select {
+  width: 4rem;
+  min-height: 1.65rem;
+  padding: .12rem .25rem;
+  font-size: .62rem;
+}
+.morton-formula-controls button {
+  min-height: 1.65rem;
+  padding: .18rem .35rem;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: 600 .61rem/1.3 var(--font-mono);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.morton-formula-controls .morton-formula-play { margin-left: auto; color: var(--obs-cyan); }
+.morton-formula-controls button:disabled { opacity: .45; cursor: default; }
+.morton-formula-progress {
+  min-height: 0;
+  margin: .45rem 0 .2rem;
+  color: var(--obs-amber);
+  font: 640 .65rem/1.35 var(--font-mono);
+}
+.morton-formula-stage {
+  display: grid;
+  align-content: center;
+  gap: .14rem;
+  min-height: 5rem;
+  padding: .45rem .55rem;
+  background: var(--surface-raised);
+  color: var(--ink);
+  font: 570 .72rem/1.65 var(--font-mono);
+  overflow-wrap: anywhere;
+}
+.morton-formula-stage > span { display: block; }
+.morton-formula-stage sub,
+.morton-formula-stage sup { position: relative; font-size: .68em; line-height: 0; }
+.morton-formula-stage[data-stage="3"] { color: var(--obs-cyan); font-size: .8rem; }
+.morton-formula-exact { margin-top: .38rem; font-size: .63rem; line-height: 1.45; }
+.morton-formula-explainer :is(button, input):focus-visible { outline: 2px solid var(--obs-cyan); outline-offset: 2px; }
+@media (max-width: 490px) {
+  .morton-formula-controls .morton-formula-play { margin-left: 0; }
+}

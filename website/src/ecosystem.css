@@ -1,0 +1,344 @@
+/* The ecosystem view has two directly selectable reading panels. */
+#capabilities {
+  padding-block: clamp(1.15rem, 2vw, 1.8rem) 0;
+  border-top: 0;
+}
+#capabilities .section-heading {
+  margin-bottom: .8rem;
+}
+#capabilities .section-heading h1 {
+  max-width: none;
+  font-size: clamp(1.55rem, 2.3vw, 2.25rem);
+}
+#capabilities .section-heading p {
+  margin-top: .3rem;
+  font-size: .78rem;
+}
+.ecosystem-switch {
+  display: flex;
+  gap: .4rem;
+  margin-bottom: .75rem;
+  padding-bottom: .75rem;
+  border-bottom: 1px solid var(--line-strong);
+}
+.ecosystem-switch button {
+  display: grid;
+  align-content: center;
+  gap: .12rem;
+  min-width: 11rem;
+  min-height: 51px;
+  padding: .55rem .85rem;
+  border: 0;
+  background: var(--surface);
+  color: var(--muted);
+  text-align: left;
+}
+.ecosystem-switch button strong {
+  color: inherit;
+  font-size: .82rem;
+  line-height: 1.2;
+}
+.ecosystem-switch button small {
+  color: var(--subtle);
+  font: 570 .61rem/1.25 var(--font-mono);
+}
+.ecosystem-switch button:hover,
+.ecosystem-switch button[aria-pressed="true"] {
+  background: #173238;
+  color: var(--obs-cyan);
+}
+#content[data-ecosystem-panel="capabilities"] #phases,
+#content[data-ecosystem-panel="phases"] #capability-map {
+  display: none !important;
+}
+
+/* More of each model's evidence is visible beside the six choices. */
+#capabilities .capability-map {
+  grid-template-columns: minmax(185px, .55fr) minmax(0, 1.45fr);
+  gap: .75rem 1.5rem;
+  border-top: 0;
+}
+#capabilities .capability-source { padding-block: .3rem; border-bottom: 0; }
+#capabilities .capability-list { gap: .25rem; }
+#capabilities .capability-option {
+  min-height: 52px;
+  padding: .5rem .65rem;
+  border: 0;
+  background: var(--surface);
+}
+#capabilities .capability-option:hover,
+#capabilities .capability-option[aria-pressed="true"] {
+  border: 0;
+  background: #173238;
+}
+#capabilities .capability-option-name { font-size: .8rem; }
+#capabilities .capability-option-status,
+#capabilities .capability-option-validation { font-size: .58rem; }
+#capabilities .capability-detail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: .6rem 1.1rem;
+  padding: .3rem 0 1rem;
+}
+#capabilities .capability-detail-header,
+#capabilities .capability-release-scope,
+#capabilities .capability-facts { grid-column: 1 / -1; }
+#capabilities .capability-detail-header { padding-bottom: .25rem; border-bottom: 0; }
+#capabilities .capability-detail h3 { font-size: 1.28rem; }
+#capabilities .capability-release-scope { margin-top: 0; }
+#capabilities .capability-functions,
+#capabilities .capability-fixture,
+#capabilities .capability-limitations { margin-top: 0; padding-top: .25rem; border-top: 0; }
+#capabilities .capability-function-list { margin-top: .35rem; }
+#capabilities .capability-function-list li { border: 0; background: #17252b; }
+#capabilities .capability-facts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .6rem;
+  margin-top: 0;
+}
+#capabilities .capability-facts > * { padding: .3rem 0 0; border-top: 0; }
+#capabilities .capability-evidence {
+  grid-column: 2;
+  align-content: start;
+  margin-top: 0;
+  padding-top: .25rem;
+  border-top: 0;
+}
+#capabilities .capability-detail p,
+#capabilities .capability-detail li { font-size: .74rem; line-height: 1.45; }
+
+/* Five phases fit beside the scene without scroll-triggered progression. */
+#phases {
+  padding-block: .5rem 1.5rem;
+  border-top: 0;
+  scroll-margin-top: 15rem;
+}
+#phases .section-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: .45rem;
+}
+#phases .section-heading > div { display: flex; align-items: baseline; gap: 1rem; min-width: 0; }
+#phases .section-heading h2 { max-width: none; font-size: 1.08rem; white-space: nowrap; }
+#phases .section-heading p {
+  overflow: hidden;
+  margin-top: 0;
+  font-size: .68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#phases .phase-story {
+  grid-template-columns: minmax(0, 1.3fr) minmax(250px, .7fr);
+  gap: clamp(1rem, 2.5vw, 2.5rem);
+}
+#phases .story-sticky { position: static; }
+#phases .phase-figure { min-height: 0; border: 0; }
+#phases .story-figure-top { border-bottom: 0; }
+#phases .phase-figure svg {
+  height: clamp(245px, 39svh, 280px);
+  min-height: 0;
+}
+#phases .phase-caption { gap: .15rem; padding-block: .6rem; border-top: 0; }
+#phases .phase-caption strong { font-size: 1.05rem; }
+#phases .phase-steps button {
+  min-height: 0;
+  padding: .55rem .75rem;
+  border: 0;
+  background: var(--surface);
+}
+#phases .phase-steps { gap: .25rem; }
+#phases .phase-steps button:hover,
+#phases .phase-steps button[aria-current="step"] { border: 0; background: #173238; }
+#phases .phase-steps button span { font-size: .6rem; }
+#phases .phase-steps button strong { margin-top: .2rem; font-size: .87rem; }
+#phases .phase-steps button small { margin-top: .15rem; font-size: .65rem; }
+
+/* The diagram explains each operation only while the Compute stack is visible. */
+#phases { --ease-in-out: cubic-bezier(.77, 0, .175, 1); }
+#phases .phase-feature-packet,
+#phases .phase-edge-packet { fill: var(--obs-cyan); opacity: 0; }
+#phases .phase-radius,
+#phases .phase-point-selected,
+#phases .phase-query { transform-box: fill-box; transform-origin: center; }
+#phases .phase-sample-0 { --phase-delay: 0s; }
+#phases .phase-sample-1 { --phase-delay: .4s; }
+#phases .phase-sample-2 { --phase-delay: .8s; }
+#phases .phase-packet-0 { --phase-delay: 0s; }
+#phases .phase-packet-1 { --phase-delay: .35s; }
+#phases .phase-packet-2 { --phase-delay: .7s; }
+#phases .phase-packet-3 { --phase-delay: 1.05s; }
+#phases .phase-packet-4 { --phase-delay: 1.4s; }
+#phases .phase-packet-5 { --phase-delay: 1.75s; }
+#phases .phase-feature-packet.phase-packet-0 { --phase-y: -16px; }
+#phases .phase-feature-packet.phase-packet-1 { --phase-y: -28px; }
+#phases .phase-feature-packet.phase-packet-2 { --phase-y: -24px; }
+#phases .phase-feature-packet.phase-packet-3 { --phase-y: -20px; }
+#phases .phase-feature-packet.phase-packet-4 { --phase-y: -16px; }
+#phases .phase-feature-packet.phase-packet-5 { --phase-y: -28px; }
+#phases .phase-edge-packet.phase-packet-0 { --phase-x: 59px; --phase-y: 18px; }
+#phases .phase-edge-packet.phase-packet-1 { --phase-x: 56px; --phase-y: 31px; }
+#phases .phase-edge-packet.phase-packet-2 { --phase-x: 63px; --phase-y: -17px; }
+#phases .phase-edge-packet.phase-packet-3 { --phase-x: 64px; --phase-y: -17px; }
+#phases .phase-edge-packet.phase-packet-4 { --phase-x: 69px; --phase-y: -27px; }
+#phases .phase-edge-packet.phase-packet-5 { --phase-x: 59px; --phase-y: 24px; }
+#phases .phase-bound-0,
+#phases .phase-voxel-row-0 { --phase-delay: 0s; }
+#phases .phase-bound-1 { --phase-delay: .7s; }
+#phases .phase-bound-2 { --phase-delay: 1.4s; }
+#phases .phase-voxel-row-1 { --phase-delay: .12s; }
+#phases .phase-voxel-row-2 { --phase-delay: .24s; }
+#phases[data-phase-active="4"] .phase-voxel {
+  fill: none;
+  stroke-dasharray: 4 5;
+  opacity: .65;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  #phases[data-phase-motion="running"][data-phase-reveal="on"] .phase-diagram {
+    animation: phase-scene-enter 180ms var(--ease-out) both;
+  }
+  #phases[data-phase-motion="running"][data-phase-active="0"] .phase-radius {
+    animation: phase-neighborhood 3.4s var(--ease-in-out) infinite alternate;
+  }
+  #phases[data-phase-motion="running"][data-phase-active="0"] .phase-point-selected {
+    animation: phase-sample 2.7s var(--ease-in-out) var(--phase-delay, 0s) infinite alternate;
+  }
+  #phases[data-phase-motion="running"][data-phase-active="1"] .phase-feature-packet {
+    animation: phase-feature-transfer 2.5s linear var(--phase-delay) infinite;
+  }
+  #phases[data-phase-motion="running"][data-phase-active="2"] .phase-edge-packet {
+    animation: phase-edge-transfer 2.8s linear var(--phase-delay) infinite;
+  }
+  #phases[data-phase-motion="running"][data-phase-active="3"] .phase-bvh {
+    animation: phase-bound-search 3.5s var(--ease-in-out) var(--phase-delay) infinite;
+  }
+  #phases[data-phase-motion="running"][data-phase-active="3"] .phase-query {
+    animation: phase-query-focus 3.5s var(--ease-in-out) infinite;
+  }
+  /* A planned layout reveals once; it never shows data flowing through a kernel. */
+  #phases[data-phase-motion="running"][data-phase-active="4"][data-phase-reveal="on"] .phase-voxel {
+    animation: phase-plan-reveal 420ms var(--ease-out) var(--phase-delay) both;
+  }
+}
+
+@keyframes phase-scene-enter {
+  from { opacity: .82; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes phase-neighborhood {
+  from { opacity: .72; transform: scale(.97); }
+  to { opacity: 1; transform: scale(1.015); }
+}
+@keyframes phase-sample {
+  from { opacity: .72; transform: scale(1); }
+  to { opacity: 1; transform: scale(1.28); }
+}
+@keyframes phase-feature-transfer {
+  0%, 15% { opacity: 0; transform: translateY(0); }
+  35%, 75% { opacity: .8; }
+  100% { opacity: 0; transform: translateY(var(--phase-y)); }
+}
+@keyframes phase-edge-transfer {
+  0%, 12% { opacity: 0; transform: translate(0, 0); }
+  32%, 72% { opacity: .65; }
+  100% { opacity: 0; transform: translate(var(--phase-x), var(--phase-y)); }
+}
+@keyframes phase-bound-search {
+  0%, 100% { opacity: .45; }
+  42% { opacity: 1; }
+}
+@keyframes phase-query-focus {
+  0%, 100% { opacity: .75; transform: scale(.9); }
+  42% { opacity: 1; transform: scale(1.15); }
+}
+@keyframes phase-plan-reveal {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: .65; transform: translateY(0); }
+}
+
+@media (hover: none) {
+  .ecosystem-switch button:not([aria-pressed="true"]):hover {
+    background: var(--surface);
+    color: var(--muted);
+  }
+  #capabilities .capability-option:not([aria-pressed="true"]):hover,
+  #phases .phase-steps button:not([aria-current="step"]):hover {
+    background: var(--surface);
+  }
+}
+
+@media (min-width: 901px) and (max-height: 680px) {
+  #capabilities { padding-top: .7rem; }
+  #capabilities .section-heading { margin-bottom: .4rem; }
+  #capabilities .section-heading h1 { font-size: clamp(1.5rem, 2vw, 1.85rem); }
+  #capabilities .section-heading p { margin-top: .15rem; line-height: 1.35; }
+  .ecosystem-switch { margin-bottom: .45rem; padding-bottom: .45rem; }
+  .ecosystem-switch button { min-height: 43px; padding-block: .35rem; }
+
+  #phases { padding-block: .2rem .75rem; }
+  #phases .section-heading { margin-bottom: .3rem; }
+  #phases .section-heading h2 { font-size: 1rem; }
+  #phases .story-figure-top { padding: .4rem .8rem; }
+  #phases .phase-figure svg { height: clamp(205px, 36svh, 245px); }
+  #phases .phase-caption { gap: .08rem; padding-block: .35rem; }
+  #phases .phase-caption strong { font-size: .96rem; }
+  #phases .phase-caption p,
+  #phases .phase-caption small { line-height: 1.3; }
+  #phases .phase-steps { gap: .2rem; }
+  #phases .phase-steps button { min-height: 58px; padding: .35rem .65rem; }
+  #phases .phase-steps button strong { margin-top: .1rem; font-size: .82rem; }
+  #phases .phase-steps button small { margin-top: .05rem; font-size: .61rem; }
+}
+
+@media (max-width: 900px) {
+  #capabilities .capability-map { grid-template-columns: 1fr; }
+  #capabilities .capability-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #capabilities .capability-option { padding-inline: .55rem; }
+}
+@media (max-width: 760px) {
+  #phases { scroll-margin-top: 20rem; }
+  #phases .section-heading,
+  #phases .section-heading > div { display: block; }
+  #phases .section-heading p { margin-top: .25rem; white-space: normal; }
+  #phases .phase-story { display: flex; flex-direction: column-reverse; gap: .75rem; }
+  #phases .phase-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #phases .phase-steps button { min-height: 72px; }
+}
+@media (max-width: 560px) {
+  #phases .phase-edge-packet.phase-packet-0 { --phase-x: 34px; --phase-y: 26px; }
+  #phases .phase-edge-packet.phase-packet-1 { --phase-x: 33px; --phase-y: 46px; }
+  #phases .phase-edge-packet.phase-packet-2 { --phase-x: 36px; --phase-y: -25px; }
+  #phases .phase-edge-packet.phase-packet-3 { --phase-x: 37px; --phase-y: -25px; }
+  #phases .phase-edge-packet.phase-packet-4 { --phase-x: 40px; --phase-y: -40px; }
+  #phases .phase-edge-packet.phase-packet-5 { --phase-x: 34px; --phase-y: 35px; }
+  .ecosystem-switch button { min-width: 0; flex: 1; padding-inline: .55rem; }
+  #capabilities .section-heading p,
+  #phases .section-heading p {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  #capabilities .section-heading { margin-bottom: .55rem; }
+  #capabilities .capability-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #capabilities .capability-detail { grid-template-columns: 1fr; }
+  #capabilities .capability-functions,
+  #capabilities .capability-fixture,
+  #capabilities .capability-limitations,
+  #capabilities .capability-evidence { grid-column: 1; }
+  #capabilities .capability-facts { grid-template-columns: 1fr; }
+  #phases .phase-steps { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .2rem; }
+  #phases .phase-steps button { min-height: 48px; padding: .3rem .1rem; text-align: center; }
+  #phases .phase-steps button span { font-size: .53rem; }
+  #phases .phase-steps button strong,
+  #phases .phase-steps button small { display: none; }
+  #phases .phase-figure svg { height: min(62vw, 240px); }
+  #phases .phase-caption { margin-inline: .8rem; padding-block: .4rem; }
+}

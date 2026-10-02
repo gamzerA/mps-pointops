@@ -1,0 +1,65 @@
+name: Explainer site
+
+on:
+  pull_request:
+    paths:
+      - website/**
+      - .github/workflows/explainer-pages.yml
+  push:
+    branches: [main]
+    paths:
+      - website/**
+      - .github/workflows/explainer-pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Provenance tests read recorded source commits, not only HEAD.
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Verify explainer data and interactions
+        env:
+          MPS_POINTOPS_SOURCE_ROOT: ${{ github.workspace }}
+        run: npm test --prefix website
+      - name: Assemble static site
+        run: |
+          mkdir -p "$RUNNER_TEMP/explainer"
+          cp website/index.html "$RUNNER_TEMP/explainer/"
+          cp -R website/assets website/data website/evidence website/src "$RUNNER_TEMP/explainer/"
+          find "$RUNNER_TEMP/explainer/src" -name '*.test.js' -delete
+      - name: Upload GitHub Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ${{ runner.temp }}/explainer
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Deploy GitHub Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@v4

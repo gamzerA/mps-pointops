@@ -1,0 +1,505 @@
+/* One recorded fixture at a time; the other evidence stays visible beside it. */
+body:has(#content[data-current-view="measurements"]) {
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  overflow: hidden;
+}
+body:has(#content[data-current-view="measurements"]) .site-header { flex: none; }
+#content[data-current-view="measurements"] {
+  display: grid;
+  grid-template-columns: minmax(312px, .8fr) minmax(0, 1.25fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: clamp(.8rem, 2vw, 1.4rem) clamp(1rem, 2.6vw, 2.2rem);
+  width: min(var(--shell), calc(100% - 48px));
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  margin-inline: auto;
+  padding-block: clamp(.9rem, 2.4svh, 1.4rem) clamp(.75rem, 1.8svh, 1.15rem);
+  overflow: hidden;
+}
+body:has(#content[data-current-view="measurements"]) .site-footer { display: none; }
+#content[data-current-view="measurements"] > [data-site-view="measurements"] { min-width: 0; min-height: 0; }
+#content[data-current-view="measurements"] #trust { grid-column: 1; grid-row: 1; }
+#content[data-current-view="measurements"] #benchmarks { grid-column: 2; grid-row: 1 / 3; }
+#content[data-current-view="measurements"] #provenance { grid-column: 1; grid-row: 2; }
+
+.measurement-heading h1 {
+  margin-top: .18rem;
+  font-size: clamp(1.65rem, 2.5vw, 2.35rem);
+  letter-spacing: -.055em;
+}
+.measurement-heading p {
+  margin-top: .28rem;
+  color: var(--muted);
+  font-size: .76rem;
+  line-height: 1.45;
+}
+.measurement-status {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .42rem;
+  margin-top: clamp(.8rem, 2.3svh, 1.25rem);
+}
+.measurement-status-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 90px;
+  padding: .67rem .72rem .6rem;
+  border-radius: .18rem;
+  background: #111b20;
+}
+.measurement-status-item > span {
+  color: var(--obs-cyan);
+  font: 650 .61rem/1.25 var(--font-mono);
+  letter-spacing: .055em;
+}
+.measurement-status-item strong {
+  margin-top: auto;
+  color: var(--ink);
+  font: 620 clamp(1.3rem, 2.05vw, 1.8rem)/1.1 var(--font-mono);
+  letter-spacing: -.055em;
+}
+.measurement-status-item small {
+  margin-top: .26rem;
+  color: var(--muted);
+  font-size: .59rem;
+  line-height: 1.3;
+}
+.measurement-status-note {
+  max-width: 50ch;
+  margin-top: .58rem;
+  color: var(--subtle);
+  font-size: .67rem;
+  line-height: 1.45;
+}
+
+.measurement-chart-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: clamp(.85rem, 2vw, 1.3rem);
+  border-radius: .25rem;
+  background: #10191e;
+}
+.measurement-chart-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.measurement-chart-heading h2,
+.measurement-proof-heading h2 {
+  margin-top: .22rem;
+  font-size: clamp(1.18rem, 1.75vw, 1.55rem);
+  letter-spacing: -.045em;
+}
+.measurement-hardware-list {
+  display: inline-flex;
+  flex: none;
+  gap: .18rem;
+  padding: .18rem;
+  border-radius: .2rem;
+  background: #0b1418;
+}
+.measurement-hardware-button {
+  min-height: 31px;
+  padding: .28rem .58rem;
+  border: 0;
+  border-radius: .14rem;
+  background: transparent;
+  color: var(--muted);
+  font: 650 .65rem/1.25 var(--font-mono);
+  cursor: pointer;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+.measurement-hardware-button:hover { color: var(--ink); }
+.measurement-hardware-button[aria-pressed="true"] { background: #234148; color: var(--obs-cyan); }
+.measurement-hardware-button:focus-visible { outline: 2px solid var(--obs-cyan); outline-offset: 2px; }
+.measurement-record-picker { margin-top: clamp(.7rem, 1.8svh, 1rem); }
+.measurement-record-picker > #measurement-record-label {
+  display: block;
+  margin-bottom: .38rem;
+  color: var(--subtle);
+  font: 650 .62rem/1.3 var(--font-mono);
+  letter-spacing: .025em;
+}
+.measurement-record-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .4rem;
+}
+.measurement-record-list.is-six-records { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.measurement-record-list.is-six-records .measurement-record { grid-template-columns: minmax(0, 1fr); min-height: 52px; }
+.measurement-record-list.is-six-records .measurement-record-scope { display: none; }
+.measurement-record {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: center;
+  align-items: baseline;
+  gap: .14rem .36rem;
+  min-width: 0;
+  min-height: 59px;
+  padding: .42rem .56rem;
+  border: 1px solid #334750;
+  border-radius: .2rem;
+  background: #0b1418;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+.measurement-record:hover { background: #18262c; border-color: #6c9198; }
+.measurement-record[aria-pressed="true"] { background: #1b353b; border-color: var(--obs-cyan); }
+.measurement-record:focus-visible { outline: 2px solid var(--obs-cyan); outline-offset: 2px; }
+.measurement-record-title {
+  min-width: 0;
+  font: 660 .76rem/1.3 var(--font-sans);
+}
+.measurement-record-scope {
+  color: var(--obs-amber);
+  font: 650 .55rem/1.25 var(--font-mono);
+  white-space: nowrap;
+}
+.measurement-record-counts {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font: 600 .61rem/1.25 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.measurement-record[aria-pressed="true"] .measurement-record-counts { color: #c4d8d9; }
+#measurement-dashboard { display: flex; flex: 1; min-height: 0; }
+.measurement-figure {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  margin-top: clamp(.65rem, 1.5svh, .9rem);
+}
+.measurement-figure-caption {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .3rem .8rem;
+}
+.measurement-scope {
+  display: inline-flex;
+  align-items: center;
+  min-height: 23px;
+  padding: .25rem .48rem;
+  border-radius: .12rem;
+  background: #30271b;
+  color: var(--obs-amber);
+  font: 660 .59rem/1 var(--font-mono);
+}
+.measurement-figure-caption strong {
+  color: var(--ink);
+  font-size: .85rem;
+  font-weight: 630;
+}
+.measurement-fixture-context {
+  margin-top: .6rem;
+  color: var(--muted);
+  font-size: .69rem;
+  line-height: 1.45;
+}
+.measurement-bars {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(1rem, 3.4svh, 1.8rem);
+  min-height: max-content;
+  padding-block: .75rem;
+}
+.measurement-bar-row { min-width: 0; }
+.measurement-bar-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: .36rem;
+  color: var(--muted);
+  font-size: .77rem;
+  line-height: 1.35;
+}
+.measurement-bar-label span { min-width: 0; }
+.measurement-bar-label strong {
+  flex: none;
+  color: var(--ink);
+  font: 680 .85rem/1.25 var(--font-mono);
+  letter-spacing: -.035em;
+  font-variant-numeric: tabular-nums;
+}
+.measurement-bar-track {
+  position: relative;
+  height: 12px;
+  border-radius: 2px;
+  background: #203038;
+  overflow: hidden;
+}
+.measurement-bar-subpixel .measurement-bar-track::after {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--obs-cyan);
+  content: '';
+}
+.measurement-bar-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: #6c8790;
+  transform: scaleX(var(--bar-scale));
+  transform-origin: left center;
+  animation: measurement-bar-enter 420ms cubic-bezier(.22, 1, .36, 1) both;
+}
+.measurement-bar-ours .measurement-bar-fill { background: var(--obs-cyan); }
+.measurement-bar-auto .measurement-bar-fill { background: var(--obs-amber); }
+.measurement-bar-ours .measurement-bar-label strong { color: var(--obs-cyan); }
+.measurement-chart-note {
+  color: var(--subtle);
+  font-size: .68rem;
+  line-height: 1.5;
+}
+.measurement-chart-footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .45rem 1.25rem;
+  margin-top: .65rem;
+}
+.measurement-chart-footer a,
+.measurement-chart-footer button {
+  min-height: 32px;
+  padding: .3rem 0;
+  border: 0;
+  background: none;
+  color: var(--obs-cyan);
+  font: 650 .69rem/1.3 var(--font-sans);
+  text-decoration: none;
+}
+.measurement-chart-footer a:hover,
+.measurement-chart-footer button:hover { text-decoration: underline; }
+
+.measurement-provenance {
+  display: flex;
+  flex-direction: column;
+  padding-top: .25rem;
+}
+.measurement-source-list { display: grid; gap: .62rem; margin: clamp(.85rem, 2.3svh, 1.3rem) 0 0; }
+.measurement-source-list > div { display: flex; align-items: baseline; justify-content: space-between; gap: .8rem; }
+.measurement-source-list dt {
+  color: var(--subtle);
+  font-size: .69rem;
+  line-height: 1.35;
+}
+.measurement-source-list dd {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: .2rem .55rem;
+  min-width: 0;
+  margin: 0;
+  color: var(--ink);
+  font: 620 .68rem/1.35 var(--font-mono);
+  text-align: right;
+}
+.measurement-source-list a,
+.measurement-evidence a { color: var(--obs-cyan); text-decoration: none; }
+.measurement-source-list a:hover,
+.measurement-evidence a:hover { text-decoration: underline; }
+.measurement-source-list [data-measure-scope] { color: var(--obs-amber); font-size: .61rem; }
+.measurement-evidence {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .35rem .75rem;
+  margin-top: clamp(.7rem, 2.3svh, 1.25rem);
+  font-size: .67rem;
+}
+.measurement-evidence strong { font-weight: 620; }
+.measurement-evidence #test-links { display: flex; flex-wrap: wrap; gap: .25rem .75rem; }
+.measurement-memory { margin-top: .65rem; color: var(--subtle); font-size: .65rem; line-height: 1.45; }
+.measurement-memory[hidden] { display: none; }
+.measurement-memory a { color: var(--obs-cyan); text-decoration: none; white-space: nowrap; }
+.measurement-memory a:hover { text-decoration: underline; }
+.measurement-pending {
+  margin-top: clamp(.65rem, 2svh, 1rem);
+  color: var(--obs-amber);
+  font-size: .68rem;
+  line-height: 1.45;
+}
+.measurement-boundary {
+  max-width: 57ch;
+  margin-top: .38rem;
+  color: var(--subtle);
+  font-size: .65rem;
+  line-height: 1.45;
+}
+
+.measurement-detail-dialog {
+  width: min(690px, calc(100% - 28px));
+  max-height: calc(100dvh - 40px);
+  padding: clamp(1rem, 3vw, 1.6rem);
+  border: 1px solid var(--line-strong);
+  border-radius: .3rem;
+  background: #111a1f;
+  color: var(--ink);
+  box-shadow: 0 28px 80px #000a;
+  overflow: auto;
+}
+.measurement-detail-dialog::backdrop { background: #020507b9; backdrop-filter: blur(4px); }
+.measurement-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.measurement-detail-head h2 { font-size: 1.2rem; letter-spacing: -.035em; }
+.measurement-detail-head button {
+  min-width: 52px;
+  min-height: 36px;
+  border: 0;
+  border-radius: .15rem;
+  background: #25343b;
+  font-size: .72rem;
+}
+.measurement-detail-facts { display: grid; gap: .65rem; margin: 1.3rem 0; }
+.measurement-detail-fact { display: grid; grid-template-columns: minmax(150px, .35fr) minmax(0, .65fr); gap: .8rem; }
+.measurement-detail-fact dt { color: var(--subtle); font-size: .72rem; }
+.measurement-detail-fact dd { min-width: 0; margin: 0; font-size: .76rem; overflow-wrap: anywhere; }
+.measurement-detail-links { display: flex; flex-wrap: wrap; gap: .6rem 1.2rem; }
+.measurement-detail-links a { color: var(--obs-cyan); font-size: .73rem; }
+.measurement-detail-note { margin-top: 1.2rem; color: var(--obs-amber); font-size: .72rem; }
+
+@keyframes measurement-bar-enter {
+  from { transform: scaleX(0); opacity: .7; }
+  to { transform: scaleX(var(--bar-scale)); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .measurement-bar-fill { animation: none; }
+  .measurement-detail-dialog::backdrop { backdrop-filter: none; }
+}
+@media (min-width: 700px) and (max-width: 900px) {
+  #content[data-current-view="measurements"] {
+    grid-template-columns: minmax(245px, .76fr) minmax(0, 1.24fr);
+    gap: .7rem 1rem;
+  }
+  .measurement-chart-section { padding: .8rem; }
+  .measurement-chart-heading { align-items: stretch; flex-direction: column; gap: .45rem; }
+  .measurement-hardware-list { align-self: flex-start; }
+  .measurement-record { padding-inline: .42rem; }
+  .measurement-record-title { font-size: .7rem; }
+  .measurement-record-scope { font-size: .52rem; }
+  .measurement-figure { margin-top: .6rem; }
+  .measurement-bars { gap: .8rem; }
+  .measurement-status-item { padding-inline: .45rem; }
+  .measurement-heading .section-index,
+  .measurement-heading p,
+  .measurement-proof-heading .micro-label { display: none; }
+  .measurement-heading h1 { margin: 0; font-size: 1.45rem; }
+  .measurement-status { margin-top: .65rem; }
+  .measurement-status-item { min-height: 75px; }
+  .measurement-status-item strong { font-size: 1.25rem; }
+  .measurement-status-note { margin-top: .4rem; font-size: .62rem; }
+  .measurement-proof-heading h2 { margin: 0; font-size: 1.2rem; }
+  .measurement-source-list { gap: .38rem; margin-top: .6rem; }
+  .measurement-source-list > div { display: block; }
+  .measurement-source-list dd { justify-content: flex-start; font-size: .62rem; text-align: left; }
+  .measurement-evidence { margin-top: .6rem; }
+  .measurement-pending { margin-top: .4rem; font-size: .64rem; }
+  .measurement-boundary { margin-top: .3rem; font-size: .62rem; }
+}
+@media (min-width: 700px) and (max-width: 900px) and (max-height: 700px) {
+  .measurement-chart-section { padding: .65rem .8rem; }
+  .measurement-record-picker { margin-top: .4rem; }
+  .measurement-record-list.is-six-records .measurement-record {
+    min-height: 44px;
+    padding-block: .2rem;
+  }
+  .measurement-figure { margin-top: .4rem; }
+  .measurement-fixture-context { margin-top: .25rem; line-height: 1.25; }
+  .measurement-bars { flex: 0 0 auto; gap: .4rem; padding-block: .4rem; }
+  .measurement-bar-label { margin-bottom: .18rem; font-size: .7rem; }
+  .measurement-bar-track { height: 9px; }
+  .measurement-chart-note { line-height: 1.3; }
+  .measurement-chart-footer { margin-top: .25rem; }
+}
+@media (max-width: 699px), (max-height: 560px) {
+  #content[data-current-view="measurements"] {
+    display: flex;
+    flex-direction: column;
+    width: min(var(--shell), calc(100% - 30px));
+    height: auto;
+    min-height: 0;
+    padding-block: 1rem;
+    overflow: auto;
+  }
+  #content[data-current-view="measurements"] > [data-site-view="measurements"] {
+    flex-shrink: 0;
+    min-height: auto;
+  }
+  .measurement-chart-section { min-height: 0; }
+  #measurement-dashboard { display: block; flex: none; min-height: auto; }
+  .measurement-figure { display: block; flex: none; min-height: auto; margin-top: .8rem; }
+  .measurement-bars {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: stretch;
+    gap: 1rem;
+    padding-block: .9rem;
+  }
+}
+@media (max-width: 600px) {
+  #content[data-current-view="measurements"] { gap: .45rem; padding-block: .6rem .7rem; }
+  .measurement-heading .section-index,
+  .measurement-heading p,
+  .measurement-proof-heading .micro-label,
+  .measurement-chart-heading .micro-label { display: none; }
+  .measurement-heading h1 { margin: 0; font-size: 1.42rem; }
+  .measurement-status { gap: .28rem; margin-top: .45rem; }
+  .measurement-status-item { min-height: 68px; padding: .4rem .45rem; }
+  .measurement-status-item strong { font-size: 1.25rem; }
+  .measurement-status-item small { margin-top: .08rem; font-size: .61rem; }
+  .measurement-status-note { margin-top: .32rem; font-size: .67rem; line-height: 1.35; }
+  .measurement-chart-section { min-height: 0; padding: .62rem .7rem; }
+  .measurement-chart-heading { align-items: flex-start; flex-direction: column; gap: .5rem; }
+  .measurement-hardware-button { min-height: 30px; }
+  .measurement-chart-heading > div { flex: 0 0 auto; }
+  .measurement-chart-heading h2 { margin: 0; font-size: .96rem; }
+  .measurement-record-picker { margin-top: .48rem; }
+  .measurement-record-picker > #measurement-record-label { margin-bottom: .3rem; font-size: .57rem; }
+  .measurement-record-list { gap: .32rem; }
+  .measurement-record-list.is-six-records { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .measurement-record { min-height: 65px; padding: .4rem .44rem; }
+  .measurement-record-title { font-size: .69rem; }
+  .measurement-record-scope { grid-column: 1 / -1; font-size: .52rem; }
+  .measurement-record-counts { font-size: .55rem; }
+  .measurement-figure { margin-top: .55rem; }
+  .measurement-scope { min-height: 20px; padding: .2rem .35rem; font-size: .61rem; }
+  .measurement-figure-caption { gap: .25rem .48rem; }
+  .measurement-figure-caption strong { font-size: .74rem; }
+  .measurement-fixture-context { margin-top: .28rem; font-size: .67rem; line-height: 1.35; }
+  .measurement-bars { gap: .48rem; padding-block: .43rem; }
+  .measurement-bar-label { margin-bottom: .15rem; font-size: .72rem; }
+  .measurement-bar-label strong { font-size: .76rem; }
+  .measurement-bar-track { height: 9px; }
+  .measurement-chart-note { font-size: .65rem; line-height: 1.35; }
+  .measurement-chart-footer { gap: .5rem; margin-top: .25rem; }
+  .measurement-chart-footer a,
+  .measurement-chart-footer button { min-height: 28px; padding: .15rem 0; font-size: .69rem; }
+  .measurement-provenance { padding: 0; }
+  .measurement-proof-heading h2 { margin: 0; font-size: 1rem; }
+  .measurement-source-list { gap: .22rem; margin-top: .35rem; }
+  .measurement-source-list > div { display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: .3rem; }
+  .measurement-source-list dt { font-size: .66rem; }
+  .measurement-source-list dd { justify-content: flex-start; gap: .1rem .4rem; margin: 0; font-size: .65rem; text-align: left; }
+  .measurement-source-list [data-measure-scope] { font-size: .62rem; }
+  .measurement-evidence { margin-top: .32rem; font-size: .67rem; }
+  .measurement-evidence strong { display: none; }
+  .measurement-pending { margin-top: .32rem; font-size: .67rem; line-height: 1.35; }
+  .measurement-boundary { margin-top: .18rem; font-size: .66rem; line-height: 1.4; }
+  .measurement-detail-fact { grid-template-columns: 1fr; gap: .12rem; }
+}

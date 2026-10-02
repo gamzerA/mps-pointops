@@ -1,0 +1,48 @@
+/* Headings for the execution, scope, and installation views share one content edge. */
+#route,
+#capabilities,
+#quickstart {
+  padding-top: clamp(1.25rem, 2vw, 2rem);
+}
+
+#route .section-heading,
+#capabilities .section-heading,
+#quickstart .section-heading {
+  display: block;
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
+}
+
+#route .section-heading h1,
+#capabilities .section-heading h1,
+#quickstart .section-heading h1 {
+  max-width: none;
+  margin: 0;
+  font-size: clamp(1.75rem, 2.35vw, 2.35rem);
+  font-weight: 650;
+  letter-spacing: -.035em;
+  line-height: 1.16;
+}
+
+/* The implementation-stage title is subordinate to the ecosystem view heading. */
+#phases .section-heading {
+  display: block;
+  margin-bottom: .75rem;
+}
+
+#phases .section-heading h2 {
+  max-width: none;
+  margin: 0;
+  font-size: clamp(1.2rem, 1.6vw, 1.5rem);
+  font-weight: 620;
+  letter-spacing: -.025em;
+  line-height: 1.2;
+  white-space: normal;
+}
+
+@media (max-width: 560px) {
+  #route .section-heading h1,
+  #capabilities .section-heading h1,
+  #quickstart .section-heading h1 {
+    font-size: clamp(1.5rem, 6vw, 1.75rem);
+  }
+}

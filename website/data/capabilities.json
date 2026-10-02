@@ -1,0 +1,216 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "repository": "gamzerA/mps-pointops",
+    "mainCommit": "905fce5384c681b16db0ebd0fbcd892635544ead",
+    "publishedVersion": "0.8.0",
+    "snapshotDate": "2026-10-02"
+  },
+  "items": [
+    {
+      "id": "pointnet2",
+      "name": "PointNet++ SSG",
+      "releaseStatus": "experimental",
+      "validationStatus": "model-fixture",
+      "functions": ["FPS", "Ball Query", "three_nn", "three_interpolate"],
+      "releaseScope": {
+        "ko": "v0.8.0에 연산자가 포함되어 있습니다. three_nn과 three_interpolate는 실험적 API이며 원본 PointNet++ 전체의 드롭인 대체는 아닙니다.",
+        "en": "The operators ship in v0.8.0. three_nn and three_interpolate are experimental APIs, not a drop-in replacement for all of PointNet++."
+      },
+      "fixture": {
+        "ko": "고정 합성 1,152점 SSG 세그멘테이션 1건을 원본 CUDA 확장과 대조했습니다. eval 모드 순방향과 손실 역전파가 허용오차 안에서 일치했습니다.",
+        "en": "One fixed synthetic 1,152-point SSG segmentation fixture was compared with the original CUDA extension. Eval-mode forward and loss backward agreed within tolerance."
+      },
+      "forward": {
+        "status": "validated",
+        "ko": "로짓·손실 허용오차 대조 통과. FPS 동률 때문에 일부 중간 로컬 인덱스는 다릅니다.",
+        "en": "Logit and loss tolerance checks passed. Some intermediate local indices differ at FPS ties."
+      },
+      "backward": {
+        "status": "validated",
+        "ko": "입력 및 68개 파라미터 기울기 대조 통과.",
+        "en": "Input and 68 parameter gradients passed the comparison."
+      },
+      "hardware": ["Apple M5 Pro"],
+      "limitations": {
+        "ko": "실제 라벨 데이터의 분할 정확도, 학습 수렴, 모든 입력에서의 인덱스 일치는 검증하지 않았습니다.",
+        "en": "Labeled-dataset accuracy, training convergence, and exact indices for every input remain unverified."
+      },
+      "evidence": [
+        {"label": {"ko": "모델 대조 기록", "en": "Model parity record"}, "path": "docs/parity/pointnet2-segmentation.md"},
+        {"label": {"ko": "전파 연산 계약", "en": "Propagation contract"}, "path": "docs/pointnet2-propagation.md"}
+      ]
+    },
+    {
+      "id": "pytorch3d",
+      "name": "PyTorch3D",
+      "releaseStatus": "released",
+      "validationStatus": "operator-fixture",
+      "functions": ["ball_query adapter", "squared-L2 Chamfer"],
+      "releaseScope": {
+        "ko": "v0.8.0에 명시적 Ball Query 서명 어댑터가 있습니다. squared-L2 Chamfer는 제한된 실험적 범위이며 설치된 PyTorch3D를 교체하지 않습니다.",
+        "en": "v0.8.0 ships an explicit Ball Query signature adapter. Squared-L2 Chamfer has a bounded experimental scope and does not replace installed PyTorch3D."
+      },
+      "fixture": {
+        "ko": "Ball Query는 CPU 패리티 스위트, Chamfer는 고정된 공식 PyTorch3D CPU 오라클의 유한 float32 사례와 대조했습니다. PyTorch3D 모델 전체 검증은 아닙니다.",
+        "en": "Ball Query was checked in a CPU parity suite; Chamfer was compared with a pinned official PyTorch3D CPU oracle on finite float32 cases. No whole PyTorch3D model was validated."
+      },
+      "forward": {
+        "status": "validated",
+        "ko": "명시된 Ball Query 및 squared-L2 Chamfer 사례에서 검증.",
+        "en": "Validated for the stated Ball Query and squared-L2 Chamfer fixtures."
+      },
+      "backward": {
+        "status": "partial",
+        "ko": "Chamfer 좌표의 1차 기울기를 지정된 리덕션·마스킹 사례에서 대조했습니다. Ball Query는 자체 거리 기울기 계약을 따릅니다.",
+        "en": "First-order Chamfer coordinate gradients were checked for the stated reduction and masking cases. Ball Query has a separate distance-gradient contract."
+      },
+      "hardware": ["Apple M5 Pro"],
+      "limitations": {
+        "ko": "v0.8.0은 Chamfer L1·법선 항·Pointclouds 객체, 일반 차원 Ball Query, 모든 경계값의 비트 일치를 지원하지 않습니다.",
+        "en": "v0.8.0 does not cover Chamfer L1, normal loss, Pointclouds objects, general-dimensional Ball Query, or bitwise parity at every boundary."
+      },
+      "evidence": [
+        {"label": {"ko": "Ball Query 수치 계약", "en": "Ball Query numerical contract"}, "path": "docs/ball-query-math.md"},
+        {"label": {"ko": "Chamfer 공식 CPU 오라클 CI", "en": "Chamfer official CPU-oracle CI"}, "path": "docs/chamfer-upstream-ci.md"},
+        {"label": {"ko": "v0.8 Chamfer 범위", "en": "v0.8 Chamfer scope"}, "path": "docs/chamfer-api-scope-v0.8.md"}
+      ]
+    },
+    {
+      "id": "pyg",
+      "name": "PyG 2.8",
+      "releaseStatus": "experimental",
+      "validationStatus": "model-fixture",
+      "functions": ["pyg::fps", "pyg::knn", "pyg::radius", "voxel_grid", "avg_pool"],
+      "releaseScope": {
+        "ko": "v0.8.0의 PyG 2.8 등록은 고정된 pyg-lib 스키마와 연산자 부분집합에 한정됩니다. torch_cluster 레거시 shim은 별도 경로입니다.",
+        "en": "The v0.8.0 PyG 2.8 registration covers a pinned pyg-lib schema and operator subset. The legacy torch_cluster shim is a separate path."
+      },
+      "fixture": {
+        "ko": "M5 Pro에서 GCN·GraphSAGE·GAT를 고정된 12노드 합성 그래프로 순방향·역전파 실행했습니다. 풀링·격자 경로는 별도 유한 float32 사례로 검증했습니다.",
+        "en": "GCN, GraphSAGE, and GAT ran forward and backward on one fixed 12-node synthetic graph on M5 Pro. Pooling and grid paths have separate finite-float32 fixtures."
+      },
+      "forward": {
+        "status": "validated",
+        "ko": "지정된 그래프 모델 및 연산자 사례에서 통과.",
+        "en": "Passed on the named graph-model and operator fixtures."
+      },
+      "backward": {
+        "status": "validated",
+        "ko": "지정된 모델과 풀링 입력의 1차 기울기 사례에서 통과.",
+        "en": "Passed first-order gradient checks for the named models and pooling inputs."
+      },
+      "hardware": [
+        {"ko": "Apple M5 Pro (모델·연산자 사례)", "en": "Apple M5 Pro (model and operator fixtures)"},
+        {"ko": "Apple M1 (한정된 연산자 스위트)", "en": "Apple M1 (bounded operator suite)"}
+      ],
+      "limitations": {
+        "ko": "모든 PyG 프로그램을 의미하지 않습니다. Node2Vec의 pyg::random_walk는 등록하지 않았고, M1은 모델 전반의 실측을 뜻하지 않습니다.",
+        "en": "This does not cover every PyG program. pyg::random_walk for Node2Vec is not registered; the M1 record is not a whole-model performance claim."
+      },
+      "evidence": [
+        {"label": {"ko": "고정 환경 결과표", "en": "Pinned results matrix"}, "path": "docs/phase3-results-2026-10-01.md"},
+        {"label": {"ko": "호환성 범위", "en": "Compatibility boundary"}, "path": "docs/phase3-compatibility-matrix.md"}
+      ]
+    },
+    {
+      "id": "dgcnn",
+      "name": "DGCNN",
+      "releaseStatus": "released",
+      "validationStatus": "model-fixture",
+      "functions": ["feature-space kNN", "EdgeConv"],
+      "releaseScope": {
+        "ko": "v0.8.0의 고차원 Metal kNN을 사용할 수 있습니다. 원본 DGCNN 모델은 검증 하네스에서 CUDA 장치 생성과 kNN 호출만 메모리상으로 바꿨습니다.",
+        "en": "v0.8.0 ships high-dimensional Metal kNN. The pinned original DGCNN model needed in-memory substitutions for its CUDA device creation and kNN call in the validation harness."
+      },
+      "fixture": {
+        "ko": "고정된 합성 64점 분류 모델 1건의 네 이웃 탐색 단계에서 CPU/MPS 인덱스 4,096칸과 순방향·역전파를 대조했습니다.",
+        "en": "One fixed synthetic 64-point classification fixture compared 4,096 CPU/MPS neighbor slots across four graph stages plus forward and backward results."
+      },
+      "forward": {
+        "status": "validated",
+        "ko": "합성 사례의 이웃 인덱스·로짓 대조 통과.",
+        "en": "Neighbor indices and logits passed on the synthetic fixture."
+      },
+      "backward": {
+        "status": "validated",
+        "ko": "입력·파라미터 기울기 대조 통과.",
+        "en": "Input and parameter gradients passed the comparison."
+      },
+      "hardware": ["Apple M5 Pro"],
+      "limitations": {
+        "ko": "ModelNet 정확도, 전체 학습, 원본 CUDA 대조, 다른 크기·동률 사례는 확인하지 않았습니다. kNN 선택 자체는 비미분이며 MPS k≤256입니다.",
+        "en": "ModelNet accuracy, full training, original CUDA parity, other sizes, and near ties are unverified. kNN selection is non-differentiable and MPS is limited to k≤256."
+      },
+      "evidence": [
+        {"label": {"ko": "고차원 kNN·DGCNN 검증", "en": "Feature kNN and DGCNN validation"}, "path": "docs/feature-knn.md"}
+      ]
+    },
+    {
+      "id": "pointcept",
+      "name": "Pointcept PTv1",
+      "releaseStatus": "experimental",
+      "validationStatus": "model-fixture",
+      "functions": ["FPS", "knn_query", "grouping", "knn_query_and_group", "interpolation"],
+      "releaseScope": {
+        "ko": "v0.8.0에서 opt-in Pointcept v1.2.1 PTv1 Seg26 pointops 호출의 다섯 함수 부분집합을 제공합니다.",
+        "en": "v0.8.0 provides an opt-in five-call pointops subset for Pointcept v1.2.1 PTv1 Seg26."
+      },
+      "fixture": {
+        "ko": "M5 Pro에서 고정된 두 구름 Seg26 eval 사례와 동률이 많은 선형 격자 사례의 CPU/MPS 순방향·1차 역전파를 Safe/Fast로 대조했습니다.",
+        "en": "On M5 Pro, fixed two-cloud Seg26 eval and tie-heavy line-grid fixtures compared CPU/MPS forward and first-order backward in Safe/Fast Math."
+      },
+      "forward": {
+        "status": "validated",
+        "ko": "고정 합성 Seg26 eval 로짓 허용오차 대조 통과.",
+        "en": "Synthetic Seg26 eval logits passed the tolerance check."
+      },
+      "backward": {
+        "status": "validated",
+        "ko": "좌표·피처·첫 인코더 가중치 기울기 대조 통과.",
+        "en": "Coordinate, feature, and first-encoder-weight gradients passed."
+      },
+      "hardware": ["Apple M5 Pro"],
+      "limitations": {
+        "ko": "원본 Seg26의 CUDA 전용 텐서 생성 한 줄을 임시 치환했습니다. 변경 없는 원본 import, 다른 PT 모델, 학습 수렴, M1 모델 검증은 남았습니다.",
+        "en": "One CUDA-only tensor constructor in original Seg26 was temporarily substituted. Unchanged upstream imports, other PT models, training convergence, and M1 model validation remain open."
+      },
+      "evidence": [
+        {"label": {"ko": "PTv1 부분집합·모델 기록", "en": "PTv1 subset and model record"}, "path": "docs/pointcept-ptv1-subset.md"}
+      ]
+    },
+    {
+      "id": "sparse-3d",
+      "name": "Sparse 3D",
+      "releaseStatus": "planned",
+      "validationStatus": "unverified",
+      "functions": ["sparse tensor", "rulebook", "SubMConv3d", "SparseConv3d"],
+      "releaseScope": {
+        "ko": "희소 텐서·규칙 테이블·희소 합성곱은 후속 단계의 목표이며 v0.8.0에 포함되지 않습니다.",
+        "en": "Sparse tensors, rulebooks, and sparse convolution are later-stage goals and are not included in v0.8.0."
+      },
+      "fixture": {
+        "ko": "현재 병합 소스에는 희소 합성곱 모델의 통과 기록이 없습니다.",
+        "en": "The merged source has no passing sparse-convolution model record."
+      },
+      "forward": {
+        "status": "unverified",
+        "ko": "미구현·미검증.",
+        "en": "Not implemented or validated."
+      },
+      "backward": {
+        "status": "unverified",
+        "ko": "미구현·미검증.",
+        "en": "Not implemented or validated."
+      },
+      "hardware": [],
+      "limitations": {
+        "ko": "spconv 호환성이나 Sparse 3D 백본의 실행을 주장하지 않습니다. 목표와 게이트만 문서화돼 있습니다.",
+        "en": "No spconv compatibility or Sparse 3D backbone execution is claimed. Only goals and gates are documented."
+      },
+      "evidence": [
+        {"label": {"ko": "희소 연산 마일스톤", "en": "Sparse operator milestone"}, "path": "docs/milestones-v0.9-v1.0.md"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#060809">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'">
+  <title>mps-pointops · Explore point-cloud computation</title>
+  <meta name="description" content="An interactive explainer for Apple Silicon point-cloud operations, their measured behavior, and verification scope.">
+  <link rel="icon" href="./assets/pointops-mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./src/styles.css?rev=20261002x">
+  <link rel="stylesheet" href="./src/formula-animation.css?rev=20261002z">
+  <link rel="stylesheet" href="./src/observatory-theme.css?rev=20261002x">
+  <link rel="stylesheet" href="./src/execution-layout.css?rev=20261002h">
+  <link rel="stylesheet" href="./src/ecosystem.css?rev=20261002y">
+  <link rel="stylesheet" href="./src/interaction-motion.css?rev=20261002x">
+  <link rel="stylesheet" href="./src/methods-layout.css?rev=20261002aa">
+  <link rel="stylesheet" href="./src/measurements-layout.css?rev=20261002m1c">
+  <link rel="stylesheet" href="./src/section-headings.css?rev=20261002a">
+  <noscript><link rel="stylesheet" href="./src/noscript.css"></noscript>
+  <script type="module" src="./src/app.js?rev=20261002z"></script>
+</head>
+<body>
+<a class="skip-link" href="#content" data-i18n="skip">Skip to content</a>
+<header class="site-header">
+  <div class="shell header-inner">
+    <a class="brand" href="#top" aria-label="mps-pointops home"><img class="brand-mark" src="./assets/pointops-mark.svg" alt="" width="42" height="42"><strong>mps-pointops</strong><span class="version-pill" id="version-pill">v0.8.0</span></a>
+    <nav class="primary-nav" aria-label="Pages"><a href="#compute">Compute</a><a href="#route">Execution</a><a href="#capabilities">Scope</a><a href="#methods">Methods</a><a href="#benchmarks">Measurements</a><a href="#quickstart">Install</a></nav>
+  </div>
+</header>
+<main id="content">
+  <section class="observatory" id="top" aria-labelledby="hero-title" data-site-view="compute">
+    <div class="obs-topline" aria-label="Demo status">
+      <span><i class="obs-live-dot" aria-hidden="true"></i> POINTOPS / COMPUTE FIELD</span>
+      <span>APPLE SILICON · PYTORCH / MPS / METAL</span>
+      <span>JS 2D TEACHING MODEL · NO GPU TIMING</span>
+    </div>
+    <h1 class="sr-only" id="hero-title">mps-pointops · Compute</h1>
+    <div class="obs-console instrument-frame" id="compute" data-compute-field>
+      <div class="obs-mode-tabs instrument-toolbar"><div class="instrument-toolbar-label"><span class="section-index">COMPUTE FIELD</span><strong>One cloud, three questions</strong></div><div class="operator-tabs" role="group" aria-label="Point-cloud operator"><button type="button" data-playground-mode="fps" aria-pressed="true">FPS</button><button type="button" data-playground-mode="knn" aria-pressed="false">kNN</button><button type="button" data-playground-mode="ball" aria-pressed="false">Ball Query</button></div><span class="obs-input-count"><output data-obs-count>—</output> INPUT POINTS</span></div>
+      <div class="obs-stage">
+        <div class="obs-field"><canvas data-compute-field-canvas tabindex="0" role="group" aria-describedby="playground-note playground-result" aria-label="2D point-cloud scene for the selected operator"></canvas><div class="obs-overlay obs-field-id">DETERMINISTIC INPUT / 2D</div><div class="obs-overlay obs-field-hint">POINTER OR ARROWS → QUERY / FPS START</div><div class="scene-key"><span><i class="key-point"></i><b>Input points</b></span><span><i class="key-query"></i><b>Query</b></span><span><i class="key-selected"></i><b>Selected</b></span></div></div>
+        <aside class="obs-sidepanel instrument-inspector" aria-label="Operator controls and result">
+          <div><span class="micro-label">CURRENT OPERATION</span><strong class="operation-title" data-playground-stage>—</strong><p class="inspector-intro" id="playground-note">Fixed 2D teaching model. This is not Metal execution or a numerical parity test.</p></div>
+          <div class="control-stack"><label class="range-control k-control"><span><b>Selection count k</b><output data-playground-k-output>—</output></span><input data-playground-k type="range" min="1" max="16" step="1" value="6"></label><label class="range-control radius-control"><span><b>Radius r</b><output data-playground-radius-output>—</output></span><input data-playground-radius type="range" min="0.06" max="0.42" step="0.005" value="0.2"></label></div>
+          <div class="query-readout"><span class="micro-label" data-query-label>QUERY / START</span><output data-playground-query-output>—</output></div>
+          <div class="playback-row"><button type="button" data-playground-play>Pause</button><details class="playground-more"><summary>Point count · playback</summary><div class="more-controls"><label class="range-control count-control"><span><b>Point count</b><output data-playground-count-output>—</output></span><input data-playground-count type="range" min="240" max="1800" step="120" value="1200"></label><div class="more-buttons"><button type="button" data-playground-step>One step</button><button type="button" data-playground-reset>Restart</button></div></div></details></div>
+        </aside>
+      </div>
+      <div class="obs-bottom">
+        <div class="obs-metric"><span>FRAME / SCAN</span><strong data-obs-frame>—</strong><div class="obs-progress" role="progressbar" aria-label="Demo progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i data-obs-progress></i></div><small data-obs-inspected>—</small></div>
+        <div class="obs-metric obs-ledger result-readout"><span class="micro-label">SELECTED INDICES / ORDER</span><output id="playground-result" data-playground-result aria-live="polite">—</output></div>
+        <div class="obs-metric obs-rule"><span>SELECTION RULE</span><code data-playground-formula>—</code><small data-obs-rule-note>—</small></div>
+        <div class="obs-metric obs-evidence"><span>INTERPRETATION</span><p>This scene explains selection. Measurements were recorded separately under named hardware and input conditions.</p><a href="#benchmarks">Inspect measurements ↗</a></div>
+      </div>
+      <div class="instrument-footer"><span>Move the query or change the operator and parameters.</span><span>DETERMINISTIC 2D MODEL · NOT A METAL TRACE</span></div>
+    </div>
+    <p class="first-note"><span>These rules lead into PyTorch/MPS execution.</span><a href="#route">Open execution →</a></p>
+  </section>
+
+  <section class="narrative-section" id="route" aria-labelledby="route-title" data-route-story data-site-view="execution">
+    <div class="shell"><div class="section-heading"><h1 id="route-title">PyTorch → MPS → Metal</h1></div>
+      <div class="scroll-story"><div class="story-sticky"><div class="story-figure">
+        <div class="story-figure-top"><span>EXECUTION PATH</span><span>PYTORCH → APPLE GPU</span></div>
+        <div class="flow-entry"><span class="flow-point-icon" aria-hidden="true">• • •</span><span>3D WORKLOAD</span></div>
+        <div class="flow-path">
+          <div class="flow-node flow-blocked" data-route-node="0"><span>×</span><strong>CUDA-only operator</strong><small>Blocked on Apple Silicon</small></div>
+          <div class="flow-node" data-route-node="1"><span>01</span><strong>PyTorch</strong><small>Tensor · model call</small></div>
+          <div class="flow-node" data-route-node="2"><span>02</span><strong>mps-pointops compat</strong><small>Signature · device bridge</small></div>
+          <div class="flow-node" data-route-node="3"><span>03</span><strong>MPS dispatch</strong><small>Input contract · path selection</small></div>
+          <div class="flow-node" data-route-node="4"><span>04</span><strong>Metal kernel</strong><small>GPU computation</small></div>
+          <div class="flow-node" data-route-node="5"><span>05</span><strong>MPS result tensor</strong><small>Passed to the next layer</small></div>
+        </div>
+        <div class="story-readout"><span class="micro-label">CURRENT STEP</span><strong data-route-title>—</strong><p data-route-detail>—</p></div>
+      </div></div><div class="story-steps" aria-label="Execution step selector">
+        <button type="button" data-route-step="0"><span>00 / BLOCKED</span><strong>CUDA-only call</strong><small>Why this call cannot run unchanged on a Mac</small></button>
+        <button type="button" data-route-step="1"><span>01 / INPUT</span><strong>PyTorch</strong><small>The model requests the same tensor operation</small></button>
+        <button type="button" data-route-step="2"><span>02 / ADAPT</span><strong>Compatibility layer</strong><small>Connects the existing API to an MPS path</small></button>
+        <button type="button" data-route-step="3"><span>03 / ROUTE</span><strong>MPS dispatch</strong><small>Checks the device and input contract</small></button>
+        <button type="button" data-route-step="4"><span>04 / EXECUTE</span><strong>Metal kernel</strong><small>Computes points and neighbors on the GPU</small></button>
+        <button type="button" data-route-step="5"><span>05 / OUTPUT</span><strong>Result tensor</strong><small>Passes indices and distances to the next layer</small></button>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="section shell" id="capabilities" aria-labelledby="capabilities-title" data-site-view="ecosystem">
+    <div class="section-heading"><h1 id="capabilities-title">Scope</h1></div>
+    <div class="ecosystem-switch" role="group" aria-label="Scope panel selector">
+      <button type="button" data-ecosystem-panel-option="capabilities" aria-controls="capability-map" aria-pressed="true"><strong>Model validation</strong><small>Release · test scope</small></button>
+      <button type="button" data-ecosystem-panel-option="phases" aria-controls="phases" aria-pressed="false"><strong>Compute stages</strong><small>Current · research · planned</small></button>
+    </div>
+    <div id="capability-map" role="region" aria-label="Model validation scope"></div>
+  </section>
+
+  <section class="narrative-section phase-section" id="phases" aria-labelledby="phases-title" data-phase-story data-site-view="ecosystem">
+    <div class="shell"><div class="section-heading"><h2 id="phases-title">Implementation stages</h2></div>
+      <div class="scroll-story phase-story"><div class="story-sticky"><div class="phase-figure"><div class="story-figure-top"><span>COMPUTE STACK</span><span>PHASE 1 → 5</span></div><svg data-phase-scene role="img" viewBox="0 0 700 300" aria-label="Point-cloud compute stages"></svg><div class="phase-caption"><span class="micro-label">CURRENT LAYER</span><strong data-phase-name>—</strong><p data-phase-detail>—</p><small data-phase-status>—</small></div></div></div><div class="story-steps phase-steps" aria-label="Development stage selector">
+        <button type="button" data-phase-step="0"><span>PHASE 01</span><strong>Sampling & neighbors</strong><small>Points → centers and neighbors</small></button>
+        <button type="button" data-phase-step="1"><span>PHASE 02</span><strong>Feature propagation</strong><small>Points + features → propagation</small></button>
+        <button type="button" data-phase-step="2"><span>PHASE 03</span><strong>Graph & grid</strong><small>Points → graph and voxel IDs</small></button>
+        <button type="button" data-phase-step="3"><span>PHASE 04</span><strong>Geometry & scale</strong><small>Distance losses and spatial index</small></button>
+        <button type="button" data-phase-step="4"><span>PHASE 05 · PLANNED</span><strong>Sparse 3D</strong><small>Metal convolution not implemented</small></button>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="measurement-summary" id="trust" aria-labelledby="measurement-title" data-site-view="measurements">
+    <div class="measurement-heading"><span class="section-index">MEASURE / VERIFY</span><h1 id="measurement-title" data-measure-copy="title">Measurements</h1></div>
+    <div class="measurement-status" id="measurement-validation" aria-label="Verification records">
+      <div class="measurement-status-item"><span>SAFE MATH</span><strong id="safe-count">—</strong><small data-measure-safe-meta>—</small></div>
+      <div class="measurement-status-item"><span>FAST MATH</span><strong data-measure-fast-count>—</strong><small data-measure-fast-meta>—</small></div>
+      <div class="measurement-status-item"><span>CI</span><strong data-measure-ci-count>—</strong><small data-measure-copy="ciLabel">Recorded checks</small></div>
+    </div>
+    <p class="measurement-status-note" data-measure-copy="statusNote">Safe and Fast were separate runs on M5 Pro research source, not a combined PyPI package result.</p>
+  </section>
+
+  <section class="section methods-section" id="methods" aria-labelledby="methods-title" data-site-view="methods"><div class="shell"><div class="section-heading"><h1 id="methods-title">Spatial index computation</h1></div></div></section>
+    <section class="section section-rule shell" id="morton" aria-labelledby="morton-title" data-site-view="methods">
+      <div class="section-intro">
+        <h2 id="morton-title" data-i18n="mortonTitle">Morton key computation</h2>
+      </div>
+      <div class="demo-frame morton-layout">
+        <div class="demo-topline"><span class="tag" data-i18n="conceptDemo">Reduced conceptual model</span><span id="morton-grid-caption">—</span></div>
+        <div class="demo-canvas-column">
+          <div class="morton-point-controls">
+            <div class="morton-sample-rank"><span class="label-small" data-i18n="mortonRankLabel">Selected point’s key rank</span><output class="morton-rank" id="morton-rank">—</output></div>
+            <div class="coordinate-inputs">
+              <label><span>X</span><input id="morton-x" type="number" inputmode="numeric" min="0" step="1"></label>
+              <label><span>Y</span><input id="morton-y" type="number" inputmode="numeric" min="0" step="1"></label>
+              <label><span>Z</span><input id="morton-z" type="number" inputmode="numeric" min="0" step="1"></label>
+            </div>
+          </div>
+          <canvas id="morton-canvas" width="512" height="512" tabindex="0" role="group" aria-describedby="morton-canvas-description"></canvas>
+          <p class="canvas-caption" id="morton-canvas-description" data-i18n="mortonCanvasHelp">Drag on the grid or focus it and use the arrow keys. Use the number fields to edit full coordinates.</p>
+          <div class="morton-sample-panel" aria-labelledby="morton-sample-title">
+            <div class="morton-sample-heading"><div><h3 id="morton-sample-title" data-i18n="stripTitle">Morton order · 16 coordinates</h3><p data-i18n="stripHint">Drag horizontally or swipe through samples. Select a point to load its coordinates.</p></div></div>
+            <div id="morton-strip" class="morton-strip" role="group" data-i18n-aria="stripAria" aria-label="Morton-sorted sample" tabindex="0"></div>
+          </div>
+        </div>
+        <div class="morton-primary">
+          <div class="morton-result">
+            <div><p class="label-small" data-i18n="mortonKeyLabel">Calculated Morton key · decimal</p><output class="morton-key" id="morton-key" for="morton-x morton-y morton-z">—</output></div>
+          </div>
+          <div id="morton-formula-animation"></div>
+          <div id="operator-formula-animation"></div>
+        </div>
+        <div class="morton-secondary">
+          <div class="morton-bit-readout"><p class="label-small" data-i18n="mortonBitsLabel">Interleaved bits · low bits on the right</p><div class="bit-panel" id="bit-panel"></div></div>
+          <p class="fine-print" id="morton-numerics">—</p>
+          <div id="morton-announcement" class="sr-only" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section shell" id="pruning" aria-labelledby="pruning-title" data-site-view="methods">
+      <div class="section-intro">
+        <h2 id="pruning-title" data-i18n="pruningTitle">AABB pruning</h2>
+      </div>
+      <div class="demo-frame pruning-layout">
+        <div class="demo-topline"><span class="tag" data-i18n="conceptDemo">Reduced conceptual model</span><span id="pruning-fixture-caption">—</span></div>
+        <div class="pruning-controls">
+          <div class="preset-control"><span data-i18n="distributionLabel">Point distribution</span><div class="preset-buttons" role="group" data-i18n-aria="distributionLabel" aria-label="Point distribution"><button type="button" data-distribution="uniform" data-i18n="distributionUniform">Uniform</button><button type="button" data-distribution="clustered" data-i18n="distributionClustered">Cluster + background</button><button type="button" data-distribution="coincident" data-i18n="distributionCoincident">All points coincident</button></div></div>
+          <label class="range-control"><span data-i18n="radiusLabel">Radius</span><input id="radius-slider" type="range" min="0.02" max="0.3" step="0.005" value="0.095"><output id="radius-output">—</output></label>
+        </div>
+        <div class="pruning-workbench">
+          <div class="pruning-visual">
+            <div class="pruning-canvas-wrap"><canvas id="pruning-canvas" width="960" height="440" tabindex="0" role="group" aria-describedby="pruning-canvas-description"></canvas></div>
+            <p class="pruning-legend"><span class="pruned-swatch" aria-hidden="true"></span><span data-i18n="prunedAabbLabel">Orange bounds: AABBs actually pruned</span></p>
+            <p class="canvas-caption" id="pruning-canvas-description" data-i18n="pruningCanvasHelp">Move the pointer or use arrow keys on the canvas to move the query. Adjust the radius with the slider.</p>
+          </div>
+          <aside class="pruning-readout" aria-labelledby="pruning-readout-title">
+            <h3 id="pruning-readout-title" data-i18n="pruningReadoutTitle">Decision for this query</h3>
+            <p class="pruning-explain" data-i18n="pruningPlain">Branches sufficiently far from the query are skipped without checking their points. The browser computes these values for the current query.</p>
+            <div class="decision-panel"><span class="label-small" data-i18n="aabbRuleLabel">Lower-bound test for the highlighted AABB</span><output id="pruning-decision">—</output><p id="pruning-decision-note">—</p></div>
+            <div class="counter-grid" id="pruning-counters"></div>
+          </aside>
+        </div>
+        <p class="fine-print" id="pruning-model-note">—</p>
+        <div id="pruning-announcement" class="sr-only" aria-live="polite"></div>
+      </div>
+    </section>
+
+
+  <section class="measurement-chart-section" id="benchmarks" aria-labelledby="measurement-chart-title" data-site-view="measurements">
+    <div class="measurement-chart-heading"><div><span class="micro-label">RECORDED / QUERY</span><h2 id="measurement-chart-title" data-measure-copy="chartTitle">Measured comparison within one fixture</h2></div><div id="measurement-hardware-list" class="measurement-hardware-list" role="group" aria-label="Measured hardware"></div></div>
+    <div class="measurement-record-picker"><span id="measurement-record-label" data-measure-copy="fixtureLabel">Measured records</span><div id="measurement-record-list" class="measurement-record-list" role="group" aria-labelledby="measurement-record-label"></div><span id="measurement-active-record" class="sr-only" role="status" aria-live="polite"></span></div>
+    <div id="measurement-dashboard" aria-live="off"></div>
+    <dialog class="measurement-detail-dialog" id="measurement-details" aria-labelledby="measurement-details-title"><div class="measurement-detail-head"><h2 id="measurement-details-title" data-measure-copy="detailsTitle">Conditions and evidence</h2><button type="button" data-measure-close data-measure-copy="close">Close</button></div><div id="measurement-detail-content"></div></dialog>
+  </section>
+  <section class="section shell" id="quickstart" aria-labelledby="quickstart-title" data-site-view="install">
+    <div class="section-heading"><h1 id="quickstart-title">Install and run</h1></div>
+    <div class="install-layout"><div class="install-main"><div class="code-heading"><span>INSTALL / RELEASED</span><button class="copy-button" type="button" data-copy="install-command">Copy</button></div><pre class="code-block"><code id="install-command">python -m pip install mps-pointops==0.8.0</code></pre><div class="code-heading"><span>COMPATIBILITY SHIM / OPT-IN</span><button class="copy-button" type="button" data-copy="example-code">Copy</button></div><pre class="code-block"><code id="example-code">import mps_pointops.compat
+mps_pointops.compat.install()</code></pre><p>Place these two lines before CUDA-oriented imports to enable the compatibility path. Registered namespaces and coverage vary by operation.</p></div><aside class="install-aside"><span class="micro-label">ENVIRONMENT</span><dl id="requirements-list" class="fact-list"></dl><p>A CPU reference path may run without MPS. Metal execution requires Apple Silicon and an MPS-enabled PyTorch build.</p><a href="https://github.com/gamzerA/mps-pointops#quick-start" target="_blank" rel="noopener noreferrer">Installation and support policy ↗</a></aside></div>
+  </section>
+  <section class="measurement-provenance" id="provenance" aria-labelledby="measurement-proof-title" data-site-view="measurements">
+    <div class="measurement-proof-heading"><span class="micro-label">PROVENANCE / LIMITS</span><h2 id="measurement-proof-title" data-measure-copy="proofTitle">Provenance and remaining limits</h2></div>
+    <dl class="measurement-source-list">
+      <div><dt data-measure-copy="releaseLabel">Published package</dt><dd><strong data-measure-version>—</strong><a href="https://doi.org/10.5281/zenodo.23092167" target="_blank" rel="noopener noreferrer" data-measure-copy="doiLink">Version DOI ↗</a></dd></div>
+      <div><dt data-measure-copy="measurementSourceLabel">Measured source</dt><dd><a data-measure-source href="#" target="_blank" rel="noopener noreferrer">—</a><span data-measure-scope>—</span></dd></div>
+      <div><dt data-measure-copy="testSourceLabel">Safe/Fast test source</dt><dd><a data-measure-test-source href="#" target="_blank" rel="noopener noreferrer">—</a></dd></div>
+    </dl>
+    <div class="measurement-evidence"><strong id="test-summary">—</strong><div id="test-links"></div></div>
+    <p class="measurement-memory" id="measurement-memory" hidden><span data-measure-memory-summary></span> <a data-measure-memory-link href="#" target="_blank" rel="noopener noreferrer">Memory JSON ↗</a></p>
+    <p class="measurement-pending" data-measure-pending>—</p>
+    <p class="measurement-boundary" data-measure-copy="boundary">Physical GPU memory peak remains unmeasured. BVH is absent from the published v0.8.0 wheel.</p>
+  </section>
+</main>
+<footer class="site-footer"><div class="shell footer-grid"><div><strong>mps-pointops</strong><p>Explaining point-cloud computation with a bounded evidence record.</p></div><div><p id="footer-license">Project Apache-2.0; Ball Query portions MIT</p><p id="footer-snapshot">v0.8.0 source snapshot · 2026-10-02 · 905fce53</p><p>A paper is in preparation; no submission or publication is claimed.</p></div></div></footer>
+<noscript><p class="noscript-message">Enable JavaScript to load visualizations and measurement records.</p></noscript>
+</body>
+</html>
