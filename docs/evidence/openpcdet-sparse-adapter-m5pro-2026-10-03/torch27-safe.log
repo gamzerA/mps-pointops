@@ -1,0 +1,3 @@
+backbone: CPU 23.9 ms, 12 sparse layers, encoded rows 1
+unet: CPU 54.8 ms, 28 sparse layers, encoded rows 1
+Wrote docs/evidence/openpcdet-sparse-adapter-m5pro-2026-10-03/torch27-safe.json
