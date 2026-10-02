@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- Add an opt-in, reusable single-cloud `SpatialIndex` with explicit Metal
+  full-scan/BVH selection. Existing dense and flat entry points keep their
+  signatures and default kernels. Automatic BVH routing is restricted to a
+  measured M5 Pro Safe Math kNN window and a sampled hot-cell guard; other
+  inputs retain the existing scan path.
+- Extend the private two-level Morton BVH to PyTorch3D-style first-K Ball
+  Query. The bounded MPS float32 path preserves original-index order, strict
+  radius comparison, `(0,-1)` padding, and first-order coordinate gradients
+  through the public index facade. Adversarial M5 Pro tests compare full
+  indices and selected squared-distance bits to the existing dense kernel.
+- Record stage-separated PyTorch MPS allocator peaks and sampled driver
+  allocation in a [source-pinned memory study](docs/spatial-memory-v090.md).
+  Total GPU physical-memory peak and physical M1 validation remain open;
+  these development changes do not constitute a v0.9 or v1.0 release.
+
 ## 0.8.0 — 2026-10-02
 
 This release adds a bounded Pointcept PTv1 compatibility path and a required

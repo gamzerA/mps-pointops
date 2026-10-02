@@ -4,8 +4,14 @@ The Ball Query Metal kernel, its Python autograd wrapper, contract tests,
 numerical analysis and floating-point probe were developed in a separate
 local `opensouce_mps` prototype and ported into this repository. They retain
 the prototype's MIT notice in
-[LICENSES/MIT-ball-query.txt](../LICENSES/MIT-ball-query.txt); the repository's
-other files are under Apache-2.0.
+[LICENSES/MIT-ball-query.txt](../LICENSES/MIT-ball-query.txt). The numerical
+radius helpers in the Apache-2.0
+[`flat_search.metal`](../mps_pointops/kernels/flat_search.metal) and
+[`spatial_bvh.metal`](../mps_pointops/kernels/spatial_bvh.metal) adapt that
+implementation's ordered FMA sum and small-radius normalization. The MIT
+notice remains applicable to those adapted portions; the surrounding flat
+search and BVH traversal code is under Apache-2.0. Both notices ship in the
+wheel and source distribution.
 
 The implementation follows the publicly documented mathematical behavior of
 [PyTorch3D Ball Query](https://github.com/facebookresearch/pytorch3d/blob/main/pytorch3d/ops/ball_query.py):

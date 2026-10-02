@@ -1,0 +1,126 @@
+{
+  "utc": "2026-10-02T02:13:19.520595+00:00",
+  "source_commit": "62fcc0f295e127be47a475fbc122d4de686b4c58",
+  "source_dirty": false,
+  "source_sha256": {
+    "bench/measure_spatial_memory.py": "3595381c861adccc26e0e6ca5d25cadd4479c1c6866dc296494e2e6d6bc7ac95",
+    "bench/bench_spatial_bvh.py": "241de2b5972612242533ecae4ad24f49f1cfa96e9094af933b3015a4f51dc667",
+    "bench/spatial_bvh.py": "0691882a65fdc27bbc255ba431ab3e6a433a5dbe89a9a96190af5f5179896858",
+    "bench/spatial_bvh.metal": "e466dd2880136a504106c8fba7e303117a9f2cdd4924dbf5bb3f636f9875c345",
+    "bench/spatial_keys.py": "e9214981f7dcb8413217979972274864c4bcd40771d0e15a9bfaf8f22946d318",
+    "bench/spatial_keys.metal": "e26bc20df349611bc7502aa7038e5692d434286600e4f454a6d273e1b6b7a8bf",
+    "mps_pointops/_flat_search_mps.py": "4fb494f3cf159c09382f510152c650115c86d8a7e89e4612547ff1911ac1002c",
+    "mps_pointops/kernels/flat_search.metal": "28da4338f4188b96f662aca319965f033226c6d9f5963caa5aaae3dde84864fb"
+  },
+  "hardware": "Apple M5 Pro",
+  "physical_ram_bytes": "51539607552",
+  "macos": "26.5.2",
+  "torch": "2.14.1",
+  "mps_recommended_max_memory_bytes": 40200896512,
+  "mps_fast_math": "0",
+  "mps_fallback": "0",
+  "fixture": {
+    "path": "bvh-serial",
+    "distribution": "cluster-sparse",
+    "points": 1000000,
+    "queries": 4096,
+    "k": 16,
+    "extent": 1024.0,
+    "cell_size": 0.015625,
+    "seed": 20261002,
+    "query_source": "sampled-reference",
+    "cluster_fraction": 0.9,
+    "cluster_side": 1.0,
+    "cluster_queries": 2048,
+    "background_queries": 2048
+  },
+  "poll_requested_ms": 0.5,
+  "instruments_pause_before_s": 0.0,
+  "instruments_pause_after_s": 0.0,
+  "baseline_after_warmup_and_empty_cache": {
+    "tensor_bytes": 0,
+    "driver_bytes": 737280
+  },
+  "stages": {
+    "input_transfer": {
+      "sample_count": 53,
+      "sampling_gap_ms_median": 0.6320835,
+      "sampling_gap_ms_max": 0.642667,
+      "first": {
+        "tensor_bytes": 0,
+        "driver_bytes": 737280
+      },
+      "last": {
+        "tensor_bytes": 12108544,
+        "driver_bytes": 1082867712
+      },
+      "sampled_high_water": {
+        "tensor_bytes": 12108544,
+        "driver_bytes": 1086488576
+      },
+      "allocator_peak": {
+        "tensor_bytes": 12108544,
+        "reserved_bytes": 1082130432
+      },
+      "host_wall_ms_with_sampling": 32.266708
+    },
+    "index_build": {
+      "sample_count": 17,
+      "sampling_gap_ms_median": 0.6454165000000001,
+      "sampling_gap_ms_max": 0.652125,
+      "first": {
+        "tensor_bytes": 12108544,
+        "driver_bytes": 1082867712
+      },
+      "last": {
+        "tensor_bytes": 20693760,
+        "driver_bytes": 1082867712
+      },
+      "sampled_high_water": {
+        "tensor_bytes": 27182080,
+        "driver_bytes": 1082884096
+      },
+      "allocator_peak": {
+        "tensor_bytes": 61867520,
+        "reserved_bytes": 1082130432
+      },
+      "host_wall_ms_with_sampling": 9.461084
+    },
+    "query": {
+      "sample_count": 97,
+      "sampling_gap_ms_median": 0.642917,
+      "sampling_gap_ms_max": 0.649833,
+      "first": {
+        "tensor_bytes": 20693760,
+        "driver_bytes": 1082867712
+      },
+      "last": {
+        "tensor_bytes": 21562112,
+        "driver_bytes": 1082867712
+      },
+      "sampled_high_water": {
+        "tensor_bytes": 21562112,
+        "driver_bytes": 1082867712
+      },
+      "allocator_peak": {
+        "tensor_bytes": 21562112,
+        "reserved_bytes": 1082130432
+      },
+      "host_wall_ms_with_sampling": 60.662292
+    }
+  },
+  "sampled_high_water_bytes": {
+    "tensor_bytes": 27182080,
+    "driver_bytes": 1086488576
+  },
+  "allocator_high_water_bytes": {
+    "tensor_bytes": 61867520,
+    "reserved_bytes": 1082130432
+  },
+  "index_tensor_storage_bytes": 8458752,
+  "result_tensor_storage_bytes": 868352,
+  "allocator_high_water_is_total_gpu_peak": false,
+  "sampled_driver_high_water_is_true_driver_peak": false,
+  "memory_scope": "PyTorch allocator peak counters include transient tensor allocations; driver counter is polled and may miss transients; neither is whole-process/OS GPU memory peak; no Instruments capture",
+  "timing_scope": "sampling perturbs wall time; do not use host_wall_ms_with_sampling as a performance benchmark"
+}

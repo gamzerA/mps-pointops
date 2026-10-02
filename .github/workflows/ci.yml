@@ -51,9 +51,14 @@ jobs:
         run: |
           if [ "$RUNNER_OS" = "macOS" ]; then sysctl -n machdep.cpu.brand_string; fi
           python -c "import platform, torch, mps_pointops; print(platform.platform()); print('torch', torch.__version__, '| mps_pointops', mps_pointops.__version__); print('MPS available:', torch.backends.mps.is_available())"
+      - name: Require physical MPS for spatial parity
+        if: runner.os == 'macOS'
+        run: python -c "import torch; assert torch.backends.mps.is_available(), 'spatial parity requires MPS'"
       - name: Tests (Metal safe math)
         # `pytest` rather than `python -m pytest`, so the repository directory is
         # not put on sys.path ahead of the installed package.
+        env:
+          PYTORCH_MPS_FAST_MATH: "0"
         run: pytest -ra tests
       - name: Tests (Metal fast math)
         if: runner.os == 'macOS'
@@ -90,6 +95,8 @@ jobs:
               "mps_pointops/kernels/pointnet2.metal",
               "mps_pointops/kernels/chamfer_nn.metal",
               "mps_pointops/kernels/voxel_pool.metal",
+              "mps_pointops/kernels/spatial_keys.metal",
+              "mps_pointops/kernels/spatial_bvh.metal",
               "mps_pointops/pytorch3d.py",
               "mps_pointops/pointnet2.py",
               "mps_pointops/chamfer.py",
@@ -98,6 +105,9 @@ jobs:
               "mps_pointops/graclus.py",
               "mps_pointops/random_walk.py",
               "mps_pointops/voxel.py",
+              "mps_pointops/spatial.py",
+              "mps_pointops/_spatial_keys.py",
+              "mps_pointops/_spatial_bvh.py",
           }
           missing = required - names
           licenses = [n for n in names if "/licenses/" in n]

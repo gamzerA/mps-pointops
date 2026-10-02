@@ -53,6 +53,9 @@ The supported squared-L2 Chamfer subset is checked against a pinned official
 PyTorch3D CPU oracle in [dedicated MPS CI](docs/chamfer-upstream-ci.md), and an
 opt-in [Pointcept PTv1 Seg26 subset](docs/pointcept-ptv1-subset.md) covers one
 documented synthetic model path.
+This development branch also contains an [L1 Chamfer prototype](docs/chamfer-l1-v0.9-prototype.md)
+and an opt-in [reusable spatial index](docs/spatial-api-v090.md) with a
+two-level Morton BVH; neither is part of the published v0.8.0 package.
 Direct comparisons against the
 [original PointNet++ CUDA extension](docs/parity/pointnet2-upstream.md) and
 [PyTorch3D Chamfer](docs/chamfer-upstream-parity-0.5.0.md) record the tested
@@ -81,6 +84,34 @@ assert neighbor_idx.tolist() == [[[0, 1], [3, 1]]]
 assert radius_idx.tolist() == [[[0, 1], [1, 2]]]
 print("MPS point ops OK")
 ```
+
+### Reusable spatial index (v0.9 development branch)
+
+The opt-in `SpatialIndex` borrows one `[N,3]` reference cloud and can reuse a
+Metal BVH across queries. Existing dense and flat calls retain their kernels.
+Set Safe Math before starting Python to force the research BVH path:
+
+```bash
+PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=0 python your_script.py
+```
+
+```python
+from mps_pointops import SpatialIndex
+
+index = SpatialIndex(xyz[0], backend="bvh")
+dist, neighbors = index.knn(centers[0], 2)       # Euclidean distance
+dist2, first = index.ball_query(centers[0], 1.1, 2)  # squared distance
+```
+
+`backend="auto"` selects BVH only for a measured M5 Pro 1M-point, `k=16`,
+large-query kNN case after a small density check; it keeps the existing scan
+for radius search, Fast Math, M1, and other inputs. The forced BVH supports
+single-cloud MPS float32, `N<=1M`, `K<=32` and a bounded finite coordinate
+domain. See the [API and dispatch contract](docs/spatial-api-v090.md) and
+the synchronized M5 Pro [kNN dispatch](docs/spatial-dispatch-v090.md),
+[Ball Query](docs/spatial-radius-dispatch-v090.md), and
+[allocator-memory](docs/spatial-memory-v090.md) studies. This branch has no
+v0.9 tag.
 
 The PointNet++ and Chamfer operators introduced in v0.5.0 can be called
 directly:
@@ -1127,9 +1158,16 @@ correctness and timing evidence without extending claims to M2–M4.
 
 ### Phase 4: Geometry losses and large-scale search (target 0.8.0 to 0.9.0)
 
-- [~] Experimental bidirectional squared-L2 Chamfer distance (introduced in
-      0.5.0; #18). Metal returns nearest indices and squared distances; PyTorch's
-      native `scatter_add_` accumulates both backward directions. Supported
+The proposed v0.9.0 spatial-search and Chamfer expansion gates, followed by
+v0.10.0 sparse convolution and a bounded v1.0.0 support contract, are tracked
+in the [v0.9–v1.0 acceptance plan](docs/milestones-v0.9-v1.0.md). Target
+versions do not indicate completed support.
+
+- [~] Experimental bidirectional Chamfer distance: squared-L2 was introduced
+      in 0.5.0 (#18), and an L1 search/backward prototype is under
+      [v0.9 development](docs/chamfer-l1-v0.9-prototype.md). Metal returns
+      nearest indices and distances; PyTorch's native `scatter_add_`
+      accumulates both backward directions. Supported
       `lengths` mask padding in forward and backward, and point/batch
       reductions scale gradients according to the [contract](docs/chamfer-contract.md).
       For the un-reduced sum, let `a(i)` be the nearest point in `x` to `q[i]`,
@@ -1167,7 +1205,10 @@ correctness and timing evidence without extending claims to M2–M4.
       [dedicated MPS CI](docs/chamfer-upstream-ci.md). Separate Safe/Fast runs
       passed 160 cases and 1,080 output/gradient checks each, including
       `lengths`, weights, and supported point/batch reductions. This does not
-      cover L1, normals, or `Pointclouds` inputs.
+      cover normals or `Pointclouds` inputs. The new L1 development path passed
+      [480 cases and 3,240 checks per CPU/MPS target](docs/chamfer-l1-v0.9-prototype.md),
+      including ties and coincident-point subgradients. It has not yet been
+      promoted to the release CI gate.
 - [~] Extend the Chamfer contention study: [physical M5 Pro and M1 Safe/Fast
       large bidirectional cases](docs/chamfer-large-contention-2026-10-02.md)
       cover up to 65,536 points with synchronized full-loss and native scatter
@@ -1178,18 +1219,29 @@ correctness and timing evidence without extending claims to M2–M4.
       Pinned synthetic model forward/backward passed on M5 Pro with one
       temporary CUDA-constructor substitution; broader Pointcept signatures,
       unchanged upstream imports, and CUDA binary parity remain open.
-- [ ] Spatial acceleration structures (uniform grid or BVH) for clouds of
-      1M+ points. Done when: faster than a CPU KD-tree at 1M points.
+- [~] Spatial acceleration structures (uniform grid or BVH) for clouds of
+      1M+ points. Done when: exact API semantics and memory bounds pass the
+      [v0.9 gate](docs/milestones-v0.9-v1.0.md), and synchronized build-plus-query
+      timings beat a CPU KD-tree on a specified 1M-point workload on both
+      M5 Pro and a physical M1. A private [two-level BVH](docs/spatial-hierarchy-v0.9-design.md)
+      now performs exact kNN and first-K Ball Query under bounded Safe Math;
+      [SpatialIndex](docs/spatial-api-v090.md) exposes it as an opt-in single-cloud
+      path. M5 Pro query-count and distribution tests plus
+      [PyTorch allocator peaks](docs/spatial-memory-v090.md) are recorded.
+      M1, total GPU physical-memory peak, public flat/batched routing, and
+      cross-device build-plus-query superiority remain open.
 - [ ] Stretch: approximate optimal transport via entropic regularization
       (Sinkhorn). Specify its numerical contract separately from exact Earth
       Mover's Distance.
 
-### Phase 5: Sparse 3D and upstream convergence (target 1.0)
+### Phase 5: Sparse 3D and upstream convergence (target 0.10.0 to 1.0.0)
 
 - [ ] Sparse convolution with an `spconv`-compatible interface, in order:
-      sparse tensor structure and submanifold convolution, then strided
-      convolution, then inverse convolution.
-      Done when: outputs match `spconv` and one real model runs inference.
+      sparse tensor structure and rulebook, `SubMConv3d`, strided
+      `SparseConv3d`, then `SparseInverseConv3d` with indice-key reuse.
+      `SparseConvTranspose3d` is a separate operator. Done when a pinned
+      spconv CUDA oracle and one real model pass forward and backward under
+      the [v0.10 gate](docs/milestones-v0.9-v1.0.md).
 - [ ] Pull requests upstream, following the Phase 2 discussions.
 - [ ] API freeze, versioning policy and 1.0.
 
@@ -1227,9 +1279,11 @@ version's citation metadata and author ORCID to GitHub's citation menu.
 
 ## License
 
-Apache-2.0 for the repository. The Ball Query kernel, Python implementation,
-contract tests, numerical documentation and probe were ported from an earlier
-MIT-licensed local prototype; its full notice is retained in
+Apache-2.0 covers the repository's new code. The Ball Query kernel, Python
+implementation, contract tests, numerical documentation and probe were ported
+from an earlier MIT-licensed local prototype. Its numerical radius helpers
+are also adapted in the flat search and experimental BVH shaders; the MIT
+notice applies to those portions and is retained in
 [LICENSES/MIT-ball-query.txt](LICENSES/MIT-ball-query.txt). No PyTorch3D or
 PointNet++ source was copied into those files. See the
 [provenance note](docs/ball-query-provenance.md).

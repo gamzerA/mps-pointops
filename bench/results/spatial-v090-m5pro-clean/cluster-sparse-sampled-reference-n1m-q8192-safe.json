@@ -1,0 +1,220 @@
+{
+  "utc": "2026-10-02T00:56:16.854802+00:00",
+  "source_commit": "a80b385e41f7ae80bfc28445ee3b970731ca3a1f",
+  "source_dirty": false,
+  "source_sha256": {
+    "bench/bench_spatial_bricks.py": "e521db6095fc19cda7cc4bb66f42177f87f6a33d15b29717abe1281332a847a0",
+    "bench/spatial_bricks.py": "e12975898e1b844dc71c556fe1283f4c64373e91522b21b1c59d12975224298b",
+    "bench/spatial_bricks.metal": "434fd82d0d2845915c0325c0da2ee1094ec192d36fe923467d35871da17070e4",
+    "bench/spatial_keys.py": "e9214981f7dcb8413217979972274864c4bcd40771d0e15a9bfaf8f22946d318",
+    "bench/spatial_keys.metal": "e26bc20df349611bc7502aa7038e5692d434286600e4f454a6d273e1b6b7a8bf",
+    "bench/spatial_selected_distances.py": "2317dd418e13ec42d9aa654731b4d5af83e1a70676c59a15add5f1c8347d7ab8",
+    "bench/spatial_selected_distances.metal": "2e4c8797fad9ef5e1496ff9679bef854d3db170090e3a213b286fad5844b5191",
+    "mps_pointops/_flat_search_mps.py": "4fb494f3cf159c09382f510152c650115c86d8a7e89e4612547ff1911ac1002c",
+    "mps_pointops/kernels/flat_search.metal": "92e9f482f7e28d3b38dcedb164669c0c0981335c525c596009aad0c688f1ea6e"
+  },
+  "hardware": "Apple M5 Pro",
+  "macos": "26.5.2",
+  "python": "3.12.13",
+  "torch": "2.14.1",
+  "scipy": "1.18.1",
+  "mps_fast_math": "0",
+  "mps_fallback": "0",
+  "fixture": {
+    "kind": "cluster-sparse",
+    "points": 1000000,
+    "queries": 8192,
+    "k": 16,
+    "extent": 1024.0,
+    "cell_size": 0.015625,
+    "seed": 20261002,
+    "cube": [
+      0.0,
+      1024.0
+    ],
+    "cluster_center": [
+      512.0,
+      512.0,
+      512.0
+    ],
+    "cluster_side": 1.0,
+    "cluster_fraction": 0.9,
+    "cluster_points": 900000,
+    "background_points": 100000,
+    "cluster_queries": 4096,
+    "background_queries": 4096,
+    "query_source": "sampled-reference"
+  },
+  "large_q_opt_in": true,
+  "pruning_enabled": true,
+  "input_transfer_ms": 32.976333,
+  "mps_brick_build_ms": [
+    2.514583,
+    2.4,
+    2.597625,
+    2.466333,
+    2.445792
+  ],
+  "mps_brick_query_ms": [
+    136.561292,
+    134.628875,
+    132.637958,
+    133.011625,
+    135.296333
+  ],
+  "mps_native_brute_query_ms": [
+    143.852917,
+    146.036166,
+    143.4965,
+    148.015709,
+    149.514834
+  ],
+  "cpu_ckdtree_build_ms": [
+    231.805084,
+    212.551583,
+    203.737416,
+    202.704084,
+    225.863541
+  ],
+  "cpu_ckdtree_query_ms": [
+    25.206125,
+    25.003916,
+    24.69275,
+    23.438209,
+    23.606083
+  ],
+  "memory_before_build": {
+    "current_allocated_bytes": 20471808,
+    "driver_allocated_bytes": 1082867712
+  },
+  "memory_after_build": {
+    "current_allocated_bytes": 28785920,
+    "driver_allocated_bytes": 1082867712
+  },
+  "memory_after_query": {
+    "current_allocated_bytes": 31407360,
+    "driver_allocated_bytes": 1082851328
+  },
+  "memory_pass_samples": [
+    {
+      "stage": "before",
+      "current_allocated_bytes": 31407360,
+      "driver_allocated_bytes": 1082851328
+    },
+    {
+      "stage": "after_brick_build",
+      "current_allocated_bytes": 39721472,
+      "driver_allocated_bytes": 1082851328
+    },
+    {
+      "stage": "after_brick_query",
+      "current_allocated_bytes": 39721472,
+      "driver_allocated_bytes": 1082851328
+    },
+    {
+      "stage": "after_native_brute_query",
+      "current_allocated_bytes": 39721472,
+      "driver_allocated_bytes": 1082851328
+    }
+  ],
+  "sampled_allocator_highwater_bytes": {
+    "current_allocated_bytes": 39721472,
+    "driver_allocated_bytes": 1082851328
+  },
+  "sampled_allocator_highwater_is_true_gpu_peak": false,
+  "cpu_process_lifetime_peak_rss_bytes": 500662272,
+  "mismatched_indices_vs_native_brute": 0,
+  "mismatched_indices_vs_ckdtree_diagnostic": 14,
+  "ckdtree_difference_classification": {
+    "mismatched_slots": 14,
+    "equal_squared_float32": 14,
+    "equal_squared_float64": 14,
+    "examples": [
+      {
+        "query": 97,
+        "slot": 7,
+        "metal_index": 128101,
+        "scipy_index": 301115,
+        "metal_squared_f32": 0.00012969225645065308,
+        "scipy_squared_f32": 0.00012969225645065308,
+        "metal_squared_f64": 0.00012969225645065308,
+        "scipy_squared_f64": 0.00012969225645065308
+      },
+      {
+        "query": 97,
+        "slot": 8,
+        "metal_index": 301115,
+        "scipy_index": 128101,
+        "metal_squared_f32": 0.00012969225645065308,
+        "scipy_squared_f32": 0.00012969225645065308,
+        "metal_squared_f64": 0.00012969225645065308,
+        "scipy_squared_f64": 0.00012969225645065308
+      },
+      {
+        "query": 683,
+        "slot": 15,
+        "metal_index": 244012,
+        "scipy_index": 478438,
+        "metal_squared_f32": 0.0003455318510532379,
+        "scipy_squared_f32": 0.0003455318510532379,
+        "metal_squared_f64": 0.0003455318510532379,
+        "scipy_squared_f64": 0.0003455318510532379
+      },
+      {
+        "query": 1849,
+        "slot": 8,
+        "metal_index": 435347,
+        "scipy_index": 504596,
+        "metal_squared_f32": 0.00021513178944587708,
+        "scipy_squared_f32": 0.00021513178944587708,
+        "metal_squared_f64": 0.00021513178944587708,
+        "scipy_squared_f64": 0.00021513178944587708
+      },
+      {
+        "query": 1849,
+        "slot": 9,
+        "metal_index": 504596,
+        "scipy_index": 435347,
+        "metal_squared_f32": 0.00021513178944587708,
+        "scipy_squared_f32": 0.00021513178944587708,
+        "metal_squared_f64": 0.00021513178944587708,
+        "scipy_squared_f64": 0.00021513178944587708
+      },
+      {
+        "query": 1872,
+        "slot": 12,
+        "metal_index": 599201,
+        "scipy_index": 616881,
+        "metal_squared_f32": 0.00033099204301834106,
+        "scipy_squared_f32": 0.00033099204301834106,
+        "metal_squared_f64": 0.00033099204301834106,
+        "scipy_squared_f64": 0.00033099204301834106
+      },
+      {
+        "query": 1872,
+        "slot": 13,
+        "metal_index": 616881,
+        "scipy_index": 599201,
+        "metal_squared_f32": 0.00033099204301834106,
+        "scipy_squared_f32": 0.00033099204301834106,
+        "metal_squared_f64": 0.00033099204301834106,
+        "scipy_squared_f64": 0.00033099204301834106
+      },
+      {
+        "query": 2262,
+        "slot": 9,
+        "metal_index": 40364,
+        "scipy_index": 350431,
+        "metal_squared_f32": 0.0002166368067264557,
+        "scipy_squared_f32": 0.0002166368067264557,
+        "metal_squared_f64": 0.0002166368067264557,
+        "scipy_squared_f64": 0.0002166368067264557
+      }
+    ]
+  },
+  "mismatched_sqdist_bits_vs_cpu_float32_diagnostic": 0,
+  "mismatched_sqdist_bits_vs_independent_metal_probe": 0,
+  "max_abs_sqdist_error_vs_cpu_float32": 0.0,
+  "timing_scope": "preloaded resident coordinates; synchronized host wall; shader compilation excluded; separate allocator sampling pass",
+  "memory_scope": "sampled after stages; not true transient GPU peak; CPU RSS covers process lifetime"
+}

@@ -67,13 +67,14 @@ def test_weighted_bidirectional_backward_matches_closed_form(device):
 
 
 @pytest.mark.parametrize("device", ["cpu", "mps"])
-def test_all_zero_weights_have_zero_gradient_on_every_input(device):
+@pytest.mark.parametrize("norm", [1, 2])
+def test_all_zero_weights_have_zero_gradient_on_every_input(device, norm):
     if device == "mps" and not torch.backends.mps.is_available():
         pytest.skip("MPS not available")
     x = torch.zeros((1, 1, 3), device=device, requires_grad=True)
     y = torch.tensor([[[2.0, 0.0, 0.0]]], device=device, requires_grad=True)
     weights = torch.zeros(1, device=device, requires_grad=True)
-    loss, _ = chamfer_distance(x, y, weights=weights)
+    loss, _ = chamfer_distance(x, y, weights=weights, norm=norm)
     loss.backward()
     assert loss.item() == 0.0
     torch.testing.assert_close(x.grad.cpu(), torch.zeros((1, 1, 3)), rtol=0, atol=0)
@@ -82,10 +83,11 @@ def test_all_zero_weights_have_zero_gradient_on_every_input(device):
 
 
 @pytest.mark.parametrize("device", ["cpu", "mps"])
+@pytest.mark.parametrize("norm", [1, 2])
 @pytest.mark.parametrize("point_reduction", ["mean", "sum", "max", None])
 @pytest.mark.parametrize("single_directional", [False, True])
 def test_all_zero_weights_match_upstream_return_shape_and_gradient_presence(
-    device, point_reduction, single_directional
+    device, norm, point_reduction, single_directional
 ):
     if device == "mps" and not torch.backends.mps.is_available():
         pytest.skip("MPS not available")
@@ -102,7 +104,7 @@ def test_all_zero_weights_match_upstream_return_shape_and_gradient_presence(
     weights = torch.zeros(2, device=device, requires_grad=True)
     loss, normals = chamfer_distance(
         x, y, weights=weights, point_reduction=point_reduction,
-        batch_reduction=None, single_directional=single_directional,
+        batch_reduction=None, single_directional=single_directional, norm=norm,
     )
     parts = loss if isinstance(loss, tuple) else (loss,)
     assert len(parts) == (1 if single_directional or point_reduction is not None else 2)
@@ -201,23 +203,229 @@ def test_double_precision_gradcheck_away_from_ties():
     assert torch.autograd.gradcheck(lambda a, b: chamfer_distance(a, b)[0], (x, y))
 
 
+def test_l1_double_precision_gradcheck_away_from_ties_and_cusps():
+    x = torch.tensor([[[0.1, 0.2, 0.3], [2.1, 0.4, 0.5]]], dtype=torch.double, requires_grad=True)
+    y = torch.tensor([[[1.0, 0.11, 0.21], [4.0, 0.8, 0.7]]], dtype=torch.double, requires_grad=True)
+    assert torch.autograd.gradcheck(lambda a, b: chamfer_distance(a, b, norm=1)[0], (x, y))
+
+
+@pytest.mark.parametrize("device", ["cpu", "mps"])
+def test_l1_ranks_by_absolute_sum_and_matches_upstream_equal_coordinate_gradient(device):
+    if device == "mps" and not torch.backends.mps.is_available():
+        pytest.skip("MPS not available")
+    x = torch.zeros((1, 1, 3), device=device, requires_grad=True)
+    y = torch.tensor([[[3.0, 0.0, 0.0], [2.0, 2.0, 0.0]]], device=device, requires_grad=True)
+    l1, _ = chamfer_distance(x, y, norm=1, single_directional=True)
+    l2, _ = chamfer_distance(x, y, norm=2, single_directional=True)
+    assert l1.item() == 3.0
+    assert l2.item() == 8.0
+    l1.backward()
+    torch.testing.assert_close(x.grad.cpu(), torch.tensor([[[-1.0, -1.0, -1.0]]]), rtol=0, atol=0)
+    torch.testing.assert_close(
+        y.grad.cpu(), torch.tensor([[[1.0, 1.0, 1.0], [0.0, 0.0, 0.0]]]), rtol=0, atol=0
+    )
+
+
+@pytest.mark.parametrize("device", ["cpu", "mps"])
+def test_l1_tie_uses_first_reference_and_masks_padding(device):
+    if device == "mps" and not torch.backends.mps.is_available():
+        pytest.skip("MPS not available")
+    x = torch.tensor([[[0.0, 0.0, 0.0], [float("nan"), 0.0, 0.0]]], device=device, requires_grad=True)
+    y = torch.tensor([[[1.0, 0.0, 0.0], [-1.0, 0.0, 0.0]]], device=device, requires_grad=True)
+    lx = torch.tensor([1], device=device)
+    ly = torch.tensor([2], device=device)
+    if device == "mps":
+        distances, indices = chamfer_module._nearest_mps(x, y, lx, ly, norm=1)
+        torch.mps.synchronize()
+        torch.testing.assert_close(distances.cpu(), torch.tensor([[1.0, 0.0]]), rtol=0, atol=0)
+        torch.testing.assert_close(indices.cpu(), torch.tensor([[0, -1]]), rtol=0, atol=0)
+    loss, _ = chamfer_distance(x, y, lx, ly, norm=1, single_directional=True)
+    assert loss.item() == 1.0
+    loss.backward()
+    torch.testing.assert_close(x.grad[0, 0].cpu(), torch.tensor([-1.0, -1.0, -1.0]), rtol=0, atol=0)
+    torch.testing.assert_close(x.grad[0, 1].cpu(), torch.zeros(3), rtol=0, atol=0)
+    torch.testing.assert_close(y.grad[0, 0].cpu(), torch.tensor([1.0, 1.0, 1.0]), rtol=0, atol=0)
+    torch.testing.assert_close(y.grad[0, 1].cpu(), torch.zeros(3), rtol=0, atol=0)
+
+
+@pytest.mark.parametrize("device", ["cpu", "mps"])
+def test_l1_exact_coincidence_uses_upstream_minus_one_subgradient(device):
+    if device == "mps" and not torch.backends.mps.is_available():
+        pytest.skip("MPS not available")
+    query = torch.zeros((1, 1, 3), device=device, requires_grad=True)
+    ref = torch.zeros((1, 1, 3), device=device, requires_grad=True)
+    loss, _ = chamfer_distance(
+        query, ref, norm=1, single_directional=True,
+        point_reduction="sum", batch_reduction="sum",
+    )
+    assert loss.item() == 0.0
+    loss.backward()
+    torch.testing.assert_close(query.grad.cpu(), -torch.ones((1, 1, 3)), rtol=0, atol=0)
+    torch.testing.assert_close(ref.grad.cpu(), torch.ones((1, 1, 3)), rtol=0, atol=0)
+
+
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason="MPS not available")
+def test_l1_metal_tie_is_stable_across_lanes_groups_and_repeated_dispatches():
+    query = torch.zeros((2, 17, 3), device="mps")
+    ref = torch.full((2, 65, 3), 100.0, device="mps")
+    ref[:, 0] = torch.tensor([1.0, 0.0, 0.0], device="mps")
+    ref[:, 31] = torch.tensor([-1.0, 0.0, 0.0], device="mps")
+    ref[:, 32] = torch.tensor([0.0, 1.0, 0.0], device="mps")
+    ref[:, 64] = torch.tensor([0.0, -1.0, 0.0], device="mps")
+    query_lengths = torch.tensor([17, 17], device="mps")
+    ref_lengths = torch.tensor([65, 65], device="mps")
+    outputs = [chamfer_module._nearest_mps(query, ref, query_lengths, ref_lengths, norm=1)
+               for _ in range(32)]
+    torch.mps.synchronize()
+    for distances, indices in outputs:
+        torch.testing.assert_close(distances.cpu(), torch.ones((2, 17)), rtol=0, atol=0)
+        torch.testing.assert_close(indices.cpu(), torch.zeros((2, 17), dtype=torch.long), rtol=0, atol=0)
+
+
 def test_rejects_unsupported_or_invalid_inputs():
     x = torch.zeros((1, 2, 3))
     y = torch.ones((1, 2, 3))
     with pytest.raises(ValueError, match="batch_reduction"):
         chamfer_distance(x, y, point_reduction=None)
-    with pytest.raises(NotImplementedError, match="norm=2"):
-        chamfer_distance(x, y, norm=1)
-    with pytest.raises(NotImplementedError, match="normal"):
-        chamfer_distance(x, y, x_normals=x)
-    with pytest.raises(ValueError, match="at least one"):
-        chamfer_distance(x, y, torch.tensor([0]), torch.tensor([2]))
+    with pytest.raises(ValueError, match="1 or 2 norm"):
+        chamfer_distance(x, y, norm=3)
+    assert chamfer_distance(x, y, x_normals=x)[1] is None
+    with pytest.raises(ValueError, match="Normals must be None"):
+        chamfer_distance(x, y, x_normals=x, point_reduction="max")
+    with pytest.raises(ValueError, match="same \\(B, P, 3\\) shape"):
+        chamfer_distance(x, y, x_normals=torch.zeros((1, 1, 3)))
+    empty_loss, _ = chamfer_distance(x, y, torch.tensor([0]), torch.tensor([2]))
+    assert empty_loss.item() == 0.0
     with pytest.raises(ValueError, match=r"\[0, 2\]"):
         chamfer_distance(x, y, torch.tensor([3]), torch.tensor([2]))
     with pytest.raises(ValueError, match="finite"):
         chamfer_distance(x.clone().fill_(float("nan")), y)
     with pytest.raises(ValueError, match="nonnegative"):
         chamfer_distance(x, y, weights=torch.tensor([-1.0]))
+
+
+@pytest.mark.parametrize("device", ["cpu", "mps"])
+@pytest.mark.parametrize("abs_cosine", [False, True])
+def test_normal_loss_and_gradients_use_selected_position_neighbor(device, abs_cosine):
+    if device == "mps" and not torch.backends.mps.is_available():
+        pytest.skip("MPS not available")
+    x = torch.tensor([[[0., 0., 0.], [2., 0., 0.]]], device=device, requires_grad=True)
+    y = torch.tensor([[[1., 0., 0.]]], device=device, requires_grad=True)
+    xn = torch.tensor([[[1., 0., 0.], [0., 1., 0.]]], device=device, requires_grad=True)
+    yn = torch.tensor([[[-1., 0., 0.]]], device=device, requires_grad=True)
+    loss, normals = chamfer_distance(
+        x, y, x_normals=xn, y_normals=yn, abs_cosine=abs_cosine,
+    )
+    assert normals is not None
+    torch.testing.assert_close(normals.cpu(), torch.tensor(0.5 if abs_cosine else 3.5), rtol=0, atol=0)
+    grads = torch.autograd.grad(loss + normals, (x, y, xn, yn))
+    torch.testing.assert_close(grads[0].cpu(), torch.tensor([[[-3., 0., 0.], [1., 0., 0.]]]), rtol=0, atol=0)
+    torch.testing.assert_close(grads[1].cpu(), torch.tensor([[[2., 0., 0.]]]), rtol=0, atol=0)
+    assert grads[2].shape == xn.shape and grads[3].shape == yn.shape
+    assert torch.isfinite(grads[2]).all() and torch.isfinite(grads[3]).all()
+
+
+@pytest.mark.parametrize("device", ["cpu", "mps"])
+def test_zero_normals_padding_and_one_sided_input(device):
+    if device == "mps" and not torch.backends.mps.is_available():
+        pytest.skip("MPS not available")
+    x = torch.tensor([[[0., 0., 0.], [99., 0., 0.]]], device=device, requires_grad=True)
+    y = torch.tensor([[[1., 0., 0.], [88., 0., 0.]]], device=device, requires_grad=True)
+    xn = torch.tensor([[[0., 0., 0.], [float("nan"), 0., 0.]]], device=device, requires_grad=True)
+    yn = torch.tensor([[[0., 0., 0.], [float("nan"), 0., 0.]]], device=device, requires_grad=True)
+    lengths = torch.tensor([1], device=device)
+    loss, normals = chamfer_distance(
+        x, y, lengths, lengths, x_normals=xn, y_normals=yn,
+        point_reduction=None, batch_reduction=None,
+    )
+    assert isinstance(loss, tuple) and isinstance(normals, tuple)
+    for part in normals:
+        torch.testing.assert_close(part.cpu(), torch.tensor([[1., 0.]]), rtol=0, atol=0)
+    gxn, gyn = torch.autograd.grad(sum(part.sum() for part in normals), (xn, yn))
+    assert torch.isfinite(gxn).all() and torch.isfinite(gyn).all()
+    torch.testing.assert_close(gxn.cpu(), torch.zeros_like(gxn.cpu()), rtol=0, atol=0)
+    torch.testing.assert_close(gyn.cpu(), torch.zeros_like(gyn.cpu()), rtol=0, atol=0)
+    _, only_one = chamfer_distance(x, y, lengths, lengths, x_normals=xn)
+    assert only_one is None
+
+
+def test_pointclouds_input_overrides_explicit_lengths_and_normals():
+    pytest.importorskip("pytorch3d")
+    from pytorch3d.structures import Pointclouds
+
+    x = torch.tensor([[[0., 0., 0.], [2., 0., 0.]],
+                      [[3., 0., 0.], [99., 0., 0.]]], requires_grad=True)
+    y = torch.tensor([[[1., 0., 0.], [4., 0., 0.]],
+                      [[4., 0., 0.], [5., 0., 0.]]], requires_grad=True)
+    xn = torch.tensor([[[1., 0., 0.], [0., 1., 0.]],
+                       [[0., 0., 1.], [0., 0., 0.]]], requires_grad=True)
+    yn = torch.tensor([[[1., 0., 0.], [0., 1., 0.]],
+                       [[0., 1., 0.], [1., 0., 0.]]], requires_grad=True)
+    lx = torch.tensor([2, 1])
+    cloud = Pointclouds(points=[x[0, :2], x[1, :1]], normals=[xn[0, :2], xn[1, :1]])
+    expected = chamfer_distance(x, y, lx, x_normals=xn, y_normals=yn)
+    actual = chamfer_distance(
+        cloud, y, x_lengths=torch.tensor([99, 99]),
+        x_normals=torch.zeros((1, 1, 3)), y_normals=yn,
+    )
+    for left, right in zip(expected, actual):
+        assert left is not None and right is not None
+        torch.testing.assert_close(left, right, rtol=0, atol=0)
+    expected_grads = torch.autograd.grad(sum(expected), (x, y, xn, yn), retain_graph=True)
+    actual_grads = torch.autograd.grad(sum(actual), (x, y, xn, yn))
+    for expected_grad, actual_grad in zip(expected_grads, actual_grads):
+        torch.testing.assert_close(actual_grad, expected_grad, rtol=0, atol=0)
+    with pytest.raises(ValueError, match="Normals must be None"):
+        chamfer_distance(cloud, y, y_normals=yn, point_reduction="max")
+
+
+@pytest.mark.parametrize("device", ["cpu", "mps"])
+@pytest.mark.parametrize("x_empty", [True, False])
+def test_empty_reference_or_query_has_zero_loss_and_gradient(device, x_empty):
+    if device == "mps" and not torch.backends.mps.is_available():
+        pytest.skip("MPS not available")
+    x = torch.zeros((1, 0 if x_empty else 2, 3), device=device, requires_grad=True)
+    y = torch.ones((1, 2 if x_empty else 0, 3), device=device, requires_grad=True)
+    loss, normals = chamfer_distance(x, y)
+    assert normals is None and loss.item() == 0.0
+    gx, gy = torch.autograd.grad(loss, (x, y))
+    assert gx.shape == x.shape and gy.shape == y.shape
+    torch.testing.assert_close(gx.cpu(), torch.zeros_like(gx.cpu()), rtol=0, atol=0)
+    torch.testing.assert_close(gy.cpu(), torch.zeros_like(gy.cpu()), rtol=0, atol=0)
+
+
+@pytest.mark.parametrize("device", ["cpu", "mps"])
+def test_empty_cloud_inside_uneven_batch_matches_normal_masking(device):
+    if device == "mps" and not torch.backends.mps.is_available():
+        pytest.skip("MPS not available")
+    x = torch.tensor([[[0., 0., 0.], [9., 0., 0.]],
+                      [[0., 0., 0.], [2., 0., 0.]]], device=device, requires_grad=True)
+    y = torch.tensor([[[1., 0., 0.], [2., 0., 0.]],
+                      [[1., 0., 0.], [3., 0., 0.]]], device=device, requires_grad=True)
+    xn = torch.tensor([[[1., 0., 0.], [0., 0., 1.]],
+                       [[1., 0., 0.], [0., 1., 0.]]], device=device, requires_grad=True)
+    yn = torch.tensor([[[1., 0., 0.], [0., 1., 0.]],
+                       [[1., 0., 0.], [0., 1., 0.]]], device=device, requires_grad=True)
+    distance, normal = chamfer_distance(
+        x, y, x_lengths=torch.tensor([0, 2], device=device),
+        y_lengths=torch.tensor([2, 2], device=device),
+        x_normals=xn, y_normals=yn, batch_reduction=None,
+    )
+    assert normal is not None
+    assert distance[0].item() == 0.0 and normal[0].item() == 1.0
+    grads = torch.autograd.grad(distance.sum() + normal.sum(), (x, y, xn, yn))
+    for grad in grads:
+        assert torch.isfinite(grad).all()
+    torch.testing.assert_close(grads[0][0].cpu(), torch.zeros((2, 3)), rtol=0, atol=0)
+    torch.testing.assert_close(grads[2][0].cpu(), torch.zeros((2, 3)), rtol=0, atol=0)
+
+
+def test_pointclouds_zero_batch_matches_upstream_scalar_zero():
+    pytest.importorskip("pytorch3d")
+    from pytorch3d.structures import Pointclouds
+
+    loss, normals = chamfer_distance(Pointclouds([]), Pointclouds([]))
+    assert normals is None and loss.shape == () and loss.item() == 0.0
 
 
 @pytest.mark.skipif(not torch.backends.mps.is_available(), reason="MPS not available")
