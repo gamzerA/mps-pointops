@@ -34,7 +34,8 @@ dispatch and every PyTorch/MPS operation in build time. An index may be reused
 across queries; publish both build-plus-one-query and amortized repeated-query
 timings. The original grid prototype uses sorted-key binary searches and has
 no CSR, batch layout, or kNN traversal. The separate BVH has Metal leaf/macro
-builds and query traversal, but no public flat/batched routing or M1 gate.
+builds and query traversal, but no public flat/batched routing. The physical
+M1 results below cover measured fixtures, not a complete release gate.
 The initial [CPU research grid](../bench/spatial_grid_reference.py) checks
 candidate coverage, original-index ordering, exact kNN termination, and
 explicit degenerate fallback. It uses binary64 distances and is **not** a
@@ -57,8 +58,11 @@ additionally preserves original-index first-K order under the dense radius
 threshold, with explicit full-scan recovery on stack overflow. The
 [memory study](spatial-memory-v090.md) records PyTorch allocator peaks that
 include transient tensor allocations; total GPU physical-memory peak still
-requires an Instruments trace. Neither evidence set includes the disconnected
-physical M1, so the release gate remains open.
+requires an Instruments trace. A subsequent [physical M1 study](spatial-m1-v090.md)
+records clean-source spatial parity, synchronized 1M-point timings, SciPy
+`cKDTree` build/query comparisons, and allocator counters on 8 GiB Apple M1.
+It does not provide an Instruments physical-memory trace or close the full
+release gate.
 The [M5 Pro branch regression logs](evidence/spatial-v090/README.md) preserve
 separate Safe and Fast runs with CPU fallback disabled; Fast Math skips the
 Safe-only BVH contract tests. The current radius-performance JSONs check
@@ -97,7 +101,9 @@ set agreement outside a documented floating-point boundary band. Ties must
 be checked against this package's deterministic brute-force oracle rather
 than treated as SciPy ordering errors. A speedup claim requires repeated M5 Pro
 and physical M1 measurements with uncertainty intervals and no memory failure.
-Until the user reconnects the physical M1, its performance gate is pending.
+The physical M1 has now been measured for the stated fixtures; its
+[raw records and limitations](spatial-m1-v090.md) are part of this plan.
+The broader speedup, physical-memory, and v1.0 support gates remain open.
 On an 8 GB M1, verify the chip, memory, macOS and PyTorch versions before
 testing. Run each Safe-Math, CPU-fallback-disabled fixture in a fresh child
 process with a recorded wall-time limit and allocator/driver checkpoints.
@@ -133,8 +139,12 @@ The L1 prototype has passed the [direct pinned-upstream parity matrix](chamfer-l
 on CPU and M5 Pro Safe/Fast. Normal loss and optional `Pointclouds` inputs
 have a separate [development parity matrix](chamfer-normals-pointclouds-v0.9-prototype.md)
 from a clean source commit. These finite float32 fixtures do not establish
-every upstream argument/error combination or physical M1 behavior, so the
-full-compatibility release gate remains open.
+every upstream argument/error combination or upstream parity on physical M1,
+so the full-compatibility release gate remains open.
+The [physical M1 internal Chamfer logs](evidence/chamfer-v090-m1/) record
+76 passed and 2 skipped in each math mode. PyTorch3D was absent on that
+machine, so its upstream parity cases were skipped; this does not close the
+full-compatibility gate.
 
 ### Optional optimal transport research
 

@@ -1,0 +1,116 @@
+{
+  "utc": "2026-10-02T09:27:43.472125+00:00",
+  "source_commit": "ef07a9337b40065c18a6c950bda4240c789f31f1",
+  "source_dirty": false,
+  "source_sha256": {
+    "bench/bench_spatial_bvh.py": "241de2b5972612242533ecae4ad24f49f1cfa96e9094af933b3015a4f51dc667",
+    "bench/spatial_bvh.py": "0691882a65fdc27bbc255ba431ab3e6a433a5dbe89a9a96190af5f5179896858",
+    "bench/spatial_bvh.metal": "e466dd2880136a504106c8fba7e303117a9f2cdd4924dbf5bb3f636f9875c345",
+    "bench/spatial_bricks.py": "e12975898e1b844dc71c556fe1283f4c64373e91522b21b1c59d12975224298b",
+    "bench/spatial_bricks.metal": "434fd82d0d2845915c0325c0da2ee1094ec192d36fe923467d35871da17070e4",
+    "bench/spatial_keys.py": "e9214981f7dcb8413217979972274864c4bcd40771d0e15a9bfaf8f22946d318",
+    "bench/spatial_keys.metal": "e26bc20df349611bc7502aa7038e5692d434286600e4f454a6d273e1b6b7a8bf",
+    "mps_pointops/_flat_search_mps.py": "4fb494f3cf159c09382f510152c650115c86d8a7e89e4612547ff1911ac1002c",
+    "mps_pointops/kernels/flat_search.metal": "28da4338f4188b96f662aca319965f033226c6d9f5963caa5aaae3dde84864fb"
+  },
+  "hardware": "Apple M1",
+  "macos": "26.5.2",
+  "torch": "2.14.1",
+  "scipy": "1.15.3",
+  "mps_fast_math": "0",
+  "mps_fallback": "0",
+  "fixture": {
+    "kind": "cluster-sparse",
+    "points": 1000000,
+    "queries": 4096,
+    "k": 16,
+    "extent": 1024.0,
+    "cell_size": 0.015625,
+    "seed": 20261002,
+    "query_source": "sampled-reference",
+    "cluster_fraction": 0.9,
+    "cluster_side": 1.0,
+    "cluster_queries": 2048,
+    "background_queries": 2048
+  },
+  "repeats": 3,
+  "input_transfer_ms": 180.6955,
+  "bvh_build_ms": [
+    10.096458,
+    10.295625,
+    10.273792
+  ],
+  "brick_build_ms": [
+    10.282708,
+    10.378708,
+    10.394
+  ],
+  "bvh_query_ms": [
+    137.362709,
+    139.02975,
+    138.188916
+  ],
+  "brick_query_ms": [
+    295.695667,
+    299.002084,
+    295.82825
+  ],
+  "bvh_split_query_ms": null,
+  "native_brute_query_ms": [
+    357.135791,
+    358.300291,
+    360.812041
+  ],
+  "cpu_ckdtree_build_ms": [
+    414.48675,
+    362.545041,
+    356.26525
+  ],
+  "cpu_ckdtree_query_ms": [
+    17.926917,
+    17.678458,
+    17.231417
+  ],
+  "bvh_index_mismatch_vs_native": 0,
+  "bvh_split_index_mismatch_vs_native": null,
+  "brick_index_mismatch_vs_native": 0,
+  "bvh_brick_squared_distance_bit_mismatch": 0,
+  "bvh_split_brick_squared_distance_bit_mismatch": null,
+  "bvh_node_visits": {
+    "p50": 370.0,
+    "p95": 1178.5,
+    "max": 1688.0
+  },
+  "bvh_point_visits": {
+    "p50": 7680.0,
+    "p95": 22912.0,
+    "max": 33792.0
+  },
+  "bvh_pruned_nodes": {
+    "p50": 135.5,
+    "p95": 412.0,
+    "max": 607.0
+  },
+  "bvh_total_fallbacks": 0,
+  "bvh_node_bytes": 458752,
+  "memory_before_build": {
+    "current_allocated_bytes": 29008128,
+    "driver_allocated_bytes": 1082802176
+  },
+  "memory_after_bvh_build": {
+    "current_allocated_bytes": 37593344,
+    "driver_allocated_bytes": 1082802176
+  },
+  "memory_after_queries": {
+    "current_allocated_bytes": 48086528,
+    "driver_allocated_bytes": 1082785792
+  },
+  "sampled_allocator_highwater_bytes": {
+    "current_allocated_bytes": 48086528,
+    "driver_allocated_bytes": 1082802176
+  },
+  "sampled_allocator_highwater_is_true_gpu_peak": false,
+  "cpu_process_lifetime_peak_rss_bytes": 334184448,
+  "timing_scope": "preloaded inputs, synchronized host wall, compilation excluded; wrappers include validation/synchronization",
+  "memory_scope": "sampled after stages; not true transient GPU peak; CPU RSS covers process lifetime"
+}

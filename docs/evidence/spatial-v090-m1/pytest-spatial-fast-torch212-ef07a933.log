@@ -1,0 +1,26 @@
+....ssss.sssssssssssssssssssssss                                         [100%]
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_spatial_public.py:67: requires isolated MPS Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_public.py:89: requires isolated MPS Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_public.py:113: requires isolated MPS Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_public.py:131: requires isolated MPS Safe Math with fallback disabled
+SKIPPED [4] tests/test_spatial_bvh.py:37: requires a physical MPS GPU in isolated Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_bvh.py:66: requires a physical MPS GPU in isolated Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_bvh.py:84: requires a physical MPS GPU in isolated Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_bvh.py:108: requires a physical MPS GPU in isolated Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_bvh.py:115: requires a physical MPS GPU in isolated Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_bvh.py:137: requires a physical MPS GPU in isolated Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_bvh.py:159: requires a physical MPS GPU in isolated Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_bvh.py:178: requires a physical MPS GPU in isolated Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_bvh.py:203: requires a physical MPS GPU in isolated Safe Math with fallback disabled
+SKIPPED [2] tests/test_spatial_bvh_radius.py:50: requires a physical MPS GPU in isolated Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_bvh_radius.py:66: requires a physical MPS GPU in isolated Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_bvh_radius.py:82: requires a physical MPS GPU in isolated Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_bvh_radius.py:103: requires a physical MPS GPU in isolated Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_bvh_radius.py:114: requires a physical MPS GPU in isolated Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_bvh_radius.py:131: requires a physical MPS GPU in isolated Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_bvh_radius.py:142: requires a physical MPS GPU in isolated Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_bvh_radius.py:153: requires a physical MPS GPU in isolated Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_bvh_radius.py:164: requires a physical MPS GPU in isolated Safe Math with fallback disabled
+SKIPPED [1] tests/test_spatial_bvh_radius.py:190: requires a physical MPS GPU in isolated Safe Math with fallback disabled
+5 passed, 27 skipped in 0.62s
