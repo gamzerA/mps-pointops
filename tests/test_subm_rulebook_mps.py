@@ -114,6 +114,25 @@ def test_mps_rulebook_accepts_a_noncontiguous_coordinate_view():
 
 
 @MPS
+def test_mps_rulebook_keeps_a_snapshot_when_caller_mutates_contiguous_indices():
+    indices, cpu = _oracle(
+        [[0, 1, 0, 0], [0, 2, 0, 0], [0, 3, 0, 0]],
+        (5, 1, 1), 1, (3, 1, 1), (1, 1, 1),
+    )
+    caller = indices.to("mps")
+    assert caller.is_contiguous()
+    gpu = generate_subm_rulebook_mps(caller, kernel_size=(3, 1, 1))
+    assert gpu.output_indices.data_ptr() != caller.data_ptr()
+    # The input write is enqueued immediately after the call. The lookup and
+    # output coordinates must both use the call-time snapshot.
+    caller[0, 1] = 4
+    torch.mps.synchronize()
+    count = int(gpu.pair_count.cpu()[0])
+    assert torch.equal(gpu.output_indices.cpu(), indices)
+    assert torch.equal(gpu.pairs[:count].cpu(), cpu.pairs)
+
+
+@MPS
 def test_mps_target_arithmetic_does_not_wrap_int32_coordinate_boundary():
     indices, cpu = _oracle(
         [[0, 2**31 - 1, 0, 0], [0, 2**31 - 2, 0, 0]],
@@ -123,19 +142,25 @@ def test_mps_target_arithmetic_does_not_wrap_int32_coordinate_boundary():
 
 
 @MPS
-def test_mps_generated_csr_is_consumable_by_metal_subm_forward():
+def test_mps_generated_csr_chains_into_metal_forward_without_intermediate_sync():
     coordinates = [[0, 2, 1, 1], [0, 1, 1, 1], [1, 2, 1, 1], [0, 3, 1, 1]]
     shape, kernel = (5, 3, 3), (3, 3, 3)
-    indices, cpu = _oracle(coordinates, shape, 2, kernel, (1, 1, 1))
-    gpu = _check_rulebook(indices, cpu, kernel, (1, 1, 1))
+    indices, _ = _oracle(coordinates, shape, 2, kernel, (1, 1, 1))
     generator = torch.Generator().manual_seed(8127)
     features = torch.randn((len(indices), 3), generator=generator)
     weights = torch.randn((2, 3, *kernel), generator=generator)
     bias = torch.randn((2,), generator=generator)
+    forward_kernel = _forward_library().subm_conv3d_f32
+    device_features = features.to("mps")
+    device_weights = weights.to("mps")
+    device_bias = bias.to("mps")
+    gpu = generate_subm_rulebook_mps(
+        indices.to("mps"), kernel_size=kernel
+    )
     output = torch.empty((len(indices), 2), dtype=torch.float32, device="mps")
-    _forward_library().subm_conv3d_f32(
-        features.to("mps"), weights.to("mps"), gpu.output_ptr,
-        gpu.output_sources, gpu.output_offsets, bias.to("mps"), output,
+    forward_kernel(
+        device_features, device_weights, gpu.output_ptr,
+        gpu.output_sources, gpu.output_offsets, device_bias, output,
         len(indices), 3, 2, 27, 1,
         threads=output.numel(), group_size=output.numel(),
     )

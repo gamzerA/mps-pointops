@@ -91,6 +91,10 @@ def generate_subm_rulebook_mps(
         )
 
     device = indices.device
+    # CPU oracle output_indices is a clone. Preserve the same snapshot even
+    # when the caller supplies an already-contiguous MPS tensor and mutates it
+    # immediately after this asynchronous call.
+    stable_indices = indices.clone(memory_format=torch.contiguous_format)
     pairs = torch.full((slots, 3), -1, dtype=torch.int64, device=device)
     output_sources = torch.full((slots,), -1, dtype=torch.int64, device=device)
     output_offsets = torch.full((slots,), -1, dtype=torch.int64, device=device)
@@ -98,14 +102,14 @@ def generate_subm_rulebook_mps(
     if slots == 0:
         output_ptr.zero_()
         return SubmRulebookMPS(
-            indices.contiguous(), pairs, torch.zeros((1,), dtype=torch.int64, device=device),
+            stable_indices, pairs, torch.zeros((1,), dtype=torch.int64, device=device),
             output_ptr, output_sources, output_offsets, kernel,
         )
 
     dense_sources = torch.empty((slots,), dtype=torch.int64, device=device)
     valid_offset = torch.empty((slots,), dtype=torch.int32, device=device)
     _library().subm_rulebook_lookup_i32(
-        indices.contiguous(), dense_sources, valid_offset,
+        stable_indices, dense_sources, valid_offset,
         rows, *kernel, *dil,
         threads=slots, group_size=min(slots, _GROUP_SIZE),
     )
@@ -118,6 +122,6 @@ def generate_subm_rulebook_mps(
         threads=max(slots, rows + 1), group_size=min(max(slots, rows + 1), _GROUP_SIZE),
     )
     return SubmRulebookMPS(
-        indices.contiguous(), pairs, offset_prefix[-1:], output_ptr,
+        stable_indices, pairs, offset_prefix[-1:], output_ptr,
         output_sources, output_offsets, kernel,
     )

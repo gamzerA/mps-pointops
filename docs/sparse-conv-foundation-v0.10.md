@@ -96,8 +96,10 @@ The private `generate_subm_rulebook_mps` takes prevalidated, unique MPS
 `int32` coordinates `[N,4]` in input row order. The caller must guarantee
 batch/spatial bounds and uniqueness; unlike the CPU oracle, this prototype
 does not inspect coordinate values on the host or reject invalid/duplicate
-coordinates. It accepts odd kernel dimensions and positive dilation (each
-parameter fits `int32`), with
+coordinates. A contiguous MPS clone snapshots the input once for both lookup
+and returned output coordinates, matching the CPU oracle's clone behavior
+when callers mutate their input after the call. It accepts odd kernel
+dimensions and positive dilation, each fitting `int32`. It also requires
 `N <= 1024` and `N * kernel_volume <= 27648`. These are explicit prototype
 limits, not Metal or `spconv` limits.
 
@@ -118,8 +120,9 @@ limits, not Metal or `spconv` limits.
 
 The existing private `subm_conv3d_forward_mps` still uses the CPU-generated
 rulebook. A test feeds the GPU-generated CSR directly to its Metal forward
-shader and compares its floating-point output with dense CPU `Conv3d`. GPU
-input validation, a scalable Metal spatial index, backwards consumption of
+shader without an intermediate queue synchronization or host readback, then
+compares its floating-point output with dense CPU `Conv3d`. GPU input
+validation, a scalable Metal spatial index, backwards consumption of
 GPU-only pair metadata, performance proof, and upstream parity are still
 required before replacing that path or making a compatibility claim.
 
@@ -146,11 +149,12 @@ small batched, unsorted, dilated, biased, empty, and noncontiguous cases with
 dense PyTorch Conv3d at active output coordinates and compares first-order
 feature, weight, and bias gradients for batched, dilated, empty, sliced-view,
 and spatially transposed weight fixtures. On the local Apple Silicon GPU with
-`PYTORCH_ENABLE_MPS_FALLBACK=0`, the combined suites passed **46 tests** in
+`PYTORCH_ENABLE_MPS_FALLBACK=0`, the combined suites passed **47 tests** in
 each separately launched Safe and Fast Math process on 2026-10-02. Of these,
-14 check the new MPS rulebook on fixed and seeded random clouds (up to 1024
+15 check the new MPS rulebook on fixed and seeded random clouds (up to 1024
 points), noncontiguous input, empty input, an `int32` coordinate boundary,
-explicit limits, and direct use of its CSR by the Metal forward shader.
+post-call input mutation, explicit limits, and direct use of its CSR by the
+Metal forward shader.
 These tests establish bounded integer-order and forward/backward prototypes,
 not performance or upstream `spconv` parity.
 
