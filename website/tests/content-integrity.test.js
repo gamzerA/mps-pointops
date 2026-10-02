@@ -74,6 +74,7 @@ test('every displayed raw evidence link resolves to a bundled local file', () =>
     ...data.benchmarks.map(record => record.conditions.sourcePath),
     ...data.verification.testRuns.map(run => run.logPath),
     data.memoryEvidence.sourcePath,
+    data.instrumentsEvidence.sourcePath,
   ];
   for (const path of paths) {
     assert.ok(!path.split('/').includes('..'));

@@ -1,0 +1,80 @@
+{
+  "utc_started": "2026-10-02T16:13:38.724635+00:00",
+  "source_commit": "6052590f9e21e31f8459e0669822fd6f122e55ca",
+  "source_dirty": false,
+  "source_sha256": {
+    "bench/measure_spatial_memory.py": "3595381c861adccc26e0e6ca5d25cadd4479c1c6866dc296494e2e6d6bc7ac95",
+    "bench/bench_spatial_bvh.py": "241de2b5972612242533ecae4ad24f49f1cfa96e9094af933b3015a4f51dc667",
+    "bench/spatial_bvh.py": "0691882a65fdc27bbc255ba431ab3e6a433a5dbe89a9a96190af5f5179896858",
+    "bench/spatial_bvh.metal": "e466dd2880136a504106c8fba7e303117a9f2cdd4924dbf5bb3f636f9875c345",
+    "bench/spatial_keys.py": "e9214981f7dcb8413217979972274864c4bcd40771d0e15a9bfaf8f22946d318",
+    "bench/spatial_keys.metal": "e26bc20df349611bc7502aa7038e5692d434286600e4f454a6d273e1b6b7a8bf",
+    "mps_pointops/_flat_search_mps.py": "4fb494f3cf159c09382f510152c650115c86d8a7e89e4612547ff1911ac1002c",
+    "mps_pointops/kernels/flat_search.metal": "28da4338f4188b96f662aca319965f033226c6d9f5963caa5aaae3dde84864fb",
+    "bench/profile_spatial_instruments.py": "67bfe7c1d6ab3522fcfe5f411f5861d9c4b07b9ef8c09ab3f9b9df7a86c52ff5"
+  },
+  "archive_commit": "62fcc0f295e127be47a475fbc122d4de686b4c58",
+  "hardware": "Apple M5 Pro",
+  "physical_ram_bytes": "51539607552",
+  "macos": "26.5.2",
+  "torch": "2.14.1",
+  "mps_fast_math": "0",
+  "mps_fallback": "0",
+  "mps_recommended_max_memory_bytes": 40200896512,
+  "mps_signposts": true,
+  "mps_signpost_wait_until_completed": false,
+  "warmups": 2,
+  "repeats": 5,
+  "include_uniform_scan": true,
+  "trace_capture": "external Instruments session; attach separately; trace not embedded",
+  "host_time_scope": "perf_counter start/end spans include Python dispatch and MPS synchronize; wall-clock timestamps aid trace correlation; neither is GPU kernel duration",
+  "memory_scope": "PyTorch tensor/driver endpoints and per-query accelerator allocator peaks; no whole-device or physical-footprint measurement",
+  "gpu_kernel_duration_ns": null,
+  "gpu_occupancy": null,
+  "cases": [
+    {
+      "name": "collapsed-q256-bvh-serial",
+      "path": "collapsed-q256-bvh-serial.json",
+      "sha256": "ae970a7c4b15fca28d2cb7c8e2dde1ac058f191a7df63e72bf850ea6520de94e"
+    },
+    {
+      "name": "collapsed-q256-bvh-split",
+      "path": "collapsed-q256-bvh-split.json",
+      "sha256": "c99f0c897cf61d86bdaa3dff3368844d82905856700cbb50f247a646dbe02975"
+    },
+    {
+      "name": "mixed-q4096-bvh-serial",
+      "path": "mixed-q4096-bvh-serial.json",
+      "sha256": "125d4ac089cb7c1b43919969808e660d042686393c4d92cf9f88970264f65c90"
+    },
+    {
+      "name": "mixed-q65536-bvh-serial",
+      "path": "mixed-q65536-bvh-serial.json",
+      "sha256": "da9ae71590615c5b4b56ce782a36896caee2cc860fa9e5d4211658f914218b1b"
+    },
+    {
+      "name": "mixed-q65536-native-full-scan",
+      "path": "mixed-q65536-native-full-scan.json",
+      "sha256": "243c9f931cf55af91faf6002c84dec640eaf5721037f289649a441f072861919"
+    },
+    {
+      "name": "uniform-q65536-bvh-serial",
+      "path": "uniform-q65536-bvh-serial.json",
+      "sha256": "181b4ed4fb353a8b6042baa403a5ff90f95a00748a50bb1dcefb086ffb8015ca"
+    },
+    {
+      "name": "uniform-q65536-native-full-scan",
+      "path": "uniform-q65536-native-full-scan.json",
+      "sha256": "b0a99ccfe5e9bb7d80c017d9c7096e065c885ef3b2f6f8a6903a3bdc45e3de32"
+    }
+  ],
+  "utc_finished_or_failed": "2026-10-02T16:14:03.838929+00:00",
+  "private_original_manifest_sha256": "df3e4f12d09ca5d404974b42ee4a03038fb77a9205951297f463406473ad8ea8",
+  "query_trace_bundle": {
+    "trace": "query-matrix-system.trace",
+    "canonical_manifest_sha256": "f5e27c02cef575fac5277f9c82374119e4b76acd7a5cf7d1a067e82a66b417dc",
+    "file_count": 672,
+    "total_file_bytes": 266394215
+  },
+  "privacy_note": "The launched process PID and raw multi-process Instruments trace are retained privately; this publication includes only target-process aggregate measurements."
+}

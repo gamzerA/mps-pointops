@@ -32,6 +32,28 @@ test('physical M1 Chamfer parity callout matches the archived upstream matrices'
     assert.match(html, /docs\/evidence\/chamfer-v090-m1-upstream\/README\.md/);
   });
 
+test('physical M1 sparse callout matches both source-pinned raw logs',
+  { skip: !haveSource && 'Set MPS_POINTOPS_SOURCE_ROOT to the local source checkout' },
+  () => {
+    const archive = join(sourceRoot, 'docs', 'evidence', 'm1-sparse-2026-10-03');
+    const manifest = JSON.parse(readFileSync(join(archive, 'manifest.json'), 'utf8'));
+    assert.equal(manifest.source_commit, '6959fd590deecbefc98a163d46c23debaaa67c9e');
+    assert.equal(manifest.hardware.cpu_brand, 'Apple M1');
+    assert.equal(manifest.status, 'passed');
+    assert.equal(manifest.fallback, '0');
+    for (const mode of ['safe', 'fast']) {
+      const run = manifest.math_modes[mode];
+      const log = readFileSync(join(archive, run.pytest_log));
+      assert.equal(createHash('sha256').update(log).digest('hex'), run.pytest_log_sha256);
+      assert.equal(run.tests_passed, 92);
+      assert.match(log.toString(), /92 passed/);
+      assert.doesNotMatch(log.toString(), /\d+ skipped/);
+    }
+    const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+    assert.match(html, /Physical M1 sparse operators · Safe\/Fast each: 92 passed, 0 skipped/);
+    assert.match(html, /docs\/evidence\/m1-sparse-2026-10-03\/README\.md/);
+  });
+
 function median(samples) {
   assert.ok(Array.isArray(samples) && samples.length > 0);
   assert.ok(samples.every((value) => Number.isFinite(value) && value >= 0));
@@ -172,6 +194,7 @@ test('bundled browser evidence exactly matches the audited source records',
       ...data.benchmarks.map(record => record.conditions.sourcePath),
       ...data.verification.testRuns.map(run => run.logPath),
       data.memoryEvidence.sourcePath,
+      data.instrumentsEvidence.sourcePath,
     ];
     for (const path of paths) {
       requireSafeRelativePath(path);
@@ -197,4 +220,22 @@ test('M1 memory figures are allocator and sampled-driver evidence, not physical 
     assert.equal(raw.sampled_driver_high_water_is_true_driver_peak, false);
     assert.equal(evidence.physicalGpuPeakStatus, 'pending');
     verifySourceHashes(raw);
+  });
+
+test('M5 Instruments summary agrees with the target-only capture evidence',
+  { skip: !haveSource && 'Set MPS_POINTOPS_SOURCE_ROOT to the local source checkout' },
+  () => {
+    const evidence = data.instrumentsEvidence;
+    const raw = rawFor(evidence.sourcePath);
+    assert.equal(raw.source.commit, evidence.sourceCommit);
+    assert.equal(raw.source.clean, true);
+    assert.equal(raw.environment.hardware, evidence.hardware);
+    assert.equal(raw.fixtures.length, evidence.fixtures);
+    for (const fixture of raw.fixtures) {
+      assert.equal(fixture.instruments.observed_max_bytes, evidence.observedMetalAllocationMaxBytes);
+    }
+    assert.equal(raw.activity_pilot.observed_max_bytes.physical_footprint,
+      evidence.sampledProcessFootprintMaxBytes);
+    assert.equal(evidence.runtimeOccupancyStatus, 'uncollected');
+    assert.equal(evidence.physicalGpuPeakStatus, 'pending');
   });

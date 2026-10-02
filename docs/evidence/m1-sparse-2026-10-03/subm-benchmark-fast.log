@@ -1,0 +1,91 @@
+{
+  "device": "Apple M1",
+  "macos": "26.5.2",
+  "torch": "2.14.1",
+  "mps_fast_math": "1",
+  "mps_fallback": "0",
+  "warmup": 1,
+  "repeats": 3,
+  "cases": [
+    {
+      "rows": 1025,
+      "rulebook_backend": "cpu",
+      "forward_median_ms": 17.298499995376915,
+      "backward_median_ms": 3.0459999688901007,
+      "samples_ms": [
+        {
+          "forward": 17.359916993882507,
+          "backward": 3.3710419666022062
+        },
+        {
+          "forward": 17.189667036291212,
+          "backward": 3.0459999688901007
+        },
+        {
+          "forward": 17.298499995376915,
+          "backward": 2.931958995759487
+        }
+      ]
+    },
+    {
+      "rows": 1025,
+      "rulebook_backend": "mps",
+      "forward_median_ms": 1.8817500094883144,
+      "backward_median_ms": 0.7939590141177177,
+      "samples_ms": [
+        {
+          "forward": 1.8817500094883144,
+          "backward": 0.7939590141177177
+        },
+        {
+          "forward": 1.8773329793475568,
+          "backward": 0.7905829697847366
+        },
+        {
+          "forward": 1.897374982945621,
+          "backward": 0.8356670150533319
+        }
+      ]
+    },
+    {
+      "rows": 10000,
+      "rulebook_backend": "cpu",
+      "forward_median_ms": 250.19962497754022,
+      "backward_median_ms": 3.7737079546786845,
+      "samples_ms": [
+        {
+          "forward": 230.1991250133142,
+          "backward": 4.576834035106003
+        },
+        {
+          "forward": 258.053999976255,
+          "backward": 3.644249984063208
+        },
+        {
+          "forward": 250.19962497754022,
+          "backward": 3.7737079546786845
+        }
+      ]
+    },
+    {
+      "rows": 10000,
+      "rulebook_backend": "mps",
+      "forward_median_ms": 14.185125008225441,
+      "backward_median_ms": 6.571875012014061,
+      "samples_ms": [
+        {
+          "forward": 13.981624972075224,
+          "backward": 6.981374986935407
+        },
+        {
+          "forward": 17.10500003537163,
+          "backward": 6.571875012014061
+        },
+        {
+          "forward": 14.185125008225441,
+          "backward": 5.569333967287093
+        }
+      ]
+    }
+  ]
+}

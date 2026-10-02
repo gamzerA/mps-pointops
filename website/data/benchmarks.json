@@ -814,5 +814,16 @@
     "allocatorTensorPeakBytes": 62604800,
     "sampledDriverHighBytes": 1086160896,
     "physicalGpuPeakStatus": "pending"
+  },
+  "instrumentsEvidence": {
+    "hardware": "Apple M5 Pro",
+    "sourceCommit": "8932fca29456bd38690f072b0979feabec6de2d0",
+    "sourcePath": "docs/evidence/instruments-m5pro-2026-10-03/measurements.json",
+    "captureDate": "2026-10-03",
+    "fixtures": 6,
+    "observedMetalAllocationMaxBytes": 1086472192,
+    "sampledProcessFootprintMaxBytes": 1367606304,
+    "runtimeOccupancyStatus": "uncollected",
+    "physicalGpuPeakStatus": "pending"
   }
 }

@@ -51,6 +51,23 @@ PINNED_SOURCE_FILES = (
     "mps_pointops/_flat_search_mps.py",
     "mps_pointops/kernels/flat_search.metal",
 )
+# All eight hashes identify the historical measurement, including its driver.
+# Query replay imports the fixture generator and search code, but never imports
+# measure_spatial_memory.py. Instrumentation changes in that separate driver do
+# not change replay inputs or kernels; retain its current hash in new captures.
+ARCHIVED_SOURCE_SHA256 = {
+    "bench/measure_spatial_memory.py": "3595381c861adccc26e0e6ca5d25cadd4479c1c6866dc296494e2e6d6bc7ac95",
+    "bench/bench_spatial_bvh.py": "241de2b5972612242533ecae4ad24f49f1cfa96e9094af933b3015a4f51dc667",
+    "bench/spatial_bvh.py": "0691882a65fdc27bbc255ba431ab3e6a433a5dbe89a9a96190af5f5179896858",
+    "bench/spatial_bvh.metal": "e466dd2880136a504106c8fba7e303117a9f2cdd4924dbf5bb3f636f9875c345",
+    "bench/spatial_keys.py": "e9214981f7dcb8413217979972274864c4bcd40771d0e15a9bfaf8f22946d318",
+    "bench/spatial_keys.metal": "e26bc20df349611bc7502aa7038e5692d434286600e4f454a6d273e1b6b7a8bf",
+    "mps_pointops/_flat_search_mps.py": "4fb494f3cf159c09382f510152c650115c86d8a7e89e4612547ff1911ac1002c",
+    "mps_pointops/kernels/flat_search.metal": "28da4338f4188b96f662aca319965f033226c6d9f5963caa5aaae3dde84864fb",
+}
+REPLAY_SOURCE_FILES = tuple(
+    name for name in PINNED_SOURCE_FILES if name != "bench/measure_spatial_memory.py"
+)
 EXPECTED_KERNELS = {
     "bvh-serial": ["bvh_knn_f32"],
     "bvh-split": ["bvh_seed_f32", "bvh_search_micro_f32", "bvh_merge_micro_f32"],
@@ -70,6 +87,11 @@ class Case:
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _current_source_hashes() -> dict[str, str]:
+    return {name: _sha256(ROOT / name) for name in
+            (*PINNED_SOURCE_FILES, "bench/profile_spatial_instruments.py")}
 
 
 def _command(*argv: str) -> str:
@@ -112,8 +134,10 @@ def load_cases(*, include_uniform_scan: bool = False, archive_dir: Path = ARCHIV
             source_map = expected_source
         elif expected_source != source_map:
             raise ValueError(f"{archive}: archived cases disagree about source hashes")
-        for source, digest in expected_source.items():
-            if _sha256(ROOT / source) != digest:
+        if expected_source != ARCHIVED_SOURCE_SHA256:
+            raise ValueError(f"{archive}: historical source hash map changed")
+        for source in REPLAY_SOURCE_FILES:
+            if _sha256(ROOT / source) != expected_source[source]:
                 raise ValueError(f"{source}: current source differs from the archived implementation")
         cases.append(Case(
             name=name,
@@ -298,8 +322,7 @@ def main() -> None:
         "pid": os.getpid(),
         "source_commit": _command("git", "rev-parse", "HEAD"),
         "source_dirty": False,
-        "source_sha256": {name: _sha256(ROOT / name) for name in
-                          (*PINNED_SOURCE_FILES, "bench/profile_spatial_instruments.py")},
+        "source_sha256": _current_source_hashes(),
         "archive_commit": ARCHIVED_COMMIT,
         "hardware": subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"],
                                    capture_output=True, text=True, check=False).stdout.strip(),

@@ -4,10 +4,14 @@
 [`spatial-memory-v090-m5pro-clean`](../bench/results/spatial-memory-v090-m5pro-clean/)
 for a **single external Instruments session**. It optionally adds one derived
 uniform native-scan case paired with the archived uniform BVH input. It checks
-the archived commit, six-case fixture matrix, and all archived implementation
-SHA-256 values against the current checkout before any MPS dispatch. A change
-to the kernels or fixture generator requires a new profile protocol and
-explicit revalidation; the old records are never rewritten.
+the archived commit, six-case fixture matrix, and the full eight-file historical
+SHA-256 map before any MPS dispatch. The seven fixture-generator and search
+implementation files must also match the current checkout. The separate
+`measure_spatial_memory.py` driver is not imported by query replay, so its
+current hash may change when memory instrumentation is updated. Every new
+capture still records all eight current hashes plus the replay harness hash.
+A change to the kernels or fixture generator requires a new profile protocol
+and explicit revalidation; the old records are never rewritten.
 
 The archived **uniform Q=65,536** fixture uses `cell_size=16.0`. A newer
 Instruments memory trace that used `cell_size=0.015625` is a different
