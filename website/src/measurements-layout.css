@@ -326,6 +326,9 @@ body:has(#content[data-current-view="measurements"]) .site-footer { display: non
 }
 .measurement-evidence strong { font-weight: 620; }
 .measurement-evidence #test-links { display: flex; flex-wrap: wrap; gap: .25rem .75rem; }
+.measurement-direct-parity { margin-top: .5rem; color: var(--subtle); font-size: .65rem; line-height: 1.45; }
+.measurement-direct-parity a { color: var(--obs-cyan); text-decoration: none; white-space: nowrap; }
+.measurement-direct-parity a:hover { text-decoration: underline; }
 .measurement-memory { margin-top: .65rem; color: var(--subtle); font-size: .65rem; line-height: 1.45; }
 .measurement-memory[hidden] { display: none; }
 .measurement-memory a { color: var(--obs-cyan); text-decoration: none; white-space: nowrap; }
