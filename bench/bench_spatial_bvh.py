@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 import platform
+import resource
 import statistics
 import subprocess
 import sys
@@ -28,10 +29,17 @@ from bench.spatial_bricks import MortonBrickIndex  # noqa: E402
 from mps_pointops._flat_search_mps import knn_indices  # noqa: E402
 
 
-def _git(*args: str) -> str:
-    result = subprocess.run(("git", *args), cwd=ROOT, capture_output=True,
+def _command(*args: str) -> str:
+    result = subprocess.run(args, cwd=ROOT, capture_output=True,
                             text=True, check=False)
     return result.stdout.strip() if result.returncode == 0 else "unavailable"
+
+
+def _memory() -> dict[str, int]:
+    return {
+        "current_allocated_bytes": int(torch.mps.current_allocated_memory()),
+        "driver_allocated_bytes": int(torch.mps.driver_allocated_memory()),
+    }
 
 
 def _fixture(args) -> tuple[np.ndarray, np.ndarray, dict]:
@@ -141,9 +149,11 @@ def main() -> None:
     brick_warm.knn(query[:1], args.k)
     knn_indices(points, query[:1], px, py_warm, args.k)
     torch.mps.synchronize()
+    memory_before = _memory()
 
     bvh, bvh_build_ms = _time(
         lambda: MortonTwoLevelBVH.build(points, origin, args.cell_size), args.repeats, True)
+    memory_after_bvh_build = _memory()
     brick, brick_build_ms = _time(
         lambda: MortonBrickIndex.build(points, origin, args.cell_size), args.repeats, True)
     (bvh_dist, bvh_idx, bvh_stats), bvh_query_ms = _time(
@@ -161,6 +171,7 @@ def main() -> None:
     tree, cpu_build_ms = _time(lambda: cKDTree(points_cpu), args.repeats, False)
     _, cpu_query_ms = _time(lambda: tree.query(query_cpu, k=args.k, workers=1), args.repeats, False)
     torch.mps.synchronize()
+    memory_after_queries = _memory()
 
     bvh_brute_mismatch = int(torch.count_nonzero(bvh_idx != native_idx).item())
     split_brute_mismatch = (int(torch.count_nonzero(split_result[1] != native_idx).item())
@@ -174,10 +185,11 @@ def main() -> None:
     stats = bvh_stats.cpu().numpy().astype(np.uint32)
     result = {
         "utc": datetime.now(timezone.utc).isoformat(),
-        "source_commit": _git("rev-parse", "HEAD"),
-        "source_dirty": bool(_git("status", "--porcelain")),
+        "source_commit": _command("git", "rev-parse", "HEAD"),
+        "source_dirty": bool(_command("git", "status", "--porcelain")),
         "source_sha256": _hashes(),
-        "hardware": platform.processor(), "macos": platform.mac_ver()[0],
+        "hardware": _command("sysctl", "-n", "machdep.cpu.brand_string"),
+        "macos": platform.mac_ver()[0],
         "torch": torch.__version__, "scipy": __import__("scipy").__version__,
         "mps_fast_math": "0", "mps_fallback": "0",
         "fixture": {"kind": args.distribution, "points": args.points,
@@ -201,7 +213,18 @@ def main() -> None:
         "bvh_total_fallbacks": int(stats[:, 4].sum()),
         "bvh_node_bytes": int(bvh.bounds.numel() * bvh.bounds.element_size()
                               + bvh.min_index.numel() * bvh.min_index.element_size()),
+        "memory_before_build": memory_before,
+        "memory_after_bvh_build": memory_after_bvh_build,
+        "memory_after_queries": memory_after_queries,
+        "sampled_allocator_highwater_bytes": {
+            key: max(stage[key] for stage in
+                     (memory_before, memory_after_bvh_build, memory_after_queries))
+            for key in ("current_allocated_bytes", "driver_allocated_bytes")
+        },
+        "sampled_allocator_highwater_is_true_gpu_peak": False,
+        "cpu_process_lifetime_peak_rss_bytes": int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss),
         "timing_scope": "preloaded inputs, synchronized host wall, compilation excluded; wrappers include validation/synchronization",
+        "memory_scope": "sampled after stages; not true transient GPU peak; CPU RSS covers process lifetime",
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n")

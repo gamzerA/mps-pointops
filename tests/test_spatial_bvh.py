@@ -130,6 +130,31 @@ def test_empty_and_short_reference_rows_are_fully_written() -> None:
         assert index.knn(query, 0)[0].shape == (len(query), 0)
 
 
+def test_boundary_and_underflow_cases_match_native_metal() -> None:
+    below = torch.nextafter(torch.tensor(1.0), torch.tensor(0.0)).item()
+    above = torch.nextafter(torch.tensor(1.0), torch.tensor(2.0)).item()
+    tiny_normal = 2.0**-70
+    pattern = torch.tensor(
+        [[below, 0, 0], [1.0, 0, 0], [above, 0, 0],
+         [4096.0, 1.0, 1.0], [4096.0, 0, 0],
+         [tiny_normal, 0, 0], [0, tiny_normal, 0], [0, 0, tiny_normal],
+         [0, 0, 0]], dtype=torch.float32,
+    )
+    points = pattern.repeat((40, 1)).flip(0).to("mps")
+    query = torch.tensor([[1.0, 0, 0], [0, 0, 0], [4096.0, 0, 0],
+                          [2.0**-65, 0, 0]], device="mps")
+    index = MortonTwoLevelBVH.build(points, torch.zeros(3, device="mps"), 1.0)
+    for parallel in (False, True):
+        distance, actual, stats = index.knn(query, 16, audit=not parallel,
+                                            parallel_microtrees=parallel)
+        direct = selected_sqdist_f32(query, points, actual)
+        expected = _oracle(points, query, 16)
+        torch.mps.synchronize()
+        assert torch.equal(actual, expected)
+        assert torch.equal(distance.view(torch.int32), direct.view(torch.int32))
+        assert torch.all(stats[:, 3:] == 0)
+
+
 def test_collapsed_cluster_cannot_prune_equal_distance_without_tie_certificate() -> None:
     points = torch.ones((10_000, 3), device="mps")
     query = torch.ones((4, 3), device="mps")
