@@ -1,6 +1,6 @@
 """Validate source/release metadata and the exact files shipped to PyPI.
 
-Run with Python 3.11+ and PyYAML. This is an offline consistency check:
+Run with Python 3.11+, PyYAML, and packaging. This is an offline consistency check:
 the release operator must separately verify the reserved Zenodo DOI and archive.
 """
 
@@ -19,6 +19,8 @@ import tomllib
 import zipfile
 
 import yaml
+from packaging.utils import canonicalize_name, parse_sdist_filename, parse_wheel_filename
+from packaging.version import Version
 
 
 CONCEPT_DOI = "10.5281/zenodo.23076057"
@@ -63,19 +65,36 @@ def validate_distributions(root: Path, dist: Path, source: dict) -> list[dict]:
     wheels, sdists = sorted(dist.glob("*.whl")), sorted(dist.glob("*.tar.gz"))
     require(len(wheels) == len(sdists) == 1,
             "dist must contain exactly one wheel and one sdist; remove stale builds")
+    wheel_name, wheel_version, _, _ = parse_wheel_filename(wheels[0].name)
+    sdist_name, sdist_version = parse_sdist_filename(sdists[0].name)
+    for label, name, version in (("wheel", wheel_name, wheel_version),
+                                  ("sdist", sdist_name, sdist_version)):
+        require(name == canonicalize_name(source["name"]) and version == Version(source["version"]),
+                f"{label}: filename name/version differs from source")
     package_files = {p.relative_to(root).as_posix(): p.read_bytes()
                      for p in (root / "mps_pointops").rglob("*")
                      if p.is_file() and p.suffix in {".py", ".metal"}}
     licenses = {p: (root / p).read_bytes()
                 for p in ("LICENSE", "LICENSES/MIT-ball-query.txt")}
     with zipfile.ZipFile(wheels[0]) as archive:
+        require(len(archive.namelist()) == len(set(archive.namelist())), "wheel: duplicate archive members")
         wheel = {name: archive.read(name) for name in archive.namelist() if not name.endswith("/")}
+    metadata_dir = f"{source['name'].replace('-', '_')}-{source['version']}.dist-info"
+    required_metadata = {f"{metadata_dir}/{name}" for name in ("METADATA", "WHEEL", "RECORD")}
+    allowed_wheel = (set(package_files) | required_metadata | {f"{metadata_dir}/top_level.txt"}
+                     | {f"{metadata_dir}/licenses/{name}" for name in licenses})
+    require(not (set(wheel) - allowed_wheel), "wheel: unexpected members outside the source package/metadata")
+    require(required_metadata <= set(wheel), "wheel: missing structural metadata")
     with tarfile.open(sdists[0]) as archive:
         sdist = {}
+        expected_root = sdists[0].name.removesuffix(".tar.gz")
         for member in archive.getmembers():
             if member.isfile():
                 relative = member.name.split("/", 1)
-                require(len(relative) == 2, "sdist member has no root directory")
+                require(len(relative) == 2 and relative[0] == expected_root
+                        and ".." not in Path(relative[1]).parts,
+                        "sdist: member is outside the expected root directory")
+                require(relative[1] not in sdist, "sdist: duplicate archive members")
                 sdist[relative[1]] = archive.extractfile(member).read()
     for label, files in (("wheel", wheel), ("sdist", sdist)):
         shipped_package = {name for name in files if name.startswith("mps_pointops/")

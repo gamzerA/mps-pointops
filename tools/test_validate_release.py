@@ -44,6 +44,8 @@ class ReleaseGateTests(unittest.TestCase):
                 elif name in ("LICENSE", "LICENSES/MIT-ball-query.txt"):
                     archive.writestr(f"{prefix}.dist-info/licenses/{name}", contents)
             archive.writestr(f"{prefix}.dist-info/METADATA", metadata)
+            archive.writestr(f"{prefix}.dist-info/WHEEL", "Wheel-Version: 1.0\nTag: py3-none-any\n")
+            archive.writestr(f"{prefix}.dist-info/RECORD", "")
         with tarfile.open(self.dist / f"{prefix}.tar.gz", "w:gz") as archive:
             for name, contents in {**self.files, "PKG-INFO": metadata}.items():
                 data = contents.encode()
@@ -90,6 +92,24 @@ class ReleaseGateTests(unittest.TestCase):
         self.artifacts(version="1.0.0")
         with self.assertRaisesRegex(ValueError, "Version differs"):
             validate_distributions(self.root, self.dist, validate_source(self.root))
+
+    def test_extra_importable_wheel_module_rejected(self):
+        self.artifacts()
+        with zipfile.ZipFile(next(self.dist.glob("*.whl")), "a") as archive:
+            archive.writestr("extra_importable_module.py", "value = 1\n")
+        with self.assertRaisesRegex(ValueError, "unexpected members"):
+            validate_distributions(self.root, self.dist, validate_source(self.root))
+
+    def test_artifact_filename_version_drift_rejected(self):
+        for extension in ("*.whl", "*.tar.gz"):
+            with self.subTest(extension=extension):
+                self.artifacts()
+                path = next(self.dist.glob(extension))
+                wrong = path.with_name(path.name.replace("0.8.0", "9.9.9"))
+                path.rename(wrong)
+                with self.assertRaisesRegex(ValueError, "filename name/version"):
+                    validate_distributions(self.root, self.dist, validate_source(self.root))
+                wrong.rename(path)
 
 
 if __name__ == "__main__":
