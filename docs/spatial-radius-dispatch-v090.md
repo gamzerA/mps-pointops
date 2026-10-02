@@ -1,4 +1,4 @@
-# Public Ball Query scan/BVH audit (dirty v0.9 development evidence)
+# Public Ball Query scan/BVH audit (clean v0.9 research evidence)
 
 This experiment compares `SpatialIndex.ball_query(query, radius, K)` with explicit `backend="scan"` and `backend="bvh"` on the physical M5 Pro. The public `backend="auto"` currently chooses scan for radius queries; the BVH figures are **opt-in research-path measurements**, not a published automatic speed claim.
 
@@ -18,21 +18,23 @@ Machine: Apple M5 Pro, 48 GB unified memory, macOS 26.5.2, PyTorch 2.14.1. `PYTO
 
 | Distribution | Q | Radius | Empty rows | Full rows | Scan query | BVH query | Auto chose |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| Uniform | 4,096 | 12 | 5 | 3 | 172.2 | 6.49 | scan |
-| Uniform | 8,192 | 12 | 13 | 9 | 327.9 | 7.25 | scan |
-| Uniform | 65,536 | 12 | 114 | 98 | 2,553.0 | 36.39 | scan |
-| 90% cluster + 10% sparse | 4,096 | 0.03 | 2,048 | 2,048 | 100.0 | 11.38 | scan |
-| 90% cluster + 10% sparse | 8,192 | 0.03 | 4,096 | 4,096 | 191.1 | 12.25 | scan |
-| 90% cluster + 10% sparse | 65,536 | 0.03 | 32,768 | 32,768 | 1,476.4 | 51.55 | scan |
-| All coincident | 4,096 | 0.5 | 2,048 | 2,048 | 85.5 | 0.49 | scan |
-| All coincident | 8,192 | 0.5 | 4,096 | 4,096 | 168.7 | 0.42 | scan |
-| All coincident | 65,536 | 0.5 | 32,768 | 32,768 | 1,276.9 | 0.69 | scan |
+| Uniform | 4,096 | 12 | 5 | 3 | 171.1 | 6.72 | scan |
+| Uniform | 8,192 | 12 | 13 | 9 | 327.5 | 7.24 | scan |
+| Uniform | 65,536 | 12 | 114 | 98 | 2,557.5 | 39.09 | scan |
+| 90% cluster + 10% sparse | 4,096 | 0.03 | 2,048 | 2,048 | 102.3 | 11.36 | scan |
+| 90% cluster + 10% sparse | 8,192 | 0.03 | 4,096 | 4,096 | 206.8 | 12.45 | scan |
+| 90% cluster + 10% sparse | 65,536 | 0.03 | 32,768 | 32,768 | 1,468.4 | 44.05 | scan |
+| All coincident | 4,096 | 0.5 | 2,048 | 2,048 | 92.6 | 0.40 | scan |
+| All coincident | 8,192 | 0.5 | 4,096 | 4,096 | 167.4 | 0.44 | scan |
+| All coincident | 65,536 | 0.5 | 32,768 | 32,768 | 1,356.4 | 0.62 | scan |
 
 The collapsed case is especially favorable to a first-K BVH traversal: the coincident rows can certify the first 16 original indices, while the displaced rows prune immediately. It must not be used to predict kNN speed or general Ball Query throughput. Larger radii that fill broad regions, more irregular point ordering, boundary-heavy inputs, and cross-device runs are required before routing the public `auto` radius path to BVH.
 
 ## Provenance, memory and reproduction
 
-The checkout base was `b4e0090b58560a21cd4a4415405eb8ff30a26f86`, but the worktree was **dirty** throughout measurement. That base commit alone does not reconstruct the executable source. Every JSON in [`bench/results/spatial-radius-dispatch-v090-m5pro/`](../bench/results/spatial-radius-dispatch-v090-m5pro/) stores the exact SHA-256 of the benchmark, wrapper, private BVH, scan adapter, and Metal shaders; the source hashes are identical across the nine runs. A clean-source rerun is required before release or paper citation.
+The executed source was commit `62fcc0f295e127be47a475fbc122d4de686b4c58` in a **clean detached worktree**. Every JSON in [`bench/results/spatial-radius-dispatch-v090-m5pro-clean/`](../bench/results/spatial-radius-dispatch-v090-m5pro-clean/) has `source_dirty=false`, this exact commit, and SHA-256 of the benchmark, wrapper, private BVH, scan adapter, and Metal shaders. Overlapping hashes are identical across the nine radius records and match the files in the executed checkout. The measurement remains limited to the M5 Pro and these synthetic fixtures.
+
+Key SHA-256 values: `mps_pointops/spatial.py` = `ad0a71bed4d93b134c718124f6d08f085bea3d43915ddc169471185d835f0b8d`; `mps_pointops/kernels/spatial_bvh.metal` = `e466dd2880136a504106c8fba7e303117a9f2cdd4924dbf5bb3f636f9875c345`; `mps_pointops/kernels/ball_query.metal` = `2856fa046cbbafb71ec0cd688f071c7dc5d2280e9f04d00471241e24d6f85ba3`. Each raw record carries the complete source map.
 
 Run one fixture from the repository root, choosing a new output name because the script refuses overwrites:
 
@@ -41,7 +43,7 @@ PYTHONPATH=. PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=0 \
   python bench/bench_spatial_radius_dispatch.py \
   --distribution cluster-sparse --points 1000000 --queries 8192 \
   --limit 16 --radius 0.03 --repeats 5 \
-  --output bench/results/spatial-radius-dispatch-v090-m5pro/repeat-cluster-q8192.json
+  --output bench/results/spatial-radius-dispatch-v090-m5pro-clean/repeat-cluster-q8192.json
 ```
 
 The JSON also records input-transfer time, the first BVH call, raw query times, PyTorch allocator peaks, and point-in-time MPS driver-memory readings. At `Q=65,536`, the resident BVH index tensors occupy `8,458,752` bytes. **Allocator peaks are not total GPU physical-memory peaks**, and the fixed measurement order keeps multiple path outputs resident. Use the separate one-path allocator and Instruments procedure in [`spatial-memory-v090.md`](spatial-memory-v090.md) for a memory conclusion.

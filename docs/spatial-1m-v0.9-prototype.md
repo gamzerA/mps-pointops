@@ -6,6 +6,11 @@ benchmark. The measured source commit is
 Every raw JSON also records SHA-256 hashes for
 the benchmark and the two experimental Metal stages. The source worktree was
 clean during each measurement.
+This page preserves the grid-stage research snapshot. Later work added an
+[opt-in public `SpatialIndex`](spatial-api-v090.md) with two-level BVH kNN and
+first-K Ball Query; its separate [radius audit](spatial-radius-dispatch-v090.md)
+and [public dispatch study](spatial-dispatch-v090.md) supersede the status
+statements below about those features.
 
 The prototype creates a 21-bit-per-axis Morton key in Metal, stably sorts
 keys with PyTorch MPS, then looks up candidate cells by binary search in a
@@ -64,9 +69,10 @@ BVH over small point bricks with AABBs computed from actual points. This lets
 a query prune an entire dense brick by a conservative distance bound instead
 of scanning every point in a coarse cell. A private exact-kNN prototype now
 implements the hierarchy and measures its M5 Pro crossover below. The
-sorted-first-K radius traversal, public routing, M1 validation, and broader
-numerical and memory gates remain open. The package remains at v0.8.0 until
-those gates and the Chamfer scope are complete.
+sorted-first-K radius traversal and limited public routing were still open at
+the time of this grid study; they now have separate experimental BVH paths.
+M1 validation and broader numerical and memory gates remain open. The package
+remains at v0.8.0 until those gates and the Chamfer scope are complete.
 
 ## Experimental kNN brick slice
 
@@ -90,8 +96,8 @@ especially with all points in one Morton cell, so this is not a general
 performance result. The first gate is differential correctness against the
 existing flat Metal kNN, including repeated exact ties across brick
 boundaries. A separate private [two-level Metal BVH prototype](spatial-hierarchy-v0.9-design.md)
-now measures hierarchical traversal. M1 validation and public routing remain
-open.
+now measures hierarchical traversal. The separate `SpatialIndex` provides
+limited opt-in/public routing; M1 validation and broader routing remain open.
 
 ### Bounded AABB-pruning contract and proof assumptions
 

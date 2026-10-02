@@ -66,21 +66,22 @@ The cause of the roughly 1 GiB reservation needs a Metal resource trace;
 the counter alone does not attribute it to the BVH, a transfer, or a
 framework cache.
 
-The six [raw JSON records](../bench/results/spatial-memory-v090-m5pro/)
+The six [raw JSON records](../bench/results/spatial-memory-v090-m5pro-clean/)
 contain integer byte counts and per-stage sample coverage. All six record
 the same measurement-script SHA-256 prefix `3595381c861a` and BVH shader
-SHA-256 prefix `094246f09eea`; full hashes are in each JSON. The measurement
+SHA-256 prefix `e466dd288013`; full hashes are in each JSON. The measurement
 program's peak counter catches short-lived allocations that its sampler can
 miss, while the driver counter remains sampled only. With the same N, Q and
 K, the uniform and mixed fixtures had identical observed tensor and driver
 peaks; this is an observation for those two generated inputs, not a general
 density-independence claim.
 
-These observations used Git HEAD `b4e0090b58560a21cd4a4415405eb8ff30a26f86`
-with a dirty worktree while v0.9 work was in progress. The run's JSON records
-SHA-256 for the measurement program and every spatial/native source file.
-Treat the table as local development evidence; rerun from a clean release
-commit before publishing a release memory claim. No M1 measurement was made.
+These observations used clean Git commit
+`62fcc0f295e127be47a475fbc122d4de686b4c58`. All six records have
+`source_dirty=false` and identical source SHA-256 maps; the recorded hashes
+also match the measurement program and spatial/native source files at that
+commit. The numbers are M5 Pro allocator measurements, not a whole-device
+GPU-memory peak. No Instruments capture or M1 measurement was made.
 
 ## Reproduction
 

@@ -133,7 +133,7 @@ def test_mps_public_bvh_empty_and_zero_radius_match_scan() -> None:
     or os.environ.get("PYTORCH_ENABLE_MPS_FALLBACK") != "0",
     reason="requires isolated MPS Safe Math with fallback disabled",
 )
-def test_public_bvh_knn_keeps_overflowed_distance_candidates() -> None:
+def test_public_bvh_knn_keeps_maximum_coordinate_candidates() -> None:
     huge = float(2**60)
     points = torch.tensor([[0.0, 0.0, 0.0], [huge, 0.0, 0.0],
                            [-huge, 0.0, 0.0]], device="mps")
@@ -141,6 +141,7 @@ def test_public_bvh_knn_keeps_overflowed_distance_candidates() -> None:
     index = SpatialIndex(points, backend="bvh")
     expected = SpatialIndex(points, backend="scan").knn(query, 3)
     assert expected[1].tolist() == [[0, 1, 2]]
+    assert torch.isfinite(expected[0]).all()
     for parallel in (False, True):
         actual = index.knn(query, 3, parallel_microtrees=parallel)
         assert torch.equal(actual[1], expected[1])

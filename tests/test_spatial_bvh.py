@@ -112,9 +112,9 @@ def test_reject_subnormal_coordinate_bits() -> None:
         MortonTwoLevelBVH.build(points, torch.zeros(3, device="mps"), 1.0)
 
 
-def test_finite_coordinates_with_infinite_squared_distance_keep_indices() -> None:
-    # float32 distance overflows even though all coordinates are finite and
-    # within the BVH's documented coordinate domain.
+def test_maximum_supported_coordinates_keep_finite_distances_and_indices() -> None:
+    # Even opposite 2**60 coordinates stay below float32 squared-distance
+    # overflow; this checks the public domain boundary and tie handling.
     huge = float(2**60)
     points = torch.tensor([[0.0, 0.0, 0.0], [huge, 0.0, 0.0],
                            [-huge, 0.0, 0.0]], device="mps")
@@ -124,6 +124,7 @@ def test_finite_coordinates_with_infinite_squared_distance_keep_indices() -> Non
     )
     expected_d, expected_i = dense_knn(query.unsqueeze(0), points.unsqueeze(0), 3)
     assert expected_i[0].tolist() == [[0, 1, 2]]
+    assert torch.isfinite(expected_d).all()
     for parallel in (False, True):
         squared, indices, stats = index.knn(query, 3, parallel_microtrees=parallel,
                                              audit=not parallel)
@@ -133,7 +134,7 @@ def test_finite_coordinates_with_infinite_squared_distance_keep_indices() -> Non
         assert torch.all(stats[:, 3:] == 0)
 
 
-def test_infinite_distance_ties_merge_across_microtrees() -> None:
+def test_large_finite_distance_ties_merge_across_microtrees() -> None:
     huge = float(2**60)
     points = torch.zeros((8193, 3), device="mps")
     points[::2, 0] = -huge
@@ -145,6 +146,7 @@ def test_infinite_distance_ties_merge_across_microtrees() -> None:
     assert index.padded_leaves > 64
     expected_d, expected_i = dense_knn(query.unsqueeze(0), points.unsqueeze(0), 16)
     assert expected_i[0].tolist() == [list(range(16))]
+    assert torch.isfinite(expected_d).all()
     for parallel in (False, True):
         squared, indices, stats = index.knn(query, 16, parallel_microtrees=parallel,
                                              audit=not parallel)

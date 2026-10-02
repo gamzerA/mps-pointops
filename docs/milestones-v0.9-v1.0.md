@@ -59,6 +59,11 @@ threshold, with explicit full-scan recovery on stack overflow. The
 include transient tensor allocations; total GPU physical-memory peak still
 requires an Instruments trace. Neither evidence set includes the disconnected
 physical M1, so the release gate remains open.
+The [M5 Pro branch regression logs](evidence/spatial-v090/README.md) preserve
+separate Safe and Fast runs with CPU fallback disabled; Fast Math skips the
+Safe-only BVH contract tests. The current radius-performance JSONs check
+output parity but do not include a per-query stack-fallback frequency;
+measure that status before closing the v0.9 performance gate.
 
 For the original grid radius path, inspect every cell intersecting the query
 ball and check the original coordinates with the existing radius comparison policy. Cell
@@ -93,6 +98,16 @@ be checked against this package's deterministic brute-force oracle rather
 than treated as SciPy ordering errors. A speedup claim requires repeated M5 Pro
 and physical M1 measurements with uncertainty intervals and no memory failure.
 Until the user reconnects the physical M1, its performance gate is pending.
+On an 8 GB M1, verify the chip, memory, macOS and PyTorch versions before
+testing. Run each Safe-Math, CPU-fallback-disabled fixture in a fresh child
+process with a recorded wall-time limit and allocator/driver checkpoints.
+Increase from 20k points and 256 queries through 100k points before trying
+1M points; raise `Q` only after the preceding size finishes without a Metal
+watchdog, out-of-memory error or excessive measured memory use. Keep the
+M1 automatic policy on scan until its own crossover matrix is measured.
+Record a failure as a failed gate, rather than dropping that fixture from the
+published table. The M5 Pro timing or 48 GB memory result is not a substitute
+for this run.
 
 ### Chamfer
 

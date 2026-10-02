@@ -86,11 +86,12 @@ uses the conditional Safe Math contract in the
 [spatial prototype report](spatial-1m-v0.9-prototype.md) and rejects Fast
 Math until that mode has an independently justified pruning bound.
 
-Finite coordinates may yield a float32 squared distance of `+∞`. The dense
-Metal kNN ranks those candidates by original index after finite-distance
-matches; the BVH must do the same. A `+∞` node bound does not prune against
-an `+∞` Kth distance because the rule is strictly `LB > τ`. Serial and split
-microtree regression tests cover this case across multiple leaves.
+For the currently supported `|coordinate|<=2**60` domain, every per-axis
+difference is at most `2**61` and the squared-distance sum is bounded by
+`3·2**122 < 2**124`, below float32's maximum finite value. Serial, split,
+and public tests cover large finite distances and cross-microtree ties at
+this bound. The shader also retains `+∞` candidates defensively if a later
+version widens the domain; that branch is outside today's public contract.
 
 ## Work and memory
 
@@ -189,7 +190,12 @@ allocation. It includes process caches, is **not** incremental BVH memory,
 and is **not** a true transient GPU peak. Instruments profiling, M1, Fast
 Math, and wider input-domain proof remain release gates.
 
-## Measurements required before routing public kNN/radius
+## Measurements required for broader public kNN/radius routing
+
+The [public dispatch matrix](spatial-dispatch-v090.md) already supports a
+narrow M5 Pro Safe-Math kNN automatic rule. The [radius matrix](spatial-radius-dispatch-v090.md)
+measures the opt-in BVH path, while automatic radius routing remains on scan.
+The following axes remain useful before expanding either automatic policy.
 
 At `N=1,000,000`, measure `Q={16,256,2048,8192,65536}` where feasible, with
 uniform points, a dense cluster plus sparse background, and a collapsed or
@@ -209,5 +215,6 @@ time or memory, so cap it explicitly and use deterministic complete scans
 for sampled queries plus smaller exhaustive fixtures. Never infer exact
 correctness from cKDTree alone at float32 ties or radius boundaries.
 
-Run the matrix on M5 Pro first. Repeat on the physical M1 when it reconnects;
+The first M5 Pro matrix is recorded in the linked studies; extend it with
+larger radii and boundary-heavy data. Repeat on the physical M1 when it reconnects;
 do not substitute an emulator or project an M5 crossover onto M1.

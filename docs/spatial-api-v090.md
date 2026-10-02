@@ -3,8 +3,9 @@
 `mps_pointops.SpatialIndex` is an **unreleased, opt-in** single-cloud API in
 the v0.9 development branch. The existing dense `knn` and `ball_query` and
 the flat/PyG adapters keep their signatures and default kernels. Building an
-index does not register a global replacement or silently move an MPS tensor
-to CPU.
+index does not register a global replacement or move the input point cloud
+to CPU. Automatic kNN routing reads back at most 4,096 Morton keys (32 KiB)
+to check sampled cell density before choosing a backend.
 
 ```python
 import torch
@@ -21,6 +22,9 @@ squared_distances, first_indices = index.ball_query(query, 0.1, 16)
 `0 <= K <= N` and returns `[Q,K]` Euclidean distances and int64 reference
 indices. The MPS path orders ties by original reference index; CPU tensors
 retain the existing PyTorch `cdist`/`topk` reference behavior.
+The MPS scan supports `K<=256` and the explicit BVH supports `K<=32`;
+unsupported values raise, without a silent CPU transfer. The CPU scan uses
+the reference implementation's `K<=N` bound.
 `ball_query` takes a Python scalar radius and `K>=0`; on MPS it returns
 squared float32 distances and int64 indices in **first matching
 original-reference index** order. The CPU scan retains the input dtype for
@@ -41,9 +45,11 @@ borrowed, and in-place mutation after construction raises an error.
 The explicit BVH accepts one MPS float32 cloud, `N<=1,000,000`, `K<=32`,
 finite normal-or-zero coordinates with `|coordinate|<=2**60`, a valid 21-bit
 Morton domain, and `PYTORCH_MPS_FAST_MATH=0` **set before Python starts**.
-Finite coordinates can still produce `+∞` float32 squared distance; kNN
-ranks such candidates by original index, matching the dense Metal sentinel
-rule, instead of treating them as absent.
+Within that coordinate bound, every component difference is at most `2**61`,
+so the squared-distance sum is at most `3·2**122 < 2**124`, below float32's
+finite maximum. The upper-bound test checks original-index ties there. The
+shader's `+∞` candidate handling is defensive for a possible future wider
+coordinate domain; it is not a reachable case in this public contract.
 These are research bounds, not hardware limits. The optional `origin` and
 `cell_size` constructor arguments control Morton **ordering**, never the
 distance predicate. By default the origin is the coordinate minimum and a
@@ -72,8 +78,8 @@ The [M5 Pro hierarchy matrix](spatial-hierarchy-v0.9-design.md) shows why
 one `Q` threshold is insufficient: mixed `Q=2048` serial BVH loses to native
 Metal full scan, while `Q=4096` wins; the all-coincident serial case loses
 even at larger `Q`. The separate [public dispatch study](spatial-dispatch-v090.md)
-includes the cell-size selection and dispatch overhead once its measurements
-are frozen. This policy is deliberately narrower than the private prototype.
+records the cell-size selection and dispatch overhead from a clean source
+commit. This policy is deliberately narrower than the private prototype.
 
 ## Numerical and release boundaries
 
