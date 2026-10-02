@@ -1,6 +1,8 @@
 # Scalable private SubM rulebook prototype (2026-10-02)
 
 Benchmarked implementation: `6b7e940708fe9b1273d0eeb80fe521a2add1d4d4`.
+Fresh Safe/Fast pytest source: `8a4b2fd8fc1db1ff7488765ed63ed6114777e203`
+(the lookup logic is unchanged from the benchmark commit).
 Source baseline: `origin/main` at `d2efed964779cd9a6ce00f1992e828f213bc028d`.
 Device: Apple M5 Pro, macOS 26.5.2, PyTorch 2.14.0. The private API and
 package version remain unchanged.
@@ -23,6 +25,8 @@ two-batch clouds at 1,025 and 10,000 rows, full int32 batch/coordinate and
 dilation boundaries, a 1,024-row 5×5×5 kernel above the old slot limit,
 preserved input snapshot, exact padded pair/CSR order, and chaining the CSR
 into the Metal forward kernel.
+The [Safe](pytest-safe.log) and [Fast](pytest-fast.log) raw logs record their
+source commit, exact Python command, math/fallback settings, and exit status.
 
 These timings and tests apply to the standalone private rulebook builder.
 There is no public SubM API. The callable private SubM convolution
@@ -43,7 +47,10 @@ resident MPS coordinates, including four sorts, lookup, scans, allocation,
 and synchronization. Each case uses 20 warmups and 50 measured calls on a
 fixed, shuffled, two-batch 64×32×16 coordinate universe with a
 3×3×3 kernel. Medians are host wall time in milliseconds; the raw samples are
-in the adjacent JSON files.
+in the adjacent [Safe](safe.json) and [Fast](fast.json) JSON files. Each JSON
+also records the implementation source commit; the original scan data are in
+[baseline Safe](baseline-safe.json) and [baseline Fast](baseline-fast.json).
+The [SHA-256 manifest](SHA256SUMS) covers these JSON files and both pytest logs.
 
 | Math | Rows | Original scan | Sorted lookup |
 | --- | ---: | ---: | ---: |

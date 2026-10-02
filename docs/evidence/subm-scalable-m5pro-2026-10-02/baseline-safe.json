@@ -1,5 +1,5 @@
 {
-  "source_commit": "d2efed9",
+  "source_commit": "d2efed964779cd9a6ce00f1992e828f213bc028d",
   "implementation": "quadratic_scan",
   "device": "Apple M5 Pro",
   "macos": "26.5.2",
