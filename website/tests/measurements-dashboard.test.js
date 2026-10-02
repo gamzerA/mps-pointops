@@ -42,7 +42,7 @@ test('research prototype keeps build time separate from its query comparison', (
 
 test('dashboard evidence remains tied to separate source and test records', () => {
   const { records } = measuredComparison(data);
-  assert.equal(records.length, 10);
+  assert.equal(records.length, 14);
   assert.ok(records.every(record => record.status === 'measured'));
   assert.ok(records.every(record => record.scope !== 'published-package'));
   assert.ok(records.every(record => record.conditions.sourcePath.startsWith('bench/results/')));
@@ -75,6 +75,20 @@ test('M1 evidence keeps opt-in BVH timing separate from scan-only Auto', () => {
   assert.ok(m1.filter(record => record.operation === 'radius').every(record =>
     record.parity.mismatchedSquaredDistanceBits === 0
     && record.parity.originalIndexOrderViolations === 0));
+});
+
+test('M5 radius sweep exposes the scan/BVH crossover without changing Auto', () => {
+  const small = measuredComparison(data, 'spatial-radius-crossover-uniform-1m-q4096-r12');
+  const large = measuredComparison(data, 'spatial-radius-crossover-uniform-1m-q4096-r1024');
+  assert.ok(small.record.ours.queryMs < small.record.baselines[0].queryMs);
+  assert.ok(large.record.ours.queryMs > large.record.baselines[0].queryMs);
+  for (const { record } of [small, large]) {
+    assert.equal(record.auto.selectedBackend, 'scan');
+    assert.equal(record.parity.mismatchedIndexSlots, 0);
+    assert.equal(record.parity.mismatchedSquaredDistanceBits, 0);
+    assert.equal(record.parity.originalIndexOrderViolations, 0);
+    assert.equal(record.parity.bvhStackFallbackRows, 0);
+  }
 });
 
 test('an invalid fixture cannot quietly become a measured bar', () => {

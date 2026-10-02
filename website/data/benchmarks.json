@@ -234,6 +234,214 @@
       }
     },
     {
+      "id": "spatial-radius-crossover-uniform-1m-q4096-r12",
+      "status": "measured",
+      "scope": "unreleased-public-source",
+      "operation": "radius",
+      "distribution": "uniform",
+      "conditions": {
+        "hardware": "Apple M5 Pro",
+        "memoryGiB": 48,
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "dtype": "float32",
+        "n": 1000000,
+        "q": 4096,
+        "k": 16,
+        "radius": 12.0,
+        "repetitions": 3,
+        "statistic": "median-of-synchronized-query-samples",
+        "querySource": "independent",
+        "inputResidence": "preloaded-mps",
+        "mpsFallback": false,
+        "mpsFastMath": false,
+        "shaderCompilationIncluded": false,
+        "hostToDeviceTransferIncluded": false,
+        "measurementDateUtc": "2026-10-02T11:50:52.468040+00:00",
+        "sourceCommit": "81c1e939c9a3af215003206dc761ecee8927447a",
+        "sourcePath": "bench/results/spatial-radius-crossover-v090-m5pro/uniform-n1m-q4096-r12-safe.json",
+        "benchmarkScript": "bench/bench_spatial_radius_dispatch.py"
+      },
+      "baselines": [
+        {
+          "id": "native-scan",
+          "name": "MPS native full scan",
+          "queryMs": 170.982541
+        }
+      ],
+      "ours": {
+        "id": "bvh",
+        "name": "MPS opt-in BVH",
+        "queryMs": 6.648917
+      },
+      "auto": {
+        "selectedBackend": "scan",
+        "queryMs": 167.958417
+      },
+      "parity": {
+        "mismatchedIndexSlots": 0,
+        "mismatchedSquaredDistanceBits": 0,
+        "originalIndexOrderViolations": 0,
+        "bvhStackFallbackRows": 0
+      }
+    },
+    {
+      "id": "spatial-radius-crossover-uniform-1m-q4096-r64",
+      "status": "measured",
+      "scope": "unreleased-public-source",
+      "operation": "radius",
+      "distribution": "uniform",
+      "conditions": {
+        "hardware": "Apple M5 Pro",
+        "memoryGiB": 48,
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "dtype": "float32",
+        "n": 1000000,
+        "q": 4096,
+        "k": 16,
+        "radius": 64.0,
+        "repetitions": 3,
+        "statistic": "median-of-synchronized-query-samples",
+        "querySource": "independent",
+        "inputResidence": "preloaded-mps",
+        "mpsFallback": false,
+        "mpsFastMath": false,
+        "shaderCompilationIncluded": false,
+        "hostToDeviceTransferIncluded": false,
+        "measurementDateUtc": "2026-10-02T11:50:57.561608+00:00",
+        "sourceCommit": "81c1e939c9a3af215003206dc761ecee8927447a",
+        "sourcePath": "bench/results/spatial-radius-crossover-v090-m5pro/uniform-n1m-q4096-r64-safe.json",
+        "benchmarkScript": "bench/bench_spatial_radius_dispatch.py"
+      },
+      "baselines": [
+        {
+          "id": "native-scan",
+          "name": "MPS native full scan",
+          "queryMs": 3.551375
+        }
+      ],
+      "ours": {
+        "id": "bvh",
+        "name": "MPS opt-in BVH",
+        "queryMs": 13.084209
+      },
+      "auto": {
+        "selectedBackend": "scan",
+        "queryMs": 3.631667
+      },
+      "parity": {
+        "mismatchedIndexSlots": 0,
+        "mismatchedSquaredDistanceBits": 0,
+        "originalIndexOrderViolations": 0,
+        "bvhStackFallbackRows": 0
+      }
+    },
+    {
+      "id": "spatial-radius-crossover-uniform-1m-q4096-r512",
+      "status": "measured",
+      "scope": "unreleased-public-source",
+      "operation": "radius",
+      "distribution": "uniform",
+      "conditions": {
+        "hardware": "Apple M5 Pro",
+        "memoryGiB": 48,
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "dtype": "float32",
+        "n": 1000000,
+        "q": 4096,
+        "k": 16,
+        "radius": 512.0,
+        "repetitions": 3,
+        "statistic": "median-of-synchronized-query-samples",
+        "querySource": "independent",
+        "inputResidence": "preloaded-mps",
+        "mpsFallback": false,
+        "mpsFastMath": false,
+        "shaderCompilationIncluded": false,
+        "hostToDeviceTransferIncluded": false,
+        "measurementDateUtc": "2026-10-02T11:51:02.694447+00:00",
+        "sourceCommit": "81c1e939c9a3af215003206dc761ecee8927447a",
+        "sourcePath": "bench/results/spatial-radius-crossover-v090-m5pro/uniform-n1m-q4096-r512-safe.json",
+        "benchmarkScript": "bench/bench_spatial_radius_dispatch.py"
+      },
+      "baselines": [
+        {
+          "id": "native-scan",
+          "name": "MPS native full scan",
+          "queryMs": 0.26625
+        }
+      ],
+      "ours": {
+        "id": "bvh",
+        "name": "MPS opt-in BVH",
+        "queryMs": 25.031833
+      },
+      "auto": {
+        "selectedBackend": "scan",
+        "queryMs": 0.219166
+      },
+      "parity": {
+        "mismatchedIndexSlots": 0,
+        "mismatchedSquaredDistanceBits": 0,
+        "originalIndexOrderViolations": 0,
+        "bvhStackFallbackRows": 0
+      }
+    },
+    {
+      "id": "spatial-radius-crossover-uniform-1m-q4096-r1024",
+      "status": "measured",
+      "scope": "unreleased-public-source",
+      "operation": "radius",
+      "distribution": "uniform",
+      "conditions": {
+        "hardware": "Apple M5 Pro",
+        "memoryGiB": 48,
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "dtype": "float32",
+        "n": 1000000,
+        "q": 4096,
+        "k": 16,
+        "radius": 1024.0,
+        "repetitions": 3,
+        "statistic": "median-of-synchronized-query-samples",
+        "querySource": "independent",
+        "inputResidence": "preloaded-mps",
+        "mpsFallback": false,
+        "mpsFastMath": false,
+        "shaderCompilationIncluded": false,
+        "hostToDeviceTransferIncluded": false,
+        "measurementDateUtc": "2026-10-02T11:51:08.067868+00:00",
+        "sourceCommit": "81c1e939c9a3af215003206dc761ecee8927447a",
+        "sourcePath": "bench/results/spatial-radius-crossover-v090-m5pro/uniform-n1m-q4096-r1024-safe.json",
+        "benchmarkScript": "bench/bench_spatial_radius_dispatch.py"
+      },
+      "baselines": [
+        {
+          "id": "native-scan",
+          "name": "MPS native full scan",
+          "queryMs": 0.186375
+        }
+      ],
+      "ours": {
+        "id": "bvh",
+        "name": "MPS opt-in BVH",
+        "queryMs": 14.926542
+      },
+      "auto": {
+        "selectedBackend": "scan",
+        "queryMs": 0.189792
+      },
+      "parity": {
+        "mismatchedIndexSlots": 0,
+        "mismatchedSquaredDistanceBits": 0,
+        "originalIndexOrderViolations": 0,
+        "bvhStackFallbackRows": 0
+      }
+    },
+    {
       "id": "m1-spatial-knn-uniform-1m-q65536",
       "status": "measured",
       "scope": "unreleased-public-source",

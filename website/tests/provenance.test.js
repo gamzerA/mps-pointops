@@ -130,6 +130,11 @@ test('each displayed benchmark matches its raw record and recorded source',
             record.parity.mismatchedIndexSlots);
           assert.equal(raw.mismatch.bvh_steady_vs_scan_squared_distance_bits,
             record.parity.mismatchedSquaredDistanceBits);
+          if (record.parity.bvhStackFallbackRows !== undefined) {
+            assert.equal(raw.bvh_stack_fallback.rows,
+              record.parity.bvhStackFallbackRows);
+            assert.equal(raw.bvh_stack_fallback.query_count, conditions.q);
+          }
         } else {
           assert.equal(raw.adaptive_decision.selected_backend,
             record.auto.selectedBackend);
