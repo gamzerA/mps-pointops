@@ -75,7 +75,7 @@ test('selection and KO/EN switch update details without conflating release and v
     const root = new FakeElement('div');
     const map = mountCapabilityMap(root, data);
     assert.equal(map.getSelectedId(), 'pointnet2');
-    assert.match(root.children[0].textContent, /PyPI 1\.0\.0 \/ 병합 소스 905fce53/);
+    assert.ok(root.children[0].textContent.includes(`PyPI ${data.source.publishedVersion} / 병합 소스 ${data.source.mainCommit.slice(0, 8)}`));
     const buttons = descendants(root).filter(element => element.className.includes('capability-option ')
       || element.className === 'capability-option');
     assert.equal(buttons.length, 6);
@@ -89,14 +89,14 @@ test('selection and KO/EN switch update details without conflating release and v
     map.setLanguage('en');
     assert.match(root.children[2].textContent, /Experimental subset/);
     assert.match(root.children[2].textContent, /Model fixture passed/);
-    assert.match(root.children[0].textContent, /merged source 905fce53/);
+    assert.ok(root.children[0].textContent.includes(`merged source ${data.source.mainCommit.slice(0, 8)}`));
     assert.equal(map.select('missing'), false);
     assert.equal(map.select('pyg'), true);
     assert.match(root.children[2].textContent, /bounded operator suite/);
     map.setLanguage('ko');
     assert.match(root.children[2].textContent, /한정된 연산자 스위트/);
     const evidence = descendants(root).find(element => element.tagName === 'a');
-    assert.match(evidence.href, /^https:\/\/github\.com\/gamzerA\/mps-pointops\/blob\/905fce53[0-9a-f]{32}\/docs\//);
+    assert.ok(evidence.href.startsWith(`https://github.com/gamzerA/mps-pointops/blob/${data.source.mainCommit}/docs/`));
     assert.equal(evidence.rel, 'noopener noreferrer');
   } finally {
     if (previousDocument === undefined) delete globalThis.document;
