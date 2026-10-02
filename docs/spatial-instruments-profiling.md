@@ -9,6 +9,12 @@ SHA-256 values against the current checkout before any MPS dispatch. A change
 to the kernels or fixture generator requires a new profile protocol and
 explicit revalidation; the old records are never rewritten.
 
+The archived **uniform Q=65,536** fixture uses `cell_size=16.0`. A newer
+Instruments memory trace that used `cell_size=0.015625` is a different
+condition; its GPU durations or memory observations must not be joined to the
+uniform record from this harness. Capture uniform `16.0` separately or label
+the mismatch explicitly in any comparison table.
+
 Each condition creates its input and builds its BVH **once**, warms the full
 query twice, then performs five synchronized query repeats by default. The
 process drops each condition's tensors and empties unused MPS cache before

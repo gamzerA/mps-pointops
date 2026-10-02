@@ -221,7 +221,9 @@ def _run_case(case: Case, warmups: int, repeats: int) -> dict[str, Any]:
                 "reserved_bytes": int(torch.accelerator.max_memory_reserved()),
             },
         })
-        del result
+        # `index_result` aliases an output in `result`. Release both before
+        # the next repeat so its live-tensor baseline does not drift upward.
+        del index_result, result
     validate_intervals(samples)
     torch.mps.synchronize()
     after = _memory()
