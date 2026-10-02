@@ -1,14 +1,26 @@
 """Local checks for the portable parts of the tiny spconv parity probe."""
 
+import importlib.util
+import sys
+from pathlib import Path
+
 import pytest
 import torch
 
-from tools.verify_spconv_toy_parity import (
-    _aligned,
-    _from_native_layout,
-    _native_layout,
-    _values,
-)
+
+# The probe is a standalone source-tree tool, deliberately absent from the
+# installed wheel. CI invokes the ``pytest`` executable, whose sys.path need
+# not include the repository root, so load the file by its actual location.
+_PROBE_PATH = Path(__file__).resolve().parents[1] / "tools" / "verify_spconv_toy_parity.py"
+_SPEC = importlib.util.spec_from_file_location("verify_spconv_toy_parity", _PROBE_PATH)
+assert _SPEC is not None and _SPEC.loader is not None
+_PROBE = importlib.util.module_from_spec(_SPEC)
+sys.modules[_SPEC.name] = _PROBE
+_SPEC.loader.exec_module(_PROBE)
+_aligned = _PROBE._aligned
+_from_native_layout = _PROBE._from_native_layout
+_native_layout = _PROBE._native_layout
+_values = _PROBE._values
 
 
 @pytest.mark.parametrize("channels", [(4, 2), (2, 4)])
