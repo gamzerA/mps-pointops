@@ -140,6 +140,7 @@ function element(tag, className = '', content) {
   return result;
 }
 function safeSourcePath(path) { return RAW_PATH.test(path ?? '') && !path.split('/').includes('..'); }
+function safeEvidencePath(path) { return /^docs\/evidence\/[A-Za-z0-9_./-]+\.json$/.test(path ?? '') && !path.split('/').includes('..'); }
 function safeLogPath(path) { return /^docs\/evidence\/[A-Za-z0-9_./-]+\.log$/.test(path ?? '') && !path.split('/').includes('..'); }
 function setText(root, selector, value) {
   const target = root.querySelector(selector);
@@ -420,12 +421,15 @@ export function mountMeasurementsDashboard(root, data, { language: initialLangua
     setText(root, '[data-measure-scope]', model.record.scope === 'research-prototype' ? t.prototype : t.provenance);
     setText(root, '[data-measure-copy="boundary"]', selectedHardware === 'Apple M1' ? t.boundaryM1 : t.boundary);
     const memory = root.querySelector('#measurement-memory');
-    const evidence = data.memoryEvidence;
-    memory.hidden = selectedHardware !== 'Apple M1' || !evidence || !safeSourcePath(evidence.sourcePath);
+    const instruments = selectedHardware === 'Apple M5 Pro' ? data.instrumentsEvidence : null;
+    const evidence = instruments || (selectedHardware === 'Apple M1' ? data.memoryEvidence : null);
+    memory.hidden = !evidence || !(instruments ? safeEvidencePath(evidence.sourcePath) : safeSourcePath(evidence.sourcePath));
     if (!memory.hidden) {
       setText(memory, '[data-measure-memory-summary]',
-        t.memorySummary(formatNumber(evidence.allocatorTensorPeakBytes / 1048576, language, 2),
-          formatNumber(evidence.sampledDriverHighBytes / 1048576, language, 2)));
+        instruments
+          ? `M5 Pro Instruments · ${instruments.fixtures} captures · ${formatNumber(instruments.observedMetalAllocationMaxBytes / 1048576, language, 2)} MiB observed Metal allocation maximum. Separate process-footprint pilot: ${formatNumber(instruments.sampledProcessFootprintMaxBytes / 1048576, language, 2)} MiB. Occupancy uncollected; not physical GPU peaks.`
+          : t.memorySummary(formatNumber(evidence.allocatorTensorPeakBytes / 1048576, language, 2),
+            formatNumber(evidence.sampledDriverHighBytes / 1048576, language, 2)));
       memory.querySelector('[data-measure-memory-link]').href = `./evidence/${evidence.sourcePath}`;
     }
   }

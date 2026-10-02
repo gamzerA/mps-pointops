@@ -1,0 +1,8 @@
+Starting recording with the counters-no-shader template. Launching process: python3.12. Time limit: 45.0 s
+Ctrl-C to stop the recording
+Target app exited, ending recording...
+Run issues were detected (trace is still ready to be viewed):
+* [Warning] GPU Service reported error: Selected counter profile is not supported on target device
+
+Recording completed. Saving output file...
+Output file saved as: mixed-q4096-no-shader-counter-pilot.trace

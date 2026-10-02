@@ -1231,7 +1231,8 @@ versions do not indicate completed support.
       now performs exact kNN and first-K Ball Query under bounded Safe Math;
       [SpatialIndex](docs/spatial-api-v090.md) exposes it as an opt-in single-cloud
       path. M5 Pro query-count and distribution tests,
-      [PyTorch allocator peaks](docs/spatial-memory-v090.md), and bounded
+      [PyTorch allocator peaks](docs/spatial-memory-v090.md),
+      [Instruments Metal allocation and process-memory observations](docs/spatial-instruments-v090.md), and bounded
       [physical M1 correctness and timing fixtures](docs/spatial-m1-v090.md)
       are recorded. Total GPU physical-memory peak, public flat/batched
       routing, and cross-device build-plus-query superiority remain open.

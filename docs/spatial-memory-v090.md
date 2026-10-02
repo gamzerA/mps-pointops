@@ -81,7 +81,10 @@ These observations used clean Git commit
 `source_dirty=false` and identical source SHA-256 maps; the recorded hashes
 also match the measurement program and spatial/native source files at that
 commit. The numbers are M5 Pro allocator measurements, not a whole-device
-GPU-memory peak. No Instruments capture or M1 measurement was made.
+GPU-memory peak. No Instruments capture or M1 measurement was made in that
+2026-10-02 run. The subsequent [M5 Pro Instruments study](spatial-instruments-v090.md)
+adds six target-process Metal allocation traces and a separate sampled
+process-footprint pilot; the original table remains unchanged.
 
 ## Reproduction
 
@@ -119,16 +122,20 @@ GPU and memory activity. For an independent total-Metal-resource and physical
 footprint report:
 
 1. Install full Xcode with Instruments and confirm the Game Memory template
-   exists. This host currently has Command Line Tools only;
-   `xcrun xctrace list templates` fails, so no `.trace` exists for the table.
+   exists. The 2026-10-03 follow-up used Xcode 26.6 with a launchable debug
+   interpreter. Its source-pinned traces and metric limits are documented in
+   the [Instruments report](spatial-instruments-v090.md).
 2. Start a fresh run of the same script with `--pause-before-s 30
    --pause-after-s 30`; it prints `INSTRUMENTS_ATTACH_READY` and its PID
    after warmup. Attach Instruments to that Python PID, select **Game
    Memory**, and begin recording before the input-transfer stage starts.
-3. In Metal Resource Events, inspect live Metal buffer allocations over the
-   transfer, build, and query intervals. In VM Tracker, record the maximum
-   resident and dirty footprint with the time interval and process PID.
-   Preserve the `.trace`, tool/Xcode version, raw JSON, and source hashes.
+3. Inspect Metal allocations over transfer, build, and query. Validate which
+   process-memory columns the selected instrument actually exports. The
+   follow-up's Activity Monitor pilot exposed sampled physical footprint and
+   resident size; its Game Memory export did not expose a VM Tracker footprint
+   table. Preserve raw traces privately, publish target-only numeric rows,
+   and record tool versions, JSON and source hashes. Do not treat the
+   `virtual-memory` page-fault table as a footprint series.
 4. Repeat on a clean release commit and on M1 when that device is available.
    A resource-allocation peak, PyTorch allocator peak, driver allocation,
    and resident physical footprint are different quantities; label each

@@ -1,0 +1,64 @@
+{
+  "environment": {
+    "hardware": "Apple M5 Pro",
+    "macos": "26.5.2",
+    "xcode": "26.6 (17F113)"
+  },
+  "probes": [
+    {
+      "id": "mixed-q4096-counter-pilot",
+      "counter_tables_requested": [
+        {
+          "schema": "gpu-counter-info",
+          "counter-profile": "3",
+          "counter-device": "0",
+          "shader-profiler": "1",
+          "documentation": "GPU Counter Info"
+        },
+        {
+          "schema": "gpu-counter-info",
+          "counter-profile": "0",
+          "counter-device": "0",
+          "shader-profiler": "0",
+          "documentation": "GPU Counter Info"
+        }
+      ],
+      "warning": "Selected counter profile is not supported on target device",
+      "xctrace_log_sha256": "f477bad3fc4b7142bd5602fdcc1529651fd5427ec2d0528dfc9007761f6ca012",
+      "toc_sha256": "5142469bf743c147a3dbe41c5316de09ca31783bae15efe4a2db4f0bb0e7cb38"
+    },
+    {
+      "id": "mixed-q4096-no-shader-counter-pilot",
+      "counter_tables_requested": [
+        {
+          "schema": "gpu-counter-info",
+          "counter-profile": "3",
+          "counter-device": "0",
+          "shader-profiler": "0",
+          "documentation": "GPU Counter Info"
+        }
+      ],
+      "warning": "Selected counter profile is not supported on target device",
+      "xctrace_log_sha256": "d78d993c6a184497f1c1cbc547d03afdb9e08ddeeb83c5b7deb5a2cf8fb2e9dd",
+      "toc_sha256": "34e82137878952efa29a76e05372ee02bb2e03c3c3846a0c07b45a25dd90c1d5"
+    },
+    {
+      "id": "mixed-q4096-system-pilot",
+      "counter_tables_requested": [
+        {
+          "schema": "gpu-counter-info",
+          "counter-profile": "0",
+          "counter-device": "0",
+          "shader-profiler": "0",
+          "documentation": "GPU Counter Info"
+        }
+      ],
+      "warning": null,
+      "xctrace_log_sha256": "c42e295600cbb108afa2d735824278f08758a8c900da582dd978c8e41e6d33c2",
+      "toc_sha256": "f1a2f034fedd2dccbf7b97201d985ef65ee6e2f37f5b06ee7b0669b55377e044"
+    }
+  ],
+  "runtime_occupancy": null,
+  "status": "uncollected",
+  "interpretation": "The tested counter profile was rejected with shader timeline enabled and disabled. This is not proof that all M5 counters or other tool versions are unsupported. The plain Metal System Trace completed without warnings and exposes GPU execution events."
+}

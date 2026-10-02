@@ -57,8 +57,11 @@ a serial BVH cannot be dispatched by Q alone. The private BVH Ball Query
 additionally preserves original-index first-K order under the dense radius
 threshold, with explicit full-scan recovery on stack overflow. The
 [memory study](spatial-memory-v090.md) records PyTorch allocator peaks that
-include transient tensor allocations; total GPU physical-memory peak still
-requires an Instruments trace. A subsequent [physical M1 study](spatial-m1-v090.md)
+include transient tensor allocations. The [M5 Pro Instruments follow-up](spatial-instruments-v090.md)
+adds six target-process Metal allocation traces and a separate sampled
+process-footprint pilot. These establish observed resource-allocation and
+process-memory measurements, not an exact whole-device physical GPU peak.
+A subsequent [physical M1 study](spatial-m1-v090.md)
 records clean-source spatial parity, synchronized 1M-point timings, SciPy
 `cKDTree` build/query comparisons, and allocator counters on 8 GiB Apple M1.
 It does not provide an Instruments physical-memory trace or close the full
@@ -112,6 +115,14 @@ and physical M1 measurements with uncertainty intervals and no memory failure.
 The physical M1 has now been measured for the stated fixtures; its
 [raw records and limitations](spatial-m1-v090.md) are part of this plan.
 The broader speedup, physical-memory, and v1.0 support gates remain open.
+For the profiling evidence, report supported GPU execution intervals, tensor
+allocator peaks, observed Metal allocation maxima, and sampled process
+footprint under their own definitions. Runtime Occupancy is optional when a
+short counter-availability probe is rejected: preserve the failure and mark
+it uncollected. Threadgroup size, SIMD width, and declared threadgroup storage
+are source/resource descriptors, not measured Occupancy or a derived
+Occupancy upper bound. A GPU pass interval must not be relabeled as an
+individual shader time unless the trace establishes that correspondence.
 On an 8 GB M1, verify the chip, memory, macOS and PyTorch versions before
 testing. Run each Safe-Math, CPU-fallback-disabled fixture in a fresh child
 process with a recorded wall-time limit and allocator/driver checkpoints.
@@ -192,6 +203,17 @@ commit, configuration, fixture, seed, dtype, and convolution algorithm;
 compare coordinate sets before aligning feature rows and comparing outputs,
 input gradients, and weight gradients. If the CUDA oracle or model is
 unavailable, retain an experimental label.
+
+The current bounded implementation has SubM, ordinary Strided and saved-key
+Inverse paths. The [Windows RTX 2080 oracle](verification/spconv-toy-rtx2080.json)
+records three tiny `spconv` 2.3.8 fixtures with 15 output/first-gradient
+comparisons; the [physical M1 archive](evidence/m1-sparse-2026-10-03/README.md)
+records 92 passing tests in each of Safe and Fast Math at source `6959fd59`,
+without CPU fallback or skips. The [OpenPCDet integration](sparse-openpcdet-local-integration.md)
+is a fixed synthetic local CPU/MPS comparison. These establish the stated
+operator and fixture coverage. Whole-model upstream CUDA parity and a full
+`spconv` API replacement remain outside the validated scope, so the private
+sparse interfaces retain their experimental label.
 
 ## v1.0.0: API and support contract
 

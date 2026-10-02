@@ -64,6 +64,17 @@ reference for ragged batches, stride, padding, dilation, inverse key reuse,
 two-layer downsample/inverse gradient propagation,
 unreachable points, empty results, and noncontiguous feature/weight views.
 
+On a physical Apple M1, the [source-pinned Safe/Fast validation](evidence/m1-sparse-2026-10-03/README.md)
+at commit `6959fd590deecbefc98a163d46c23debaaa67c9e` passed **92 tests
+per mode, zero skipped** with PyTorch 2.14.1 and fallback disabled. That is
+the aggregate of six CPU rulebook, SubM, Strided/Inverse Metal, and adapter
+suites; it is not 92 independent Strided/Inverse tests. The optional 1,025/
+10,000-row timings measure **SubM rulebook backend choice** while both paths
+run feature arithmetic on MPS, so they are not a Strided/Inverse performance
+benchmark or a pure CPU-versus-GPU convolution comparison. The 10,000-row
+MPS-rulebook backward median was slower than the CPU-rulebook path in both
+math modes, despite the shorter forward median.
+
 This prototype still uses CPU geometry generation and small fixed caps. A
 device-resident ordinary rulebook builder, scalable CSR construction, a
 separate sparse transpose operator, upstream `spconv 2.x` CUDA parity for

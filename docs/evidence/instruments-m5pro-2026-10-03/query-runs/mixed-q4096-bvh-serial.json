@@ -1,0 +1,129 @@
+{
+  "name": "mixed-q4096-bvh-serial",
+  "fixture": {
+    "path": "bvh-serial",
+    "distribution": "cluster-sparse",
+    "points": 1000000,
+    "queries": 4096,
+    "k": 16,
+    "extent": 1024.0,
+    "cell_size": 0.015625,
+    "seed": 20261002,
+    "query_source": "sampled-reference",
+    "cluster_fraction": 0.9,
+    "cluster_side": 1.0,
+    "cluster_queries": 2048,
+    "background_queries": 2048
+  },
+  "fixture_points_queries_sha256": "17f938455f20e0810e7cdfa902b17744d9151ee14d3eff5de01f7706945bc58c",
+  "archive_reference": {
+    "path": "bench/results/spatial-memory-v090-m5pro-clean/mixed-q4096-bvh-serial.json",
+    "sha256": "12f6cd2640d5ed584690cc3891b5ce8ab61ae3cbf9cf92abfd103e224a316165",
+    "derived_case": false,
+    "archived_2026_10_02_memory": {
+      "allocator_high_water_bytes": {
+        "tensor_bytes": 61867520,
+        "reserved_bytes": 1082130432
+      },
+      "sampled_high_water_bytes": {
+        "tensor_bytes": 27182080,
+        "driver_bytes": 1086488576
+      }
+    }
+  },
+  "expected_query_kernel_symbols": [
+    "bvh_knn_f32"
+  ],
+  "before_query_repeats": {
+    "tensor_bytes": 20693760,
+    "driver_bytes": 1082851328
+  },
+  "after_query_repeats": {
+    "tensor_bytes": 20693760,
+    "driver_bytes": 1082851328
+  },
+  "warmups": 2,
+  "query_repeats": [
+    {
+      "repeat": 0,
+      "host_unix_start_ns": 1790957623858538000,
+      "host_unix_end_ns": 1790957623917072000,
+      "host_perf_start_ns": 7681874432583,
+      "host_perf_end_ns": 7681932963750,
+      "host_synchronized_ns": 58531167,
+      "memory_after_query": {
+        "tensor_bytes": 21562112,
+        "driver_bytes": 1082851328
+      },
+      "allocator_peak_during_query": {
+        "tensor_bytes": 21562112,
+        "reserved_bytes": 1082130432
+      }
+    },
+    {
+      "repeat": 1,
+      "host_unix_start_ns": 1790957623917238000,
+      "host_unix_end_ns": 1790957623975715000,
+      "host_perf_start_ns": 7681933131416,
+      "host_perf_end_ns": 7681991607291,
+      "host_synchronized_ns": 58475875,
+      "memory_after_query": {
+        "tensor_bytes": 21562112,
+        "driver_bytes": 1082851328
+      },
+      "allocator_peak_during_query": {
+        "tensor_bytes": 21562112,
+        "reserved_bytes": 1082130432
+      }
+    },
+    {
+      "repeat": 2,
+      "host_unix_start_ns": 1790957623975861000,
+      "host_unix_end_ns": 1790957624034814000,
+      "host_perf_start_ns": 7681991754666,
+      "host_perf_end_ns": 7682050706125,
+      "host_synchronized_ns": 58951459,
+      "memory_after_query": {
+        "tensor_bytes": 21562112,
+        "driver_bytes": 1082851328
+      },
+      "allocator_peak_during_query": {
+        "tensor_bytes": 21562112,
+        "reserved_bytes": 1082130432
+      }
+    },
+    {
+      "repeat": 3,
+      "host_unix_start_ns": 1790957624034972000,
+      "host_unix_end_ns": 1790957624095050000,
+      "host_perf_start_ns": 7682050866208,
+      "host_perf_end_ns": 7682110943416,
+      "host_synchronized_ns": 60077208,
+      "memory_after_query": {
+        "tensor_bytes": 21562112,
+        "driver_bytes": 1082851328
+      },
+      "allocator_peak_during_query": {
+        "tensor_bytes": 21562112,
+        "reserved_bytes": 1082130432
+      }
+    },
+    {
+      "repeat": 4,
+      "host_unix_start_ns": 1790957624095198000,
+      "host_unix_end_ns": 1790957624153542000,
+      "host_perf_start_ns": 7682111092000,
+      "host_perf_end_ns": 7682169434833,
+      "host_synchronized_ns": 58342833,
+      "memory_after_query": {
+        "tensor_bytes": 21562112,
+        "driver_bytes": 1082851328
+      },
+      "allocator_peak_during_query": {
+        "tensor_bytes": 21562112,
+        "reserved_bytes": 1082130432
+      }
+    }
+  ],
+  "host_synchronized_median_ms": 58.531167
+}
