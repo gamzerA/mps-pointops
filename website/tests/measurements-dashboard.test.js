@@ -6,10 +6,10 @@ import { measuredComparison } from '../src/measurements-dashboard.js';
 
 const data = JSON.parse(readFileSync(fileURLToPath(new URL('../data/benchmarks.json', import.meta.url)), 'utf8'));
 
-test('the default comparison uses query times from one measured unreleased fixture', () => {
+test('the default comparison uses query times from one historical source fixture', () => {
   const { record, series, maxMs } = measuredComparison(data);
   assert.equal(record.id, 'spatial-knn-uniform-independent-1m-q65536');
-  assert.equal(record.scope, 'unreleased-public-source');
+  assert.equal(record.scope, 'historical-source-snapshot');
   assert.equal(record.conditions.n, 1_000_000);
   assert.equal(record.conditions.q, 65_536);
   assert.deepEqual(series.map(item => [item.id, item.queryMs]), [
@@ -48,7 +48,7 @@ test('dashboard evidence remains tied to separate source and test records', () =
   assert.ok(records.every(record => record.conditions.sourcePath.startsWith('bench/results/')));
   assert.notEqual(records[0].conditions.sourceCommit, records[1].conditions.sourceCommit);
   assert.equal(data.verification.testRuns.find(run => run.id === 'safe').sourceCommit, records[1].conditions.sourceCommit);
-  assert.equal(data.meta.publishedVersion, '0.8.0');
+  assert.equal(data.meta.publishedVersion, '1.0.0');
   assert.ok(data.support.some(item => item.id === 'm1-8gb-spatial' && item.status === 'measured'));
   assert.ok(data.support.some(item => item.id === 'physical-gpu-peak' && item.status === 'pending'));
 });
@@ -56,7 +56,7 @@ test('dashboard evidence remains tied to separate source and test records', () =
 test('M1 evidence keeps opt-in BVH timing separate from scan-only Auto', () => {
   const m1 = data.benchmarks.filter(record => record.conditions.hardware === 'Apple M1');
   assert.equal(m1.length, 6);
-  assert.ok(m1.every(record => record.scope === 'unreleased-public-source'
+  assert.ok(m1.every(record => record.scope === 'historical-source-snapshot'
     && record.conditions.sourceCommit === 'ef07a9337b40065c18a6c950bda4240c789f31f1'
     && record.conditions.n === 1_000_000 && record.conditions.q === 65_536
     && record.conditions.repetitions === 3 && record.auto.selectedBackend === 'scan'

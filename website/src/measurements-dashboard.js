@@ -20,15 +20,15 @@ const COPY = {
     doiLink: '버전 DOI ↗',
     measurementSourceLabel: '현재 측정 소스',
     testSourceLabel: 'Safe/Fast 테스트 소스',
-    boundary: '물리 GPU 메모리 피크는 아직 계측되지 않았습니다. BVH 경로는 공개 v0.8.0 wheel에 없습니다.',
-    boundaryM1: 'M1 8GB의 100만 점 실측은 미배포 소스의 opt-in BVH와 scan을 비교합니다. Auto는 여섯 조건 모두 scan을 선택했습니다. 실제 GPU 메모리 피크는 아직 계측되지 않았습니다.',
+    boundary: '정확한 물리 GPU 메모리 피크는 미측정입니다. v1.0.0의 BVH는 제한된 입력을 위한 선택 경로입니다.',
+    boundaryM1: 'M1 8GB의 과거 100만 점 실측은 opt-in BVH와 scan을 비교합니다. Auto는 여섯 조건 모두 scan을 선택했습니다. 배포된 v1.0.0 wheel의 재측정값은 아닙니다.',
     queryTime: '동일 기록의 쿼리 시간',
     queryNote: '막대 길이는 선택한 한 기록 안에서만 비교합니다. 빌드 시간은 포함하지 않습니다.',
     queryNoteM1: '사전 적재한 MPS 입력의 동기화된 쿼리 중앙값입니다. 인덱스 빌드·전송·컴파일은 제외합니다. Auto는 M1에서 scan입니다.',
     fixture: '입력 조건',
-    provenance: '미배포 소스 실측',
+    provenance: '과거 소스 실측',
     prototype: '연구 시제품 실측',
-    listUnreleased: '미배포 소스',
+    listUnreleased: '소스 기록',
     listPrototype: '시제품',
     auto: 'Auto 선택',
     detailButton: '조건과 원시 근거 보기',
@@ -79,15 +79,15 @@ const COPY = {
     doiLink: 'Version DOI ↗',
     measurementSourceLabel: 'Selected measurement source',
     testSourceLabel: 'Safe/Fast test source',
-    boundary: 'Physical GPU memory peak remains unmeasured. BVH is absent from the published v0.8.0 wheel.',
-    boundaryM1: 'M1 8 GB measurements compare opt-in BVH with scan in unreleased source at 1M points. Auto selected scan in all six fixtures. Physical GPU memory peak remains unmeasured.',
+    boundary: 'Exact physical GPU memory peak remains unmeasured. v1.0.0 includes a bounded, opt-in BVH path.',
+    boundaryM1: 'M1 8 GB historical measurements compare opt-in BVH with scan at 1M points. Auto selected scan in all six fixtures. These are source-pinned runs, not new v1.0.0 wheel timings.',
     queryTime: 'Query time in one record',
     queryNote: 'Bar lengths compare only within this record. Build time is excluded.',
     queryNoteM1: 'Synchronized query medians on preloaded MPS inputs. Build, transfer, and compilation are excluded. Auto selected scan on M1; a 3 px mark reveals subpixel bars.',
     fixture: 'Fixture',
-    provenance: 'Unreleased source measurement',
+    provenance: 'Historical source measurement',
     prototype: 'Research prototype measurement',
-    listUnreleased: 'Unreleased',
+    listUnreleased: 'Source record',
     listPrototype: 'Prototype',
     auto: 'Auto selected',
     detailButton: 'Inspect conditions and raw evidence',
@@ -235,7 +235,7 @@ function renderDetail(root, model, language) {
   }
   const note = element('p', 'measurement-detail-note', record.scope === 'research-prototype'
     ? (language === 'ko' ? '연구 시제품의 기록입니다. 공개 패키지의 성능으로 해석하지 마세요.' : 'This is a research prototype record, not published-package performance.')
-    : (language === 'ko' ? '미배포 공개 소스의 기록입니다. BVH는 v0.8.0 wheel에 없습니다.' : 'This records unreleased public source. BVH is absent from the v0.8.0 wheel.'));
+    : (language === 'ko' ? 'v1.0.0에 포함된 경로의 과거 소스 실측입니다. 배포 wheel의 재측정값이 아닙니다.' : 'Historical source measurement of a path included in v1.0.0; not a fresh benchmark of the released wheel.'));
   body.replaceChildren(list, links, note);
 }
 

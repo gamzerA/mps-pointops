@@ -152,7 +152,7 @@
   "counterDistances": "Distance checks",
   "counterHits": "Points in radius",
   "pruningAnnouncement": "Visited {visited} nodes, rejected {pruned} AABB roots, checked {distances} point distances, found {hits} points",
-  "pruningModelNote": "This is a browser-computed 2D, single-query model. It Morton-sorts points, bisects balanced {brick}-point bricks, bounds actual coordinates, and collects all radius hits without a K limit. 'Pruned AABB roots' counts each rejected subtree root once, not all descendants. The unreleased research Metal path uses a two-level balanced BVH of {sourceBrick}-point bricks in 3D and returns the first K hits in original input order. These counters are not GPU performance metrics.",
+  "pruningModelNote": "This is a browser-computed 2D, single-query model. It Morton-sorts points, bisects balanced {brick}-point bricks, bounds actual coordinates, and collects all radius hits without a K limit. 'Pruned AABB roots' counts each rejected subtree root once, not all descendants. The bounded opt-in Metal path uses a two-level balanced BVH of {sourceBrick}-point bricks in 3D and returns the first K hits in original input order. These counters are not GPU performance metrics.",
   "benchmarksTitle": "Measurements need conditions.",
   "benchmarksDeck": "Keep the prototype, current source paths, and unfavorable cases visible together.",
   "benchmarkSourceSummary": "All times are stage or query medians from raw records. The prototype executed source commit {prototypeCommit}; current source executed commit {currentCommit}. Merge commit {mergeCommit} is not a test-run commit.",

@@ -130,13 +130,13 @@ test('route and Phase controllers translate active details, buttons, and accessi
     const phaseController = mountPhaseStory(phases.root, { language: 'en' });
     phaseController.select(4);
     assert.equal(phases.name.textContent, 'Sparse 3D computation');
-    assert.match(phases.status.textContent, /not implemented/);
+    assert.match(phases.status.textContent, /Private experimental API/);
     assert.match(phases.svg.getAttribute('aria-label'), /Sparse 3D computation/);
     assert.equal(phases.group.getAttribute('aria-label'), 'Choose a development phase');
-    assert.match(phases.steps[4].getAttribute('aria-label'), /Planned/);
+    assert.match(phases.steps[4].getAttribute('aria-label'), /experimental/);
     phaseController.setLanguage('ko');
     assert.equal(phases.name.textContent, '희소 3D 계산');
-    assert.match(phases.svg.getAttribute('aria-label'), /미구현/);
+    assert.match(phases.svg.getAttribute('aria-label'), /비공개 실험 API/);
     assert.equal(phases.steps[4].getAttribute('aria-current'), 'step');
     phases.steps[1].click();
     assert.equal(phases.name.textContent, '점과 피처');

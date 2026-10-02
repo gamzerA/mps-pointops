@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "meta": {
     "project": "mps-pointops",
-    "publishedVersion": "0.8.0",
+    "publishedVersion": "1.0.0",
     "mainMergeCommit": "905fce5384c681b16db0ebd0fbcd892635544ead",
     "developmentSourceCommit": "62fcc0f295e127be47a475fbc122d4de686b4c58",
     "snapshotDate": "2026-10-02",
@@ -12,7 +12,7 @@
       "status": "pending"
     },
     "license": "Project Apache-2.0; Ball Query portions MIT",
-    "installation": "python -m pip install mps-pointops==0.8.0"
+    "installation": "python -m pip install mps-pointops==1.0.0"
   },
   "demo": {
     "mortonBitsPerAxis": 21,
@@ -90,7 +90,7 @@
     {
       "id": "spatial-knn-uniform-independent-1m-q65536",
       "status": "measured",
-      "scope": "unreleased-public-source",
+      "scope": "historical-source-snapshot",
       "operation": "knn",
       "distribution": "uniform",
       "conditions": {
@@ -138,7 +138,7 @@
     {
       "id": "spatial-knn-coincident-1m-q65536",
       "status": "measured",
-      "scope": "unreleased-public-source",
+      "scope": "historical-source-snapshot",
       "operation": "knn",
       "distribution": "coincident",
       "conditions": {
@@ -186,7 +186,7 @@
     {
       "id": "spatial-radius-uniform-independent-1m-q65536",
       "status": "measured",
-      "scope": "unreleased-public-source",
+      "scope": "historical-source-snapshot",
       "operation": "radius",
       "distribution": "uniform",
       "conditions": {
@@ -236,7 +236,7 @@
     {
       "id": "spatial-radius-crossover-uniform-1m-q4096-r12",
       "status": "measured",
-      "scope": "unreleased-public-source",
+      "scope": "historical-source-snapshot",
       "operation": "radius",
       "distribution": "uniform",
       "conditions": {
@@ -288,7 +288,7 @@
     {
       "id": "spatial-radius-crossover-uniform-1m-q4096-r64",
       "status": "measured",
-      "scope": "unreleased-public-source",
+      "scope": "historical-source-snapshot",
       "operation": "radius",
       "distribution": "uniform",
       "conditions": {
@@ -340,7 +340,7 @@
     {
       "id": "spatial-radius-crossover-uniform-1m-q4096-r512",
       "status": "measured",
-      "scope": "unreleased-public-source",
+      "scope": "historical-source-snapshot",
       "operation": "radius",
       "distribution": "uniform",
       "conditions": {
@@ -392,7 +392,7 @@
     {
       "id": "spatial-radius-crossover-uniform-1m-q4096-r1024",
       "status": "measured",
-      "scope": "unreleased-public-source",
+      "scope": "historical-source-snapshot",
       "operation": "radius",
       "distribution": "uniform",
       "conditions": {
@@ -444,7 +444,7 @@
     {
       "id": "m1-spatial-knn-uniform-1m-q65536",
       "status": "measured",
-      "scope": "unreleased-public-source",
+      "scope": "historical-source-snapshot",
       "operation": "knn",
       "distribution": "uniform",
       "conditions": {
@@ -493,7 +493,7 @@
     {
       "id": "m1-spatial-knn-cluster-sparse-1m-q65536",
       "status": "measured",
-      "scope": "unreleased-public-source",
+      "scope": "historical-source-snapshot",
       "operation": "knn",
       "distribution": "cluster-sparse",
       "conditions": {
@@ -542,7 +542,7 @@
     {
       "id": "m1-spatial-knn-collapsed-1m-q65536",
       "status": "measured",
-      "scope": "unreleased-public-source",
+      "scope": "historical-source-snapshot",
       "operation": "knn",
       "distribution": "collapsed",
       "conditions": {
@@ -591,7 +591,7 @@
     {
       "id": "m1-spatial-radius-uniform-1m-q65536",
       "status": "measured",
-      "scope": "unreleased-public-source",
+      "scope": "historical-source-snapshot",
       "operation": "radius",
       "distribution": "uniform",
       "conditions": {
@@ -642,7 +642,7 @@
     {
       "id": "m1-spatial-radius-cluster-sparse-1m-q65536",
       "status": "measured",
-      "scope": "unreleased-public-source",
+      "scope": "historical-source-snapshot",
       "operation": "radius",
       "distribution": "cluster-sparse",
       "conditions": {
@@ -693,7 +693,7 @@
     {
       "id": "m1-spatial-radius-collapsed-1m-q65536",
       "status": "measured",
-      "scope": "unreleased-public-source",
+      "scope": "historical-source-snapshot",
       "operation": "radius",
       "distribution": "collapsed",
       "conditions": {
@@ -806,7 +806,7 @@
   ],
   "memoryEvidence": {
     "hardware": "Apple M1",
-    "scope": "unreleased-public-source",
+    "scope": "historical-source-snapshot",
     "sourceCommit": "ef07a9337b40065c18a6c950bda4240c789f31f1",
     "sourcePath": "bench/results/spatial-v090-m1/memory-bvh-serial-uniform-1m-q65536-ef07a933.json",
     "n": 1000000,

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "asOf": "2026-10-02",
-  "publishedPackageVersion": "0.8.0",
-  "publishedPackageTag": "v0.8.0",
+  "publishedPackageVersion": "1.0.0",
+  "publishedPackageTag": "v1.0.0",
   "records": [
     {
       "id": "m5-dense-fps-20000",
@@ -870,7 +870,7 @@
     },
     {
       "id": "spatial-knn-uniform-independent-1m-q65536",
-      "availability": "unreleased-source",
+      "availability": "released-code-snapshot",
       "hardware": "Apple M5 Pro",
       "operation": "knn",
       "n": 1000000,
@@ -933,11 +933,11 @@
         "cleanSource": true,
         "sourceHashesRecorded": true
       },
-      "caution": "v0.9 source measurement. BVH is opt-in; Auto may select scan. This path is absent from the published 0.8.0 wheel."
+      "caution": "Historical source measurement of the bounded spatial path now included in v1.0.0. BVH is opt-in; Auto may select scan. This is not a fresh timing of the released wheel."
     },
     {
       "id": "spatial-knn-coincident-1m-q65536",
-      "availability": "unreleased-source",
+      "availability": "released-code-snapshot",
       "hardware": "Apple M5 Pro",
       "operation": "knn",
       "n": 1000000,
@@ -1000,11 +1000,11 @@
         "cleanSource": true,
         "sourceHashesRecorded": true
       },
-      "caution": "v0.9 source measurement. BVH is opt-in; Auto may select scan. This path is absent from the published 0.8.0 wheel."
+      "caution": "Historical source measurement of the bounded spatial path now included in v1.0.0. BVH is opt-in; Auto may select scan. This is not a fresh timing of the released wheel."
     },
     {
       "id": "spatial-radius-uniform-independent-1m-q65536",
-      "availability": "unreleased-source",
+      "availability": "released-code-snapshot",
       "hardware": "Apple M5 Pro",
       "operation": "ball-query",
       "n": 1000000,
@@ -1068,7 +1068,7 @@
         "cleanSource": true,
         "sourceHashesRecorded": true
       },
-      "caution": "v0.9 source measurement. BVH is opt-in; Auto may select scan. This path is absent from the published 0.8.0 wheel."
+      "caution": "Historical source measurement of the bounded spatial path now included in v1.0.0. BVH is opt-in; Auto may select scan. This is not a fresh timing of the released wheel."
     }
   ]
 }

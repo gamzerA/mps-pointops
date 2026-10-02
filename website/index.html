@@ -24,7 +24,7 @@
 <a class="skip-link" href="#content" data-i18n="skip">Skip to content</a>
 <header class="site-header">
   <div class="shell header-inner">
-    <a class="brand" href="#top" aria-label="mps-pointops home"><img class="brand-mark" src="./assets/pointops-mark.svg" alt="" width="42" height="42"><strong>mps-pointops</strong><span class="version-pill" id="version-pill">v0.8.0</span></a>
+    <a class="brand" href="#top" aria-label="mps-pointops home"><img class="brand-mark" src="./assets/pointops-mark.svg" alt="" width="42" height="42"><strong>mps-pointops</strong><span class="version-pill" id="version-pill">v1.0.0</span></a>
     <nav class="primary-nav" aria-label="Pages"><a href="#compute">Compute</a><a href="#route">Execution</a><a href="#capabilities">Scope</a><a href="#methods">Methods</a><a href="#benchmarks">Measurements</a><a href="#quickstart">Install</a></nav>
   </div>
 </header>
@@ -87,7 +87,7 @@
     <div class="section-heading"><h1 id="capabilities-title">Scope</h1></div>
     <div class="ecosystem-switch" role="group" aria-label="Scope panel selector">
       <button type="button" data-ecosystem-panel-option="capabilities" aria-controls="capability-map" aria-pressed="true"><strong>Model validation</strong><small>Release · test scope</small></button>
-      <button type="button" data-ecosystem-panel-option="phases" aria-controls="phases" aria-pressed="false"><strong>Compute stages</strong><small>Current · research · planned</small></button>
+      <button type="button" data-ecosystem-panel-option="phases" aria-controls="phases" aria-pressed="false"><strong>Compute stages</strong><small>Public APIs · bounded experiments</small></button>
     </div>
     <div id="capability-map" role="region" aria-label="Model validation scope"></div>
   </section>
@@ -99,7 +99,7 @@
         <button type="button" data-phase-step="1"><span>PHASE 02</span><strong>Feature propagation</strong><small>Points + features → propagation</small></button>
         <button type="button" data-phase-step="2"><span>PHASE 03</span><strong>Graph & grid</strong><small>Points → graph and voxel IDs</small></button>
         <button type="button" data-phase-step="3"><span>PHASE 04</span><strong>Geometry & scale</strong><small>Distance losses and spatial index</small></button>
-        <button type="button" data-phase-step="4"><span>PHASE 05 · PLANNED</span><strong>Sparse 3D</strong><small>Metal convolution not implemented</small></button>
+        <button type="button" data-phase-step="4"><span>PHASE 05 · EXPERIMENTAL</span><strong>Sparse 3D</strong><small>Private bounded Metal implementation</small></button>
       </div></div>
     </div>
   </section>
@@ -189,13 +189,13 @@
   </section>
   <section class="section shell" id="quickstart" aria-labelledby="quickstart-title" data-site-view="install">
     <div class="section-heading"><h1 id="quickstart-title">Install and run</h1></div>
-    <div class="install-layout"><div class="install-main"><div class="code-heading"><span>INSTALL / RELEASED</span><button class="copy-button" type="button" data-copy="install-command">Copy</button></div><pre class="code-block"><code id="install-command">python -m pip install mps-pointops==0.8.0</code></pre><div class="code-heading"><span>COMPATIBILITY SHIM / OPT-IN</span><button class="copy-button" type="button" data-copy="example-code">Copy</button></div><pre class="code-block"><code id="example-code">import mps_pointops.compat
+    <div class="install-layout"><div class="install-main"><div class="code-heading"><span>INSTALL / RELEASED</span><button class="copy-button" type="button" data-copy="install-command">Copy</button></div><pre class="code-block"><code id="install-command">python -m pip install mps-pointops==1.0.0</code></pre><div class="code-heading"><span>COMPATIBILITY SHIM / OPT-IN</span><button class="copy-button" type="button" data-copy="example-code">Copy</button></div><pre class="code-block"><code id="example-code">import mps_pointops.compat
 mps_pointops.compat.install()</code></pre><p>Place these two lines before CUDA-oriented imports to enable the compatibility path. Registered namespaces and coverage vary by operation.</p></div><aside class="install-aside"><span class="micro-label">ENVIRONMENT</span><dl id="requirements-list" class="fact-list"></dl><p>A CPU reference path may run without MPS. Metal execution requires Apple Silicon and an MPS-enabled PyTorch build.</p><a href="https://github.com/gamzerA/mps-pointops#quick-start" target="_blank" rel="noopener noreferrer">Installation and support policy ↗</a></aside></div>
   </section>
   <section class="measurement-provenance" id="provenance" aria-labelledby="measurement-proof-title" data-site-view="measurements">
     <div class="measurement-proof-heading"><span class="micro-label">PROVENANCE / LIMITS</span><h2 id="measurement-proof-title" data-measure-copy="proofTitle">Provenance and remaining limits</h2></div>
     <dl class="measurement-source-list">
-      <div><dt data-measure-copy="releaseLabel">Published package</dt><dd><strong data-measure-version>—</strong><a href="https://doi.org/10.5281/zenodo.23092167" target="_blank" rel="noopener noreferrer" data-measure-copy="doiLink">Version DOI ↗</a></dd></div>
+      <div><dt data-measure-copy="releaseLabel">Published package</dt><dd><strong data-measure-version>—</strong><a href="https://doi.org/10.5281/zenodo.23107348" target="_blank" rel="noopener noreferrer" data-measure-copy="doiLink">Version DOI ↗</a></dd></div>
       <div><dt data-measure-copy="measurementSourceLabel">Measured source</dt><dd><a data-measure-source href="#" target="_blank" rel="noopener noreferrer">—</a><span data-measure-scope>—</span></dd></div>
       <div><dt data-measure-copy="testSourceLabel">Safe/Fast test source</dt><dd><a data-measure-test-source href="#" target="_blank" rel="noopener noreferrer">—</a></dd></div>
     </dl>
@@ -203,10 +203,10 @@ mps_pointops.compat.install()</code></pre><p>Place these two lines before CUDA-o
     <p class="measurement-direct-parity">Physical M1 Chamfer · pinned PyTorch3D CPU oracle · Safe/Fast each: 480 base + 252 normals/Pointclouds cases, 0 failures, max |Δ| 1.91e-6. <a href="https://github.com/gamzerA/mps-pointops/blob/main/docs/evidence/chamfer-v090-m1-upstream/README.md" target="_blank" rel="noopener noreferrer">Chamfer evidence ↗</a> Physical M1 sparse operators · Safe/Fast each: 92 passed, 0 skipped at <code>6959fd59</code>. <a href="https://github.com/gamzerA/mps-pointops/blob/main/docs/evidence/m1-sparse-2026-10-03/README.md" target="_blank" rel="noopener noreferrer">Sparse scope &amp; raw logs ↗</a></p>
     <p class="measurement-memory" id="measurement-memory" hidden><span data-measure-memory-summary></span> <a data-measure-memory-link href="#" target="_blank" rel="noopener noreferrer">Memory JSON ↗</a></p>
     <p class="measurement-pending" data-measure-pending>—</p>
-    <p class="measurement-boundary" data-measure-copy="boundary">Physical GPU memory peak remains unmeasured. BVH is absent from the published v0.8.0 wheel.</p>
+    <p class="measurement-boundary" data-measure-copy="boundary">Exact physical GPU memory peak remains unmeasured. v1.0.0 includes a bounded, opt-in BVH path.</p>
   </section>
 </main>
-<footer class="site-footer"><div class="shell footer-grid"><div><strong>mps-pointops</strong><p>Explaining point-cloud computation with a bounded evidence record.</p><p><a href="./reference/">API and support reference ↗</a></p></div><div><p id="footer-license">Project Apache-2.0; Ball Query portions MIT</p><p id="footer-snapshot">v0.8.0 source snapshot · 2026-10-02 · 905fce53</p><p>A paper is in preparation; no submission or publication is claimed.</p></div></div></footer>
+<footer class="site-footer"><div class="shell footer-grid"><div><strong>mps-pointops</strong><p>Explaining point-cloud computation with a bounded evidence record.</p><p><a href="./reference/">API and support reference ↗</a></p></div><div><p id="footer-license">Project Apache-2.0; Ball Query portions MIT</p><p id="footer-snapshot">v1.0.0 source snapshot · 2026-10-02 · 905fce53</p><p>A paper is in preparation; no submission or publication is claimed.</p></div></div></footer>
 <noscript><p class="noscript-message">Enable JavaScript to load visualizations and measurement records.</p></noscript>
 </body>
 </html>

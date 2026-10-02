@@ -105,7 +105,7 @@ test('benchmark data follows a bounded measured/pending/unsupported schema', () 
     assert.ok(!ids.has(record.id), `duplicate benchmark id ${record.id}`);
     ids.add(record.id);
     assert.equal(record.status, 'measured', `${record.id} needs recorded samples`);
-    assert.ok(['research-prototype', 'unreleased-public-source'].includes(record.scope));
+    assert.ok(['research-prototype', 'historical-source-snapshot'].includes(record.scope));
     assert.ok(Array.isArray(record.baselines) && record.baselines.length > 0,
       `${record.id} must allow multiple baseline entries`);
     assert.match(record.conditions.sourceCommit, /^[0-9a-f]{40}$/);
@@ -139,7 +139,7 @@ test('benchmark data follows a bounded measured/pending/unsupported schema', () 
   }
 
   assert.ok(data.benchmarks.some((record) => record.scope === 'research-prototype'));
-  assert.ok(data.benchmarks.some((record) => record.scope === 'unreleased-public-source'));
+  assert.ok(data.benchmarks.some((record) => record.scope === 'historical-source-snapshot'));
   for (const entry of data.support) {
     assert.ok(['measured', 'pending', 'unsupported'].includes(entry.status));
   }
