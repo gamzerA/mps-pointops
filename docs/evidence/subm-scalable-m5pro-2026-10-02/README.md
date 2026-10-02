@@ -1,5 +1,6 @@
 # Scalable private SubM rulebook prototype (2026-10-02)
 
+Benchmarked implementation: `6b7e940708fe9b1273d0eeb80fe521a2add1d4d4`.
 Source baseline: `origin/main` at `d2efed964779cd9a6ce00f1992e828f213bc028d`.
 Device: Apple M5 Pro, macOS 26.5.2, PyTorch 2.14.0. The private API and
 package version remain unchanged.
@@ -7,7 +8,9 @@ package version remain unchanged.
 The prior lookup compared each of `K*N` targets with up to `N` input rows and
 rejected `N > 1024`. This prototype stably sorts row IDs by the four int32
 coordinate fields, then performs a Metal binary search for each target. The
-lookup work is `O(N log N + K*N log N)`; sorting and compaction stay on MPS.
+lookup uses `O(K*N*log N)` comparisons rather than `O(K*N²)`. Four stable
+MPS sorts and linear compaction add work; PyTorch does not promise a specific
+sorting algorithm or asymptotic cost for this backend. All work stays on MPS.
 The target arithmetic is signed int64, with explicit int32 range checks before
 search, so an out-of-range neighbor cannot wrap to a valid coordinate. Input
 coordinates still require uniqueness and valid range from the caller. The
@@ -20,6 +23,13 @@ two-batch clouds at 1,025 and 10,000 rows, full int32 batch/coordinate and
 dilation boundaries, a 1,024-row 5×5×5 kernel above the old slot limit,
 preserved input snapshot, exact padded pair/CSR order, and chaining the CSR
 into the Metal forward kernel.
+
+These timings and tests apply to the standalone private rulebook builder.
+There is no public SubM API. The callable private SubM convolution
+`subm_conv3d_forward_mps` still builds its rulebook on CPU and transfers the
+CSR to MPS; it does not call this sorted builder. A test manually chains the
+GPU-generated CSR into its Metal forward shader. The GPU rulebook is not yet
+wired into that wrapper's backward path.
 
 ```sh
 PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=0 \

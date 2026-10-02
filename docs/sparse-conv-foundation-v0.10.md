@@ -1,7 +1,7 @@
 # Experimental sparse convolution coordinate oracle (v0.10 groundwork)
 
 Status: **CPU rulebook, experimental Metal SubM forward and first-order
-backward, and a bounded MPS rulebook construction prototype.** These private
+backward, and a sorted MPS rulebook construction prototype.** These private
 modules (`mps_pointops._sparse_rulebook`, `_subm_conv_mps`, and
 `_subm_rulebook_mps`) are not exported by `mps_pointops` and are not an
 `spconv` replacement. The v0.10 release gate remains open.
@@ -52,8 +52,8 @@ the input. The prototype restricts SubM to odd kernels, unit stride, and
 implicit center padding. Its source position is
 `output_position + (offset - floor(kernel_size/2))*dilation`.
 
-The rulebook is generated and sorted into output CSR on the CPU. The optional
-private `subm_conv3d_forward_mps(indices, features, weights, spatial_shape,
+The convolution wrapper's rulebook is generated and sorted into output CSR on
+the CPU. The optional private `subm_conv3d_forward_mps(indices, features, weights, spatial_shape,
 batch_size, dilation=1, bias=None)` transfers that CSR to MPS and uses one
 Metal writer per output scalar to gather and reduce features. Coordinates are
 CPU int32 `[N,4]`; features and weights are MPS float32 `[N,Cin]` and
@@ -86,11 +86,11 @@ when one input contributes to several outputs. Tests use `rtol=1e-4,
 atol=1e-5` for float32 forward and backward. The Metal shader's forward
 uses explicit FMA and Safe math, while `PYTORCH_MPS_FAST_MATH` controls the
 PyTorch backward operations in separate processes. Higher-order gradients,
-coordinate gradients, scalable Metal rulebook construction,
+coordinate gradients, integrated GPU rulebook construction,
 strided/inverse/transpose convolution, and source-compatible `spconv` APIs
 remain unsupported.
 
-## Bounded MPS-native rulebook construction prototype
+## Private MPS-native sorted rulebook prototype
 
 The private `generate_subm_rulebook_mps` takes prevalidated, unique MPS
 `int32` coordinates `[N,4]` in input row order. The caller must guarantee
@@ -99,15 +99,21 @@ does not inspect coordinate values on the host or reject invalid/duplicate
 coordinates. A contiguous MPS clone snapshots the input once for both lookup
 and returned output coordinates, matching the CPU oracle's clone behavior
 when callers mutate their input after the call. It accepts odd kernel
-dimensions and positive dilation, each fitting `int32`. It also requires
-`N <= 1024` and `N * kernel_volume <= 27648`. These are explicit prototype
-limits, not Metal or `spconv` limits.
+dimensions and positive dilation, each fitting `int32`. The former 1,024-row
+and 27,648-slot caps are gone. The current wrapper checks a Metal 1-D dispatch
+limit of `N * kernel_volume <= 2**32 - 2`; available device memory can limit
+practical inputs earlier. These are private implementation limits, not
+`spconv` limits.
 
-1. A Metal thread for each `(kernel_offset, output_row)` computes the integer
-   source coordinate and scans input rows for an exact match. Intermediate
-   coordinate arithmetic uses signed 64-bit integers to avoid `int32`
-   wraparound near the coordinate limit. This direct lookup is
-   `O(kernel_volume * N^2)` and is **not** the intended large-cloud index.
+1. Four stable MPS sorts of row IDs, from the last coordinate field to the
+   first, produce a lexicographic index. A Metal thread for each
+   `(kernel_offset, output_row)` computes the target and binary-searches that
+   index. Lookup needs `O(log N)` comparisons per target; the previous
+   prototype scanned all `N` rows, taking `O(kernel_volume * N²)` lookup
+   work. Overall cost also includes the four sorts. PyTorch does not promise
+   their sorting algorithm or asymptotic cost on MPS. Intermediate target
+   arithmetic uses signed 64-bit integers, and out-of-int32 targets are
+   rejected before lookup to prevent wraparound matches.
 2. MPS-device integer prefix sums compute ranks in both offset-major and
    output-major order. A second Metal kernel writes each valid pair once to
    its unique rank. There are no atomics and no schedule-dependent ties.
@@ -118,17 +124,20 @@ limits, not Metal or `spconv` limits.
    every unused element with `-1`. Reading the count on CPU would synchronize,
    but construction and CSR consumption do not require such a readback.
 
-The existing private `subm_conv3d_forward_mps` still uses the CPU-generated
-rulebook. A test feeds the GPU-generated CSR directly to its Metal forward
+No public SubM API is exported. The callable private
+`subm_conv3d_forward_mps` still uses the CPU-generated rulebook; the sorted
+builder is not integrated into that convolution wrapper. A test feeds the
+GPU-generated CSR directly to its Metal forward
 shader without an intermediate queue synchronization or host readback, then
 compares its floating-point output with dense CPU `Conv3d`. GPU input
-validation, a scalable Metal spatial index, backwards consumption of
-GPU-only pair metadata, performance proof, and upstream parity are still
+validation, backward consumption of GPU-only pair metadata, full-wrapper
+performance proof, and upstream parity are still
 required before replacing that path or making a compatibility claim.
 
 ## Reproducible local check
 
-On the 2026-10-02 workspace with PyTorch 2.14.1, run:
+On the 2026-10-02 M5 Pro workspace with PyTorch 2.14.0, run each math mode
+in a fresh process:
 
 ```bash
 python -m pytest -q tests/test_sparse_rulebook.py
@@ -138,28 +147,24 @@ PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=1 \
   python -m pytest -q tests/test_sparse_rulebook.py tests/test_subm_metal.py tests/test_subm_rulebook_mps.py
 ```
 
-The initial rulebook suite passed **20 tests**. It covers duplicate/out-of-range
-rejection; non-sorted input, batch isolation, exact kernel-offset pair order,
-dilation, padding, stride, empty input, and invalid parameters. For several
-3D kernels, an independently built dense occupancy convolution checks the
-active output set, and a dense feature convolution checks all rulebook
-gather/weight/reduction values. Direct `spconv` runtime parity has **not** been
-run because it is not installed in this environment. The Metal suite compares
-small batched, unsorted, dilated, biased, empty, and noncontiguous cases with
-dense PyTorch Conv3d at active output coordinates and compares first-order
-feature, weight, and bias gradients for batched, dilated, empty, sliced-view,
-and spatially transposed weight fixtures. On the local Apple Silicon GPU with
-`PYTORCH_ENABLE_MPS_FALLBACK=0`, the combined suites passed **47 tests** in
-each separately launched Safe and Fast Math process on 2026-10-02. Of these,
-15 check the new MPS rulebook on fixed and seeded random clouds (up to 1024
-points), noncontiguous input, empty input, an `int32` coordinate boundary,
-post-call input mutation, explicit limits, and direct use of its CSR by the
-Metal forward shader.
-The same fixed source tree was independently run on a physical Apple M1
-(8 GiB, macOS 26.5.2, PyTorch 2.14.1) with MPS CPU fallback disabled. Safe
-and Fast each passed **47 tests**. The [raw M1 logs and source provenance](evidence/subm-m1-prototype-2026-10-02/README.md)
-are archived. These tests establish bounded integer-order and
-forward/backward prototypes, not performance or upstream `spconv` parity.
+The CPU oracle suite checks duplicate and out-of-range rejection, input row
+order, batch separation, exact kernel-offset pairs, dilation, stride, empty
+input, and dense occupancy/value agreement. The related CPU and Metal suites
+passed **51/51** on M5 Pro in each mode with fallback disabled. New cases
+include 1,025 and 10,000 unsorted rows, a 5×5×5 kernel above the old slot
+cap, and int32 coordinate/dilation boundaries. The [M5 Pro evidence](evidence/subm-scalable-m5pro-2026-10-02/README.md)
+contains the tested source hash, synchronized 1,024/10,000-row timings, and
+[Safe](evidence/subm-scalable-m5pro-2026-10-02/pytest-safe.log) and
+[Fast](evidence/subm-scalable-m5pro-2026-10-02/pytest-fast.log) raw pytest logs.
+Direct `spconv` runtime parity has **not** been run because it is not installed
+in this environment.
+
+Before the sorted builder, the 1,024-row quadratic prototype was independently
+run on a physical Apple M1 (8 GiB, macOS 26.5.2, PyTorch 2.14.1) with MPS CPU
+fallback disabled; Safe and Fast each passed **47 tests**. The
+[historical raw M1 logs and source provenance](evidence/subm-m1-prototype-2026-10-02/README.md)
+remain archived. These operator tests do not prove performance of the full
+convolution wrapper or upstream `spconv` parity.
 
 ## Remaining gates before any compatibility claim
 
@@ -167,9 +172,9 @@ forward/backward prototypes, not performance or upstream `spconv` parity.
    2.x CPU and CUDA runs, including its output-order mapping and weight layout.
 2. Specify duplicate-input handling, empty outputs, missing cells, and
    `indice_key` reuse against upstream behavior instead of assuming parity.
-3. Replace the quadratic GPU prototype with a scalable validated Metal
-   spatial index, integrate it into the forward and backward paths without a
-   host pair-count readback, and profile the full call against the CPU
+3. Integrate the sorted GPU rulebook into the forward and backward paths
+   without a host pair-count readback, validate its practical memory and
+   scaling limits, and profile the full convolution call against the CPU
    rulebook path. Implement strided backward and separate inverse and
    transpose paths.
 4. Verify at least one pinned sparse 3D backbone end to end on supported

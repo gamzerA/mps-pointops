@@ -1,9 +1,10 @@
 """Experimental MPS construction of a SubM sparse rulebook.
 
 Four stable device sorts make a lexicographic index over the full int32
-coordinate tuple. Each Metal lookup then uses binary search, for
-O(N log N + K*N log N) work instead of a scan over all input rows. Pair
-compaction and the logical count remain on the MPS device.
+coordinate tuple. Each Metal lookup then uses O(log N) binary-search
+comparisons instead of scanning N rows. Total work also includes four MPS
+sorts, whose algorithm and complexity depend on the PyTorch backend, and
+linear pair compaction. The logical count remains on the MPS device.
 """
 
 from __future__ import annotations
