@@ -2,17 +2,24 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import subprocess
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
-import tools.run_m1_sparse_validation as runner
-from tools.run_m1_sparse_validation import (
-    GateError, parse_pytest_summary, validate_hardware, validate_torch_version,
-    verify_checkout,
-)
+_SCRIPT = Path(__file__).resolve().parents[1] / "tools/run_m1_sparse_validation.py"
+_SPEC = importlib.util.spec_from_file_location("run_m1_sparse_validation", _SCRIPT)
+assert _SPEC is not None and _SPEC.loader is not None
+runner = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(runner)
+GateError = runner.GateError
+parse_pytest_summary = runner.parse_pytest_summary
+validate_hardware = runner.validate_hardware
+validate_torch_version = runner.validate_torch_version
+verify_checkout = runner.verify_checkout
 
 
 def test_pytest_summary_requires_passes_and_rejects_skips():
