@@ -39,3 +39,10 @@ future extensions. The previous local [M5 Pro direct comparison](chamfer-upstrea
 and its raw files remain the baseline; CI now repeats the supported matrix on
 every pull request and `main` push. A green workflow means the supported
 subset passed on that runner, not that the full PyTorch3D API is implemented.
+
+A separate [physical M1 direct-upstream archive](evidence/chamfer-v090-m1-upstream/README.md)
+now records L1, squared-L2, normal loss, `Pointclouds`, and first derivatives
+from clean development commit `ef07a933` against the same pinned PyTorch3D
+CPU oracle. Safe and Fast Math each passed 480 base and 252 extended cases with
+zero failed checks or elements. This is a wider opt-in experiment, not an
+expansion of the required CI gate or a full-API compatibility declaration.

@@ -1,0 +1,8 @@
+Machine: physical Apple M1, 8 GiB, macOS 26.5.2
+Package source: ef07a9337b40065c18a6c950bda4240c789f31f1, clean
+Upstream PyTorch3D source: 88e182f989c80836f4bd744e0d9cb1852762ce01 (0.7.9)
+Upstream change: setup.py only, two C++17 build flags changed to C++20 for torch 2.14.1
+Build: PYTORCH3D_FORCE_NO_CUDA=1 MAX_JOBS=1 ARCHFLAGS='-arch arm64'
+Runtime: Python 3.10.6, PyTorch 2.14.1, PYTORCH_ENABLE_MPS_FALLBACK=0
+Safe/Fast: separate Python processes; PYTORCH_MPS_FAST_MATH=0 or 1
+Oracle: upstream PyTorch3D CPU extension; target: mps-pointops MPS
