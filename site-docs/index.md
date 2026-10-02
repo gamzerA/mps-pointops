@@ -2,11 +2,12 @@
 
 Metal point-cloud, graph, and geometry operators for PyTorch tensors on Apple Silicon.
 
-This reference describes the **repository source**. The latest published package and
-the source on `main` may differ. Check [PyPI](https://pypi.org/project/mps-pointops/)
-and the [release tags](https://github.com/gamzerA/mps-pointops/releases) before
-attributing a feature to an installed version. The development source contains
-opt-in research paths that are not part of the published v0.8.0 release.
+This reference describes the **repository source** and the bounded v1.0.0
+release scope. The latest published package and source on `main` may differ
+during release preparation. Check [PyPI](https://pypi.org/project/mps-pointops/)
+and the [release tags](https://github.com/gamzerA/mps-pointops/releases)
+before attributing a feature to an installed version. Opt-in research paths
+and private modules do not imply complete upstream-library compatibility.
 
 <div class="reference-actions">
   <a href="https://gamzerA.github.io/mps-pointops/">Interactive explainer</a>
