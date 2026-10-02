@@ -1,0 +1,164 @@
+{
+  "utc": "2026-10-02T09:11:38.615996+00:00",
+  "source_commit": "ef07a9337b40065c18a6c950bda4240c789f31f1",
+  "source_dirty": false,
+  "source_status": [],
+  "source_sha256": {
+    "bench/bench_spatial_dispatch.py": "ca94c3b957007f2164d8ec7fdd13c2c430b1cbd87ee749f57cbe6c5cbcb0bf7b",
+    "bench/bench_spatial_bvh.py": "241de2b5972612242533ecae4ad24f49f1cfa96e9094af933b3015a4f51dc667",
+    "mps_pointops/spatial.py": "ad0a71bed4d93b134c718124f6d08f085bea3d43915ddc169471185d835f0b8d",
+    "mps_pointops/_spatial_bvh.py": "c5aa3761b30ad0d42c4f5d16faafd400c61092075661beea48e7f7a9de9420a0",
+    "mps_pointops/_spatial_keys.py": "971b4c67681f52a052b99a4e875d0a201d6314d8a7429acb73722a9ffc022764",
+    "mps_pointops/ops.py": "6e3d01426a43286ece66941571bbae3e0489e81cf3090cbcf087121af6e3d1b0",
+    "mps_pointops/kernels/spatial_bvh.metal": "e466dd2880136a504106c8fba7e303117a9f2cdd4924dbf5bb3f636f9875c345",
+    "mps_pointops/kernels/spatial_keys.metal": "e26bc20df349611bc7502aa7038e5692d434286600e4f454a6d273e1b6b7a8bf",
+    "mps_pointops/kernels/knn.metal": "21a34b07630cde064c1653985d472deab6d107844b53905d40696e14fc4d9db9"
+  },
+  "hardware": "Apple M1",
+  "physical_ram_bytes": "8589934592",
+  "macos": "26.5.2",
+  "torch": "2.14.1",
+  "mps_fast_math": "0",
+  "mps_fallback": "0",
+  "fixture": {
+    "distribution": "uniform",
+    "points": 1000000,
+    "queries": 8192,
+    "k": 16,
+    "extent": 1024.0,
+    "cell_size": 16.0,
+    "seed": 20261002,
+    "query_source": "sampled-reference",
+    "uniform_cube": [
+      0,
+      1024.0
+    ]
+  },
+  "repeats": 3,
+  "adaptive_decision": {
+    "selected_backend": "scan",
+    "sample_hot_cell_fraction": null,
+    "policy_note": "M5 Pro Safe Math only; N=1M, K=16, Q>=8192 and sampled Morton max-cell fraction<0.05"
+  },
+  "input_transfer_ms": [
+    53.047708
+  ],
+  "auto_first_call_ms_including_decision_and_optional_build": [
+    641.358542
+  ],
+  "explicit_bvh_build_ms": [
+    20.967292
+  ],
+  "scan_steady_query_ms": [
+    621.556958,
+    625.135792,
+    626.047167
+  ],
+  "bvh_steady_query_ms": [
+    142.174625,
+    141.559125,
+    141.340666
+  ],
+  "auto_steady_query_ms": [
+    623.532292,
+    604.653875,
+    626.421459
+  ],
+  "index_mismatch": {
+    "auto_first_vs_scan_indices": 0,
+    "auto_vs_scan_indices": 0,
+    "bvh_vs_scan_indices": 0
+  },
+  "euclidean_distance_max_abs_error": {
+    "auto_first_vs_scan_max_abs": 0.0,
+    "auto_vs_scan_max_abs": 0.0,
+    "bvh_vs_scan_max_abs": 0.0
+  },
+  "bvh_resident_index_tensor_bytes": 8458752,
+  "memory_samples": {
+    "after_warmup": {
+      "current_tensor_bytes": 0,
+      "driver_bytes": 671744
+    },
+    "after_transfer": {
+      "current_tensor_bytes": 12157184,
+      "driver_bytes": 1082802176
+    },
+    "after_auto_first": {
+      "current_tensor_bytes": 13730048,
+      "driver_bytes": 1082802176
+    },
+    "after_bvh_build": {
+      "current_tensor_bytes": 22315264,
+      "driver_bytes": 1082802176
+    },
+    "after_queries": {
+      "current_tensor_bytes": 27033856,
+      "driver_bytes": 1091174400
+    }
+  },
+  "torch_allocator_peaks_by_stage": {
+    "transfer": [
+      {
+        "tensor_bytes": 12157184,
+        "reserved_bytes": 1082130432
+      }
+    ],
+    "auto_first": [
+      {
+        "tensor_bytes": 13730048,
+        "reserved_bytes": 1082130432
+      }
+    ],
+    "explicit_bvh_build": [
+      {
+        "tensor_bytes": 63489024,
+        "reserved_bytes": 1082130432
+      }
+    ],
+    "scan_query": [
+      {
+        "tensor_bytes": 23888128,
+        "reserved_bytes": 1082130432
+      },
+      {
+        "tensor_bytes": 25460992,
+        "reserved_bytes": 1082130432
+      },
+      {
+        "tensor_bytes": 25460992,
+        "reserved_bytes": 1082130432
+      }
+    ],
+    "bvh_query": [
+      {
+        "tensor_bytes": 26149120,
+        "reserved_bytes": 1082130432
+      },
+      {
+        "tensor_bytes": 27721984,
+        "reserved_bytes": 1082130432
+      },
+      {
+        "tensor_bytes": 27721984,
+        "reserved_bytes": 1082130432
+      }
+    ],
+    "auto_query": [
+      {
+        "tensor_bytes": 27033856,
+        "reserved_bytes": 1082130432
+      },
+      {
+        "tensor_bytes": 28606720,
+        "reserved_bytes": 1090519040
+      },
+      {
+        "tensor_bytes": 28606720,
+        "reserved_bytes": 1090519040
+      }
+    ]
+  },
+  "timing_scope": "preloaded MPS inputs; synchronize before and after each host-wall sample; compilation excluded; query includes public wrapper and its validation",
+  "memory_scope": "PyTorch allocator tensor/reserved peak counters and stage-sampled MPS driver bytes; neither is total GPU memory or transient driver peak"
+}
