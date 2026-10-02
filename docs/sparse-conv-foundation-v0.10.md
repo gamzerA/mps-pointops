@@ -110,9 +110,9 @@ gather/weight/reduction values. Direct `spconv` runtime parity has **not** been
 run because it is not installed in this environment. The Metal suite compares
 small batched, unsorted, dilated, biased, empty, and noncontiguous cases with
 dense PyTorch Conv3d at active output coordinates and compares first-order
-feature, weight, and bias gradients for batched, dilated, empty, and
-noncontiguous-view fixtures. On the local Apple Silicon GPU with
-`PYTORCH_ENABLE_MPS_FALLBACK=0`, the combined suites passed **31 tests** in
+feature, weight, and bias gradients for batched, dilated, empty, sliced-view,
+and spatially transposed weight fixtures. On the local Apple Silicon GPU with
+`PYTORCH_ENABLE_MPS_FALLBACK=0`, the combined suites passed **32 tests** in
 each separately launched Safe and Fast Math process on 2026-10-02. These
 tests establish a bounded forward/backward prototype, not performance or
 upstream `spconv` parity.

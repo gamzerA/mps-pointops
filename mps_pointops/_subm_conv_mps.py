@@ -84,7 +84,13 @@ class _SubmConv3d(torch.autograd.Function):
         features, weights, pair_sources, pair_outputs = ctx.saved_tensors
         grad_output = grad_output.contiguous()
         grad_features = torch.zeros_like(features) if ctx.needs_input_grad[0] else None
-        grad_weights = torch.zeros_like(weights) if ctx.needs_input_grad[1] else None
+        # zeros_like preserves unusual input strides; a spatial transpose can
+        # then make view(Cout, Cin, -1) invalid. A logical, contiguous gradient
+        # is accepted by autograd and maps back through the caller's view.
+        grad_weights = (
+            torch.zeros(weights.shape, dtype=weights.dtype, device=weights.device)
+            if ctx.needs_input_grad[1] else None
+        )
         grad_bias = (
             grad_output.sum(dim=0)
             if ctx.has_bias and ctx.needs_input_grad[2] else None

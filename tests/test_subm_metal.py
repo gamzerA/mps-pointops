@@ -219,3 +219,41 @@ def test_metal_subm_accepts_noncontiguous_feature_weight_and_bias_views():
         (base_bias.grad, cpu_base_bias.grad),
     ):
         torch.testing.assert_close(observed.cpu(), reference, rtol=1e-4, atol=1e-5)
+
+
+@MPS
+def test_metal_subm_backward_accepts_spatially_transposed_weights():
+    # A transpose of two non-singleton kernel axes makes zeros_like(weights)
+    # noncontiguous; flattening that buffer with view used to fail in backward.
+    coordinates = [[0, 1, 1, 1], [0, 2, 1, 1], [0, 1, 2, 1]]
+    indices = torch.tensor(coordinates, dtype=torch.int32)
+    generator = torch.Generator().manual_seed(5931)
+    cpu_features = torch.randn((3, 2), generator=generator).requires_grad_()
+    cpu_weight_base = torch.randn((2, 2, 3, 3, 1), generator=generator).requires_grad_()
+    cpu_weights = cpu_weight_base.transpose(2, 3)
+    dense = torch.zeros((1, 2, 4, 4, 3), dtype=torch.float32)
+    for row, (_, a0, a1, a2) in enumerate(coordinates):
+        dense[0, :, a0, a1, a2] = cpu_features[row]
+    expected_dense = F.conv3d(dense, cpu_weights, padding=(1, 1, 0))
+    expected = torch.stack([
+        expected_dense[0, :, a0, a1, a2] for _, a0, a1, a2 in coordinates
+    ])
+    upstream = torch.tensor([[0.75, -1.25], [1.5, 0.5], [-0.3, 0.8]])
+    (expected * upstream).sum().backward()
+
+    mps_features = cpu_features.detach().to("mps").requires_grad_()
+    mps_weight_base = cpu_weight_base.detach().to("mps").requires_grad_()
+    mps_weights = mps_weight_base.transpose(2, 3)
+    assert not mps_weights.is_contiguous()
+    actual = subm_conv3d_forward_mps(
+        indices, mps_features, mps_weights, (4, 4, 3), 1
+    )
+    (actual * upstream.to("mps")).sum().backward()
+    torch.mps.synchronize()
+    torch.testing.assert_close(actual.cpu(), expected.detach(), rtol=1e-4, atol=1e-5)
+    torch.testing.assert_close(
+        mps_features.grad.cpu(), cpu_features.grad, rtol=1e-4, atol=1e-5
+    )
+    torch.testing.assert_close(
+        mps_weight_base.grad.cpu(), cpu_weight_base.grad, rtol=1e-4, atol=1e-5
+    )
