@@ -88,8 +88,9 @@ even when point visits are pruned. Bricks can have overlapping wide AABBs,
 especially with all points in one Morton cell, so this is not a general
 performance result. The first gate is differential correctness against the
 existing flat Metal kNN, including repeated exact ties across brick
-boundaries. The M1 check and an actual hierarchical acceleration structure
-remain open before public routing.
+boundaries. A separate private [two-level Metal BVH prototype](spatial-hierarchy-v0.9-design.md)
+now measures hierarchical traversal. M1 validation and public routing remain
+open.
 
 ### Bounded AABB-pruning contract and proof assumptions
 
