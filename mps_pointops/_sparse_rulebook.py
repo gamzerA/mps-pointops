@@ -181,6 +181,8 @@ def generate_sparse_conv_rulebook(
                 continue
             output = tuple(numerators[axis] // steps[axis] for axis in range(3))
             if all(0 <= output[axis] < out_shape[axis] for axis in range(3)):
+                if any(value > 2**31 - 1 for value in output):
+                    raise ValueError("active output coordinate exceeds int32 range")
                 reachable.add((coord[0], *output))
     outputs = sorted(reachable)
     pairs: list[tuple[int, int, int]] = []

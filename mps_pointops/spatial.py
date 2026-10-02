@@ -86,7 +86,8 @@ class SpatialIndex:
     ``auto`` uses the BVH only for the measured M5 Pro, Safe Math, one-million
     point, K=16, 8192<=Q<=65536 kNN case, and rejects a concentrated Morton cell in
     a small deterministic sample. Other inputs retain the existing scan path.
-    Radius search defaults to scanning until its hierarchy speed is measured.
+    Radius search defaults to scanning: measured large-radius inputs reverse
+    the BVH advantage because first-K full scans stop early.
     An explicit ``backend="bvh"`` is available for supported MPS float32
     inputs. Auto dispatch reads a small sample of Morton keys on the host;
     the search itself remains on MPS without copying the full point cloud.

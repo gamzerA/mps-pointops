@@ -1,10 +1,11 @@
 # Experimental sparse convolution coordinate oracle (v0.10 groundwork)
 
-Status: **CPU rulebook, experimental Metal SubM forward and first-order
-backward, and a sorted MPS rulebook construction prototype.** These private
-modules (`mps_pointops._sparse_rulebook`, `_subm_conv_mps`, and
-`_subm_rulebook_mps`) are not exported by `mps_pointops` and are not an
-`spconv` replacement. The v0.10 release gate remains open.
+Status: **CPU rulebook, private bounded CPU stride/inverse reference,
+experimental Metal SubM forward and first-order backward, and a sorted MPS
+rulebook construction prototype.** These private modules are not exported by
+`mps_pointops` and are not an `spconv` replacement. The v0.10 release gate
+remains open. The [CPU stride/inverse contract](sparse-conv-stride-inverse-cpu.md)
+documents the new reference and its remaining gaps.
 
 ## Source contract and our supported subset
 
@@ -18,8 +19,8 @@ the active coordinate set. The
 uses the standard dense-convolution output-size formula, returns the original
 indices for SubM, and passes only kernel size and dilation to the SubM pair
 generator. The [guide](https://github.com/traveller59/spconv/blob/v2.3.8/docs/USAGE.md)
-also distinguishes `SparseInverseConv3d` from `SparseConvTranspose3d`; neither
-is implemented here.
+also distinguishes `SparseInverseConv3d` from `SparseConvTranspose3d`. Only a
+bounded private CPU reference for the former is implemented here.
 
 This independent oracle accepts only CPU `int32` indices and CPU `float32` or
 `float64` features. It checks `[N, 4]` and `[N, C]` shapes, `C ≥ 1`, matching
@@ -86,9 +87,10 @@ when one input contributes to several outputs. Tests use `rtol=1e-4,
 atol=1e-5` for float32 forward and backward. The Metal shader's forward
 uses explicit FMA and Safe math, while `PYTORCH_MPS_FAST_MATH` controls the
 PyTorch backward operations in separate processes. Higher-order gradients,
-coordinate gradients, integrated GPU rulebook construction,
+coordinate gradients, integrated GPU rulebook construction, Metal
 strided/inverse/transpose convolution, and source-compatible `spconv` APIs
-remain unsupported.
+remain unsupported. The CPU stride/inverse reference has separate tests and
+limits described [here](sparse-conv-stride-inverse-cpu.md).
 
 ## Private MPS-native sorted rulebook prototype
 
@@ -178,8 +180,8 @@ convolution wrapper or upstream `spconv` parity.
 3. Integrate the sorted GPU rulebook into the forward and backward paths
    without a host pair-count readback, validate its practical memory and
    scaling limits, and profile the full convolution call against the CPU
-   rulebook path. Implement strided backward and separate inverse and
-   transpose paths.
+   rulebook path. Implement strided and inverse Metal forward/backward and a
+   separate transpose path.
 4. Verify at least one pinned sparse 3D backbone end to end on supported
    Apple Silicon hardware. The physical M1 test above covers only small
    operator fixtures, not a backbone or large-cloud workload.

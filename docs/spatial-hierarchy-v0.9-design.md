@@ -5,8 +5,9 @@ This design accompanies the **experimental** exact CPU
 private Metal [`MortonTwoLevelBVH`](../bench/spatial_bvh.py). The Metal BVH is
 now exposed through the unreleased, opt-in single-cloud
 [`SpatialIndex`](spatial-api-v090.md); it does not replace the existing dense
-or flat operators. M5 Pro results below are fixture-specific; the
-physical M1 is currently unavailable and its gate remains pending.
+or flat operators. M5 Pro results below are fixture-specific. A separate
+[physical M1 study](spatial-m1-v090.md) records selected correctness,
+performance, and allocator fixtures without closing the release gates.
 
 ## Structure and contracts
 
@@ -187,8 +188,8 @@ counterexample visits all one million; splitting parallelizes that work but
 does not reduce its total comparisons. The sampled MPS allocator high-water
 at Q=65,536 is about 81.5 MB for live tensors and 1.08 GB for driver
 allocation. It includes process caches, is **not** incremental BVH memory,
-and is **not** a true transient GPU peak. Instruments profiling, M1, Fast
-Math, and wider input-domain proof remain release gates.
+and is **not** a true transient GPU peak. Instruments profiling, broader M1
+coverage, Fast Math, and wider input-domain proof remain release gates.
 
 ## Measurements required for broader public kNN/radius routing
 
@@ -215,6 +216,8 @@ time or memory, so cap it explicitly and use deterministic complete scans
 for sampled queries plus smaller exhaustive fixtures. Never infer exact
 correctness from cKDTree alone at float32 ties or radius boundaries.
 
-The first M5 Pro matrix is recorded in the linked studies; extend it with
-larger radii and boundary-heavy data. Repeat on the physical M1 when it reconnects;
-do not substitute an emulator or project an M5 crossover onto M1.
+The [large-radius M5 Pro sweep](spatial-radius-dispatch-v090.md#large-radius-dispatch-counterexample)
+shows a first-K scan speed advantage at the same `N`, `Q`, and `K` where
+the BVH wins at a smaller radius. The physical M1 has also been measured on
+selected fixtures. Extend both matrices with boundary-heavy cases and a
+measured density/radius predictor before widening automatic dispatch.
