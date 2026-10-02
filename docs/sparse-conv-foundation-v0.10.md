@@ -1,8 +1,9 @@
 # Experimental sparse convolution coordinate oracle (v0.10 groundwork)
 
-Status: **CPU-only design and test fixture.** This module is private
-(`mps_pointops._sparse_rulebook`), is not exported by `mps_pointops`, and is
-not an `spconv` replacement. The v0.10 release gate remains open.
+Status: **CPU rulebook plus experimental Metal SubM forward.** These private
+modules (`mps_pointops._sparse_rulebook` and `_subm_conv_mps`) are not exported
+by `mps_pointops` and are not an `spconv` replacement. The v0.10 release gate
+remains open.
 
 ## Source contract and our supported subset
 
@@ -50,9 +51,22 @@ the input. The prototype restricts SubM to odd kernels, unit stride, and
 implicit center padding. Its source position is
 `output_position + (offset - floor(kernel_size/2))*dilation`.
 
-The row-index rulebook specifies gathering and reduction but has no Metal
-implementation, weights, bias, feature output, or backward path. It cannot
-establish bitwise parity of floating-point accumulation order.
+The rulebook is generated and sorted into output CSR on the CPU. The optional
+private `subm_conv3d_forward_mps(indices, features, weights, spatial_shape,
+batch_size, dilation=1, bias=None)` transfers that CSR to MPS and uses one
+Metal writer per output scalar to gather and reduce features. Coordinates are
+CPU int32 `[N,4]`; features and weights are MPS float32 `[N,Cin]` and
+`[Cout,Cin,K0,K1,K2]`, with optional MPS float32 bias `[Cout]`. The output
+is MPS float32 `[N,Cout]` in input coordinate row order. The weight layout is
+the *dense PyTorch Conv3d* layout used by the oracle; it is not a claim about
+the pinned spconv weight layout. Each output starts from bias (or zero) and
+visits rulebook pairs in increasing kernel-offset order, then input-channel
+order, applying `fma(feature, weight, total)` on each term. Both Safe and Fast
+Math are exercised in separate processes. Sparse floating-point output need
+only be close to dense PyTorch, since its convolution reduction order may
+differ. Any input requiring autograd raises an explicit error. CPU rulebook
+construction, gradient propagation, strided/inverse/transpose convolution,
+and source-compatible `spconv` APIs are still missing.
 
 ## Reproducible local check
 
@@ -62,13 +76,18 @@ On the 2026-10-02 workspace with PyTorch 2.14.1, run:
 python -m pytest -q tests/test_sparse_rulebook.py
 ```
 
-The initial suite passed **20 tests**. It covers duplicate/out-of-range
+The initial rulebook suite passed **20 tests**. It covers duplicate/out-of-range
 rejection; non-sorted input, batch isolation, exact kernel-offset pair order,
 dilation, padding, stride, empty input, and invalid parameters. For several
 3D kernels, an independently built dense occupancy convolution checks the
 active output set, and a dense feature convolution checks all rulebook
 gather/weight/reduction values. Direct `spconv` runtime parity has **not** been
-run because it is not installed in this environment.
+run because it is not installed in this environment. The Metal suite compares
+small batched, unsorted, dilated, biased, empty, and noncontiguous cases with
+dense PyTorch Conv3d at active output coordinates. On the local Apple Silicon
+GPU with `PYTORCH_ENABLE_MPS_FALLBACK=0`, the combined suites passed in both
+separately launched Safe and Fast Math processes. These tests establish a
+bounded forward prototype, not performance or upstream parity.
 
 ## Remaining gates before any compatibility claim
 
@@ -76,8 +95,9 @@ run because it is not installed in this environment.
    2.x CPU and CUDA runs, including its output-order mapping and weight layout.
 2. Specify duplicate-input handling, empty outputs, missing cells, and
    `indice_key` reuse against upstream behavior instead of assuming parity.
-3. Implement and profile Metal rulebook generation and gather-GEMM-scatter,
-   then SubM and strided backward. Add separate inverse and transpose paths.
+3. Replace CPU rulebook generation with a scalable Metal path and profile the
+   full call (including CSR transfer). Implement SubM and strided backward.
+   Add separate inverse and transpose paths.
 4. Verify at least one pinned sparse 3D backbone end to end on supported
    Apple Silicon hardware. Physical M1 measurement is deferred while the
-   remote device is disconnected.
+   remote device is available for later validation.
