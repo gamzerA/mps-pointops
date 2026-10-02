@@ -77,6 +77,7 @@ def test_source_gate_requires_exact_clean_full_commit(tmp_path):
 def test_failed_pytest_keeps_log_and_failed_manifest(tmp_path, monkeypatch):
     output = tmp_path / "evidence"
     monkeypatch.setattr(runner, "verify_checkout", lambda *_: None)
+    monkeypatch.setattr(runner, "validate_hardware", lambda *_: None)
     monkeypatch.setattr(runner, "_source_hashes", lambda *_: {"fixture.py": "abc"})
     monkeypatch.setattr(runner, "SUITES", ("tests/test_sparse_rulebook.py",))
     monkeypatch.setattr(runner, "_environment", lambda *_args, **_kw: {
