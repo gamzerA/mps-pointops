@@ -4,6 +4,10 @@ One fresh Safe-Math process measures one synthetic fixture. Uniform and mixed
 queries are independent of references. The all-coincident stress fixture uses
 half coincident and half displaced queries to exercise both full and empty
 rows; these measurements are not a model workload performance claim.
+
+Use ``--allow-homogeneous-rows`` when probing a large-radius case in which
+every query fills its first-K row. The option only relaxes the fixture-shape
+assertion; index, distance-bit, and output-order checks still apply.
 """
 
 from __future__ import annotations
@@ -113,6 +117,8 @@ def main() -> None:
                         help="default: 16 for uniform/collapsed; 1/64 for cluster-sparse")
     parser.add_argument("--seed", type=int, default=20261002)
     parser.add_argument("--repeats", type=int, default=5)
+    parser.add_argument("--allow-homogeneous-rows", action="store_true",
+                        help="permit all-full or all-empty rows in radius crossover probes")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
@@ -183,6 +189,14 @@ def main() -> None:
     bvh_d, bvh_i = bvh_result
     auto_d, auto_i = auto_result
     first_d, first_i = bvh_first
+    # The public facade returns only distances and indices. Query the same
+    # already-built BVH once more outside every timed sample so the shader's
+    # per-query bounded-stack recovery counter can be archived as evidence.
+    diagnostic_d, diagnostic_i, diagnostic_stats = bvh._get_bvh().radius(
+        query, args.radius, args.limit,
+    )
+    torch.mps.synchronize()
+    fallback_rows = int(torch.count_nonzero(diagnostic_stats[:, 4]).item())
     mismatch = {
         "bvh_first_vs_scan_indices": int(torch.count_nonzero(first_i != scan_i).item()),
         "bvh_steady_vs_scan_indices": int(torch.count_nonzero(bvh_i != scan_i).item()),
@@ -193,6 +207,10 @@ def main() -> None:
             bvh_d.view(torch.int32) != scan_d.view(torch.int32)).item()),
         "auto_vs_scan_squared_distance_bits": int(torch.count_nonzero(
             auto_d.view(torch.int32) != scan_d.view(torch.int32)).item()),
+        "diagnostic_vs_scan_indices": int(torch.count_nonzero(
+            diagnostic_i != scan_i).item()),
+        "diagnostic_vs_scan_squared_distance_bits": int(torch.count_nonzero(
+            diagnostic_d.view(torch.int32) != scan_d.view(torch.int32)).item()),
     }
     row_counts = _row_counts(scan_i)
     order_violations = _order_violations(scan_i)
@@ -223,10 +241,17 @@ def main() -> None:
                     "seed": args.seed,
                     **detail},
         "repeats": args.repeats,
+        "mixed_rows_required": not args.allow_homogeneous_rows,
         "auto_selected_backend": "bvh" if auto._bvh is not None else "scan",
         "row_counts": row_counts,
         "original_index_order_violations": order_violations,
         "mismatch": mismatch,
+        "bvh_stack_fallback": {
+            "rows": fallback_rows,
+            "fraction": fallback_rows / len(query),
+            "query_count": len(query),
+            "scope": "one untimed private BVH query after the public timing samples",
+        },
         "input_transfer_ms": transfer_ms,
         "bvh_first_call_including_build_ms": bvh_first_ms,
         "scan_steady_query_ms": scan_ms,
@@ -259,7 +284,8 @@ def main() -> None:
     print("raw", args.output)
     if any(mismatch.values()) or order_violations:
         raise AssertionError("public Ball Query paths differ in indices, squared bits, or first-K order")
-    if row_counts["first_k_full_rows"] == 0 or row_counts["zero_neighbor_rows"] == 0:
+    if (not args.allow_homogeneous_rows and
+            (row_counts["first_k_full_rows"] == 0 or row_counts["zero_neighbor_rows"] == 0)):
         raise AssertionError("fixture did not exercise both full first-K and empty rows")
 
 
