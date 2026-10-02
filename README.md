@@ -22,6 +22,7 @@ Compatibility stand-ins cover supported `pointnet2_ops`, `knn_cuda`, and
   <img src="docs/assets/pointops-hero.svg" width="1200" alt="Three operator diagrams: FPS chooses spread-out centers; kNN ranks neighbors by distance; Ball Query retains the first K points inside a radius.">
 </p>
 
+[Interactive explainer](https://gamzerA.github.io/mps-pointops/) ·
 [Quick start](#quick-start) · [Results](#benchmark) ·
 [Equations](#the-operators-in-equations) · [Compatibility](#compatibility) ·
 [Numerical contract](docs/ball-query-math.md) · [Citation](#citation)

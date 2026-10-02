@@ -1,0 +1,65 @@
+{
+  "date_utc": "2026-10-02T00:05:33.732198+00:00",
+  "source_commit": "1f1613a17c9b340464de92b6ae82180e8421d993",
+  "source_dirty": false,
+  "source_sha256": {
+    "bench/bench_spatial_morton.py": "8411716b6e9000728dc4f4b8a6ae6573ab07fe6dc49c5272ab357fc92ce5f4fc",
+    "bench/spatial_keys.py": "e9214981f7dcb8413217979972274864c4bcd40771d0e15a9bfaf8f22946d318",
+    "bench/spatial_keys.metal": "e26bc20df349611bc7502aa7038e5692d434286600e4f454a6d273e1b6b7a8bf",
+    "bench/spatial_radius.py": "a06681d28305de2857d444feeb0f4b8de8a91e96ed1e178df2405d1ac630d851",
+    "bench/spatial_radius.metal": "f427fe98d64798bc391d3c732eaf9e1c7a6fe675f2e8c031d7c82c1185daad94",
+    "mps_pointops/kernels/flat_search.metal": "92e9f482f7e28d3b38dcedb164669c0c0981335c525c596009aad0c688f1ea6e"
+  },
+  "hardware": "Apple M5 Pro",
+  "macos": "26.5.2",
+  "python": "3.12.13",
+  "torch": "2.14.1",
+  "scipy": "1.18.1",
+  "mps_fast_math": "0",
+  "mps_fallback": "0",
+  "fixture": {
+    "kind": "uniform synthetic float32",
+    "seed": 20261002,
+    "points": 1000000,
+    "queries": 1024,
+    "extent": 1024.0,
+    "radius": 16.0,
+    "cell_size": 16.0,
+    "limit": 16
+  },
+  "input_transfer_ms": 61.878458,
+  "cpu_ckdtree_build_ms": [
+    252.358042,
+    264.892709,
+    254.737167,
+    249.266792,
+    251.376667
+  ],
+  "cpu_ckdtree_query_ms": [
+    4.0945,
+    4.04675,
+    3.55125,
+    3.748833,
+    3.817417
+  ],
+  "mps_morton_build_ms": [
+    6.721208,
+    4.080417,
+    2.839917,
+    2.017459,
+    10.968458
+  ],
+  "mps_morton_query_ms": [
+    2.674541,
+    2.558291,
+    2.642459,
+    2.517458,
+    2.589
+  ],
+  "mps_current_allocated_bytes": 44710656,
+  "mps_driver_allocated_bytes": 1082851328,
+  "mismatched_slots_vs_ckdtree": 0,
+  "native_brute_sample_queries": 8,
+  "native_brute_sample_equal": true,
+  "timing_scope": "preloaded coordinates; synchronized host wall time; shader compilation excluded"
+}

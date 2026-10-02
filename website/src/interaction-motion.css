@@ -1,0 +1,79 @@
+@charset "UTF-8";
+
+/* Motion distinguishes entry and state without delaying the live computation. */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .observatory .obs-topline {
+    animation: instrument-enter 420ms var(--ease-out) both;
+  }
+
+  .observatory .obs-mode-tabs {
+    animation: instrument-enter 480ms var(--ease-out) 45ms both;
+  }
+
+  .observatory .obs-field canvas {
+    animation: field-enter 760ms var(--ease-out) 90ms both;
+  }
+
+  .observatory .obs-sidepanel {
+    animation: instrument-enter 500ms var(--ease-out) 110ms both;
+  }
+
+  .observatory .obs-bottom {
+    animation: instrument-enter 520ms var(--ease-out) 160ms both;
+  }
+
+  .primary-nav a,
+  .operator-tabs button,
+  .playback-row button,
+  .more-buttons button,
+  .ecosystem-switch button,
+  .story-steps button,
+  .capability-option {
+    transition:
+      background-color 180ms var(--ease-out),
+      border-color 180ms var(--ease-out),
+      color 180ms var(--ease-out),
+      opacity 180ms var(--ease-out),
+      transform 140ms var(--ease-out);
+  }
+
+  .flow-node {
+    transition:
+      background-color 220ms var(--ease-out),
+      border-color 220ms var(--ease-out),
+      opacity 220ms var(--ease-out);
+  }
+
+  :is(.primary-nav a, .operator-tabs button, .playback-row button, .more-buttons button):active:not(:focus-visible) {
+    transform: scale(.97);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+  .primary-nav a:not([aria-current="page"]):hover,
+  .operator-tabs button:not([aria-pressed="true"]):hover {
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes instrument-enter {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes field-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .observatory :is(.obs-topline, .obs-mode-tabs, .obs-field canvas, .obs-sidepanel, .obs-bottom) {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

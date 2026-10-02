@@ -1,0 +1,10 @@
+.site-header,
+main,
+.site-footer {
+  display: none;
+}
+
+.noscript-message {
+  margin: min(24vh, 10rem) auto 2rem;
+  width: min(42rem, calc(100% - 2rem));
+}

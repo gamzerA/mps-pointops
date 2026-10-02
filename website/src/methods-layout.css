@@ -1,0 +1,256 @@
+/* Methods: calculation first, optional sample comparison second. */
+#methods {
+  padding-block: clamp(1.1rem, 2.8svh, 1.7rem) .55rem;
+  border-top: 0;
+}
+#methods .shell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .8rem 1.5rem;
+}
+#methods .section-heading { display: block; margin: 0; }
+#methods .section-heading h1 {
+  max-width: none;
+  font-size: clamp(1.55rem, 2.45vw, 2.35rem);
+  line-height: 1.2;
+}
+.methods-switch { display: flex; flex-wrap: wrap; gap: .4rem; }
+.methods-switch button {
+  display: inline-flex;
+  align-items: center;
+  gap: .65rem;
+  min-height: 40px;
+  padding: .55rem .9rem;
+  border: 0;
+  border-radius: .18rem;
+  background: var(--surface);
+  color: var(--muted);
+  text-align: left;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.methods-switch button strong { font-size: .82rem; line-height: 1.25; }
+.methods-switch-index {
+  color: var(--obs-amber);
+  font: 650 .61rem/1 var(--font-mono);
+  letter-spacing: .04em;
+}
+.methods-switch button[aria-pressed="true"] { background: #1b3439; color: var(--obs-cyan); }
+.methods-switch button:active { background: #244348; }
+
+#content:not([data-methods-panel="pruning"]) #pruning,
+#content[data-methods-panel="pruning"] #morton { display: none !important; }
+#morton,
+#pruning {
+  padding-block: .3rem .75rem;
+  border-top: 0;
+  scroll-margin-top: 13rem;
+}
+#morton .section-intro,
+#pruning .section-intro { display: block; margin-bottom: .7rem; }
+#morton .section-intro h2,
+#pruning .section-intro h2 {
+  max-width: none;
+  font-size: clamp(1.2rem, 1.8vw, 1.55rem);
+  line-height: 1.25;
+}
+#morton .demo-frame,
+#pruning .demo-frame { border: 0; padding: 0; }
+#morton .demo-topline,
+#pruning .demo-topline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .3rem .75rem;
+  margin-bottom: .4rem;
+  font-size: .67rem;
+}
+#morton .canvas-caption,
+#pruning .canvas-caption { margin-top: .48rem; font-size: .72rem; line-height: 1.5; }
+
+#morton .morton-result { display: block; margin-top: .65rem; padding-bottom: .55rem; }
+#morton .morton-primary,
+#morton .morton-secondary { min-width: 0; }
+#morton .demo-canvas-column { --morton-grid-width: min(100%, 480px); }
+#morton .morton-point-controls,
+#morton-canvas { width: var(--morton-grid-width); }
+#morton .morton-point-controls { display: grid; gap: .4rem; margin-bottom: .55rem; }
+#morton .morton-point-controls .coordinate-inputs { gap: .38rem; }
+#morton .morton-point-controls .coordinate-inputs input { font-size: .76rem; }
+#morton .morton-point-controls .morton-sample-rank { justify-content: space-between; }
+#morton .morton-sample-panel {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  margin-top: .7rem;
+  padding: 0 0 .65rem;
+}
+#morton .morton-sample-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .25rem 1rem;
+  margin-bottom: .5rem;
+}
+#morton .morton-sample-heading h3 {
+  margin: 0;
+  font-size: .77rem;
+  font-weight: 680;
+  line-height: 1.35;
+}
+#morton .morton-sample-heading p {
+  margin: .15rem 0 0;
+  color: var(--muted);
+  font-size: .67rem;
+  line-height: 1.4;
+}
+#morton .morton-sample-rank { display: flex; align-items: baseline; gap: .48rem; }
+#morton .morton-sample-rank .label-small { margin: 0; white-space: nowrap; }
+#morton .morton-rank { padding: 0; font-size: .77rem; }
+#morton .morton-strip {
+  gap: .45rem;
+  max-width: 100%;
+  padding: 0 0 .4rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  touch-action: pan-x;
+  cursor: grab;
+  scrollbar-width: thin;
+}
+#morton .morton-strip.is-dragging { cursor: grabbing; user-select: none; }
+#morton .morton-strip .strip-point {
+  display: grid;
+  align-content: center;
+  gap: .12rem;
+  flex: 0 0 12.3rem;
+  min-height: 4rem;
+  padding: .32rem .58rem;
+  text-align: left;
+}
+#morton .strip-point-rank { color: var(--muted); font-size: .63rem; }
+#morton .strip-point-coordinate { font-size: .72rem; font-weight: 670; }
+#morton .strip-point-key {
+  color: var(--muted);
+  font: 540 .61rem/1.2 var(--font-mono);
+  white-space: nowrap;
+}
+#morton .strip-point.is-selected .strip-point-rank,
+#morton .strip-point.is-selected .strip-point-key { color: inherit; }
+#morton .morton-strip:focus-visible,
+#morton .strip-point:focus-visible { outline: 2px solid var(--obs-cyan); outline-offset: -2px; }
+#morton .morton-result .label-small { margin-top: 0; }
+#morton .morton-formula-explainer { margin-top: .8rem; border-color: var(--line-strong); }
+#morton .morton-formula-total {
+  margin-top: .65rem;
+  padding: .6rem .7rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+}
+#morton .morton-formula-total-expression { font-size: .81rem; }
+#morton .morton-formula-controls { margin-top: .75rem; }
+#morton .morton-bit-readout { margin-top: .7rem; }
+#morton .morton-bit-readout .label-small { margin-top: 0; }
+#morton .bit-panel { margin-top: .35rem; }
+#morton .morton-secondary > .fine-print { margin-top: .7rem; font-size: .7rem; }
+#pruning .pruning-readout h3 { padding-bottom: .3rem; border-bottom: 0; }
+#pruning .pruning-explain { max-width: none; margin-top: .25rem; font-size: .71rem; line-height: 1.4; }
+#pruning .decision-panel { margin-top: .5rem; padding-block: .18rem .4rem; border-block: 0; }
+#pruning .decision-panel output { margin-top: .2rem; font-size: 1rem; line-height: 1.3; }
+#pruning .decision-panel p { margin-top: .25rem; font-size: .67rem; line-height: 1.35; }
+#pruning .counter-grid > * { padding-block: .3rem; }
+#pruning .counter-grid .counter-value { margin-top: .18rem; font-size: 1.1rem; line-height: 1.1; }
+#pruning .counter-grid .counter-label { font-size: .65rem; line-height: 1.25; }
+#pruning .pruning-legend { margin-top: .3rem; }
+#pruning .canvas-caption { margin-top: .3rem; }
+#pruning .pruning-layout > .fine-print { margin-top: .5rem; font-size: .69rem; line-height: 1.4; }
+#pruning .pruning-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .65rem;
+  align-items: start;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+#pruning .preset-control { display: grid; justify-items: start; gap: .35rem; }
+#pruning .preset-buttons button { min-height: 40px; }
+#pruning .pruning-controls .range-control {
+  width: 100%;
+  padding-top: .55rem;
+  border-top: 1px solid var(--line);
+}
+
+@media (min-width: 901px) {
+  #morton .morton-layout {
+    grid-template-columns: minmax(290px, .72fr) minmax(0, 1.28fr);
+    gap: .8rem 1.2rem;
+  }
+  #morton .demo-topline { grid-column: 1 / -1; grid-row: 1; }
+  #morton .morton-primary { grid-column: 2; grid-row: 2; }
+  #morton .demo-canvas-column { grid-column: 1; grid-row: 2; }
+  #morton .morton-secondary { grid-column: 2; grid-row: 3; }
+  #morton .demo-canvas-column { --morton-grid-width: min(100%, clamp(260px, calc(100svh - 330px), 340px)); }
+  #morton .demo-canvas-column { width: 100%; }
+  #pruning .pruning-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr);
+    gap: .55rem 1.35rem;
+  }
+  #pruning .demo-topline { grid-column: 1 / -1; grid-row: 1; }
+  #pruning .pruning-workbench { display: contents; }
+  #pruning .pruning-visual { grid-column: 1; grid-row: 2 / span 2; }
+  #pruning .pruning-controls { grid-column: 2; grid-row: 2; }
+  #pruning .pruning-readout { grid-column: 2; grid-row: 3; }
+  #pruning .pruning-layout > .fine-print { grid-column: 1 / -1; grid-row: 4; }
+  #pruning-canvas { width: 100%; max-width: 760px; }
+}
+@media (min-width: 1100px) {
+  #morton .morton-primary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .3rem .7rem;
+    align-content: start;
+  }
+  #morton .morton-result { grid-column: 1 / -1; }
+  #morton .morton-result { margin-top: .25rem; padding-bottom: .35rem; }
+  #morton-formula-animation { grid-column: 1; min-width: 0; }
+  #operator-formula-animation { grid-column: 2; min-width: 0; }
+  #morton .morton-formula-explainer,
+  #morton .operator-derivation { height: 100%; margin-top: 0; }
+}
+@media (min-width: 901px) and (max-width: 1100px) {
+  #pruning .pruning-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (max-width: 900px) {
+  #morton,
+  #pruning { scroll-margin-top: 10rem; }
+  #morton .morton-layout,
+  #pruning .pruning-workbench { grid-template-columns: minmax(0, 1fr); }
+  #morton-canvas { max-width: min(100%, 480px); }
+  #morton .morton-sample-panel { grid-row: auto; }
+  #morton .morton-strip .strip-point { flex-basis: 11.5rem; }
+  #pruning .pruning-controls { margin-bottom: .85rem; }
+}
+@media (max-height: 680px) and (min-width: 901px) {
+  #methods { padding-block: .75rem .15rem; }
+  #methods .section-heading h1 { font-size: 1.6rem; }
+  .methods-switch button { min-height: 36px; padding-block: .38rem; }
+  #morton,
+  #pruning { padding-block: .15rem .35rem; }
+  #morton .section-intro,
+  #pruning .section-intro { margin-bottom: .35rem; }
+  #morton .section-intro h2,
+  #pruning .section-intro h2 { font-size: 1.2rem; }
+  #pruning .counter-grid > * { padding-block: .24rem; }
+}
+@media (hover: hover) and (pointer: fine) {
+  .methods-switch button:not([aria-pressed="true"]):hover { background: #1b2b31; color: var(--ink); }
+  #morton-canvas,
+  #pruning-canvas { cursor: crosshair; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .methods-switch button { transition-duration: 0ms; }
+}

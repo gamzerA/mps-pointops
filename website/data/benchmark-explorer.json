@@ -1,0 +1,1074 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-10-02",
+  "publishedPackageVersion": "0.8.0",
+  "publishedPackageTag": "v0.8.0",
+  "records": [
+    {
+      "id": "m5-dense-fps-20000",
+      "availability": "released-code-snapshot",
+      "hardware": "Apple M5 Pro",
+      "operation": "fps",
+      "n": 20000,
+      "q": null,
+      "api": "dense",
+      "distribution": "noisy sphere, random order",
+      "fixture": {
+        "dtype": "float32",
+        "batch": 1,
+        "sampleCount": 1024,
+        "k": null,
+        "radius": null,
+        "seed": 0
+      },
+      "environment": {
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "python": "3.12.13",
+        "memoryGiB": 48,
+        "math": "default (unset)",
+        "fallback": "off"
+      },
+      "method": {
+        "repetitions": 5,
+        "warmups": 2,
+        "timing": "preloaded inputs; synchronized host wall time; shader compilation and transfer excluded",
+        "comparisonScope": "same source snapshot, fixture, and public operation; SciPy tree-build comparison excluded",
+        "buildIncluded": null
+      },
+      "series": [
+        {
+          "id": "metal",
+          "label": "mps-pointops Metal",
+          "milliseconds": 5.632458021864295,
+          "device": "MPS",
+          "kind": "ours"
+        },
+        {
+          "id": "torch-mps",
+          "label": "torch (MPS)",
+          "milliseconds": 43.11366600450128,
+          "device": "MPS",
+          "kind": "baseline"
+        },
+        {
+          "id": "fpsample",
+          "label": "fpsample vanilla",
+          "milliseconds": 33.1078750314191,
+          "device": "CPU",
+          "kind": "baseline"
+        }
+      ],
+      "parity": {
+        "indexMismatches": 0,
+        "detail": "idx mismatches 0/1024"
+      },
+      "source": {
+        "rawPath": "bench/results/2026-10-01-source-sync/2026-10-01-apple-m5-pro.json",
+        "sourceCommit": null,
+        "archiveCommit": "61c7ea6cffe26af79e1a84e1f4889bb23813753a",
+        "benchmarkScript": "bench/bench_pointops.py",
+        "cleanSource": null,
+        "sourceHashesRecorded": true
+      },
+      "caution": "Historical source-synchronized measurement; exact wheel reinstallation was not timed."
+    },
+    {
+      "id": "m5-dense-knn-20000",
+      "availability": "released-code-snapshot",
+      "hardware": "Apple M5 Pro",
+      "operation": "knn",
+      "n": 20000,
+      "q": 1024,
+      "api": "dense",
+      "distribution": "noisy sphere, random order",
+      "fixture": {
+        "dtype": "float32",
+        "batch": 1,
+        "sampleCount": null,
+        "k": 128,
+        "radius": null,
+        "seed": 0
+      },
+      "environment": {
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "python": "3.12.13",
+        "memoryGiB": 48,
+        "math": "default (unset)",
+        "fallback": "off"
+      },
+      "method": {
+        "repetitions": 5,
+        "warmups": 2,
+        "timing": "preloaded inputs; synchronized host wall time; shader compilation and transfer excluded",
+        "comparisonScope": "same source snapshot, fixture, and public operation; SciPy tree-build comparison excluded",
+        "buildIncluded": null
+      },
+      "series": [
+        {
+          "id": "metal",
+          "label": "mps-pointops Metal",
+          "milliseconds": 2.1155000431463122,
+          "device": "MPS",
+          "kind": "ours"
+        },
+        {
+          "id": "torch-mps",
+          "label": "torch cdist+topk (MPS)",
+          "milliseconds": 9.534374927170575,
+          "device": "MPS",
+          "kind": "baseline"
+        }
+      ],
+      "parity": {
+        "indexMismatches": 0,
+        "detail": "missing 0/131072, position mismatches 0, max dist err 0.0e+00"
+      },
+      "source": {
+        "rawPath": "bench/results/2026-10-01-source-sync/2026-10-01-apple-m5-pro.json",
+        "sourceCommit": null,
+        "archiveCommit": "61c7ea6cffe26af79e1a84e1f4889bb23813753a",
+        "benchmarkScript": "bench/bench_pointops.py",
+        "cleanSource": null,
+        "sourceHashesRecorded": true
+      },
+      "caution": "Historical source-synchronized measurement; exact wheel reinstallation was not timed."
+    },
+    {
+      "id": "m5-dense-ball-query-20000",
+      "availability": "released-code-snapshot",
+      "hardware": "Apple M5 Pro",
+      "operation": "ball-query",
+      "n": 20000,
+      "q": 1024,
+      "api": "dense",
+      "distribution": "noisy sphere, random order",
+      "fixture": {
+        "dtype": "float32",
+        "batch": 1,
+        "sampleCount": null,
+        "k": 64,
+        "radius": 0.1,
+        "seed": 0
+      },
+      "environment": {
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "python": "3.12.13",
+        "memoryGiB": 48,
+        "math": "default (unset)",
+        "fallback": "off"
+      },
+      "method": {
+        "repetitions": 5,
+        "warmups": 2,
+        "timing": "preloaded inputs; synchronized host wall time; shader compilation and transfer excluded",
+        "comparisonScope": "same source snapshot, fixture, and public operation; SciPy tree-build comparison excluded",
+        "buildIncluded": null
+      },
+      "series": [
+        {
+          "id": "metal",
+          "label": "mps-pointops Metal",
+          "milliseconds": 1.0737079428508878,
+          "device": "MPS",
+          "kind": "ours"
+        },
+        {
+          "id": "torch-mps",
+          "label": "torch mask+topk (MPS)",
+          "milliseconds": 25.630083051510155,
+          "device": "MPS",
+          "kind": "baseline"
+        }
+      ],
+      "parity": {
+        "indexMismatches": 0,
+        "detail": "idx mismatches 0/65536, max dist^2 err 1.9e-09"
+      },
+      "source": {
+        "rawPath": "bench/results/2026-10-01-source-sync/2026-10-01-apple-m5-pro.json",
+        "sourceCommit": null,
+        "archiveCommit": "61c7ea6cffe26af79e1a84e1f4889bb23813753a",
+        "benchmarkScript": "bench/bench_pointops.py",
+        "cleanSource": null,
+        "sourceHashesRecorded": true
+      },
+      "caution": "Historical source-synchronized measurement; exact wheel reinstallation was not timed."
+    },
+    {
+      "id": "m5-dense-fps-100000",
+      "availability": "released-code-snapshot",
+      "hardware": "Apple M5 Pro",
+      "operation": "fps",
+      "n": 100000,
+      "q": null,
+      "api": "dense",
+      "distribution": "noisy sphere, random order",
+      "fixture": {
+        "dtype": "float32",
+        "batch": 1,
+        "sampleCount": 1024,
+        "k": null,
+        "radius": null,
+        "seed": 0
+      },
+      "environment": {
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "python": "3.12.13",
+        "memoryGiB": 48,
+        "math": "default (unset)",
+        "fallback": "off"
+      },
+      "method": {
+        "repetitions": 5,
+        "warmups": 2,
+        "timing": "preloaded inputs; synchronized host wall time; shader compilation and transfer excluded",
+        "comparisonScope": "same source snapshot, fixture, and public operation; SciPy tree-build comparison excluded",
+        "buildIncluded": null
+      },
+      "series": [
+        {
+          "id": "metal",
+          "label": "mps-pointops Metal",
+          "milliseconds": 25.152084068395197,
+          "device": "MPS",
+          "kind": "ours"
+        },
+        {
+          "id": "torch-mps",
+          "label": "torch (MPS)",
+          "milliseconds": 84.72958405036479,
+          "device": "MPS",
+          "kind": "baseline"
+        },
+        {
+          "id": "fpsample",
+          "label": "fpsample vanilla",
+          "milliseconds": 163.6662910459563,
+          "device": "CPU",
+          "kind": "baseline"
+        }
+      ],
+      "parity": {
+        "indexMismatches": 0,
+        "detail": "idx mismatches 0/1024"
+      },
+      "source": {
+        "rawPath": "bench/results/2026-10-01-source-sync/2026-10-01-apple-m5-pro.json",
+        "sourceCommit": null,
+        "archiveCommit": "61c7ea6cffe26af79e1a84e1f4889bb23813753a",
+        "benchmarkScript": "bench/bench_pointops.py",
+        "cleanSource": null,
+        "sourceHashesRecorded": true
+      },
+      "caution": "Historical source-synchronized measurement; exact wheel reinstallation was not timed."
+    },
+    {
+      "id": "m5-dense-knn-100000",
+      "availability": "released-code-snapshot",
+      "hardware": "Apple M5 Pro",
+      "operation": "knn",
+      "n": 100000,
+      "q": 1024,
+      "api": "dense",
+      "distribution": "noisy sphere, random order",
+      "fixture": {
+        "dtype": "float32",
+        "batch": 1,
+        "sampleCount": null,
+        "k": 128,
+        "radius": null,
+        "seed": 0
+      },
+      "environment": {
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "python": "3.12.13",
+        "memoryGiB": 48,
+        "math": "default (unset)",
+        "fallback": "off"
+      },
+      "method": {
+        "repetitions": 5,
+        "warmups": 2,
+        "timing": "preloaded inputs; synchronized host wall time; shader compilation and transfer excluded",
+        "comparisonScope": "same source snapshot, fixture, and public operation; SciPy tree-build comparison excluded",
+        "buildIncluded": null
+      },
+      "series": [
+        {
+          "id": "metal",
+          "label": "mps-pointops Metal",
+          "milliseconds": 4.088709014467895,
+          "device": "MPS",
+          "kind": "ours"
+        },
+        {
+          "id": "torch-mps",
+          "label": "torch cdist+topk (MPS)",
+          "milliseconds": 70.90745901223272,
+          "device": "MPS",
+          "kind": "baseline"
+        }
+      ],
+      "parity": {
+        "indexMismatches": 0,
+        "detail": "missing 0/131072, position mismatches 0, max dist err 0.0e+00"
+      },
+      "source": {
+        "rawPath": "bench/results/2026-10-01-source-sync/2026-10-01-apple-m5-pro.json",
+        "sourceCommit": null,
+        "archiveCommit": "61c7ea6cffe26af79e1a84e1f4889bb23813753a",
+        "benchmarkScript": "bench/bench_pointops.py",
+        "cleanSource": null,
+        "sourceHashesRecorded": true
+      },
+      "caution": "Historical source-synchronized measurement; exact wheel reinstallation was not timed."
+    },
+    {
+      "id": "m5-dense-ball-query-100000",
+      "availability": "released-code-snapshot",
+      "hardware": "Apple M5 Pro",
+      "operation": "ball-query",
+      "n": 100000,
+      "q": 1024,
+      "api": "dense",
+      "distribution": "noisy sphere, random order",
+      "fixture": {
+        "dtype": "float32",
+        "batch": 1,
+        "sampleCount": null,
+        "k": 64,
+        "radius": 0.1,
+        "seed": 0
+      },
+      "environment": {
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "python": "3.12.13",
+        "memoryGiB": 48,
+        "math": "default (unset)",
+        "fallback": "off"
+      },
+      "method": {
+        "repetitions": 5,
+        "warmups": 2,
+        "timing": "preloaded inputs; synchronized host wall time; shader compilation and transfer excluded",
+        "comparisonScope": "same source snapshot, fixture, and public operation; SciPy tree-build comparison excluded",
+        "buildIncluded": null
+      },
+      "series": [
+        {
+          "id": "metal",
+          "label": "mps-pointops Metal",
+          "milliseconds": 1.4560000272467732,
+          "device": "MPS",
+          "kind": "ours"
+        },
+        {
+          "id": "torch-mps",
+          "label": "torch mask+topk (MPS)",
+          "milliseconds": 157.21233293879777,
+          "device": "MPS",
+          "kind": "baseline"
+        }
+      ],
+      "parity": {
+        "indexMismatches": 0,
+        "detail": "idx mismatches 0/65536, max dist^2 err 1.9e-09"
+      },
+      "source": {
+        "rawPath": "bench/results/2026-10-01-source-sync/2026-10-01-apple-m5-pro.json",
+        "sourceCommit": null,
+        "archiveCommit": "61c7ea6cffe26af79e1a84e1f4889bb23813753a",
+        "benchmarkScript": "bench/bench_pointops.py",
+        "cleanSource": null,
+        "sourceHashesRecorded": true
+      },
+      "caution": "Historical source-synchronized measurement; exact wheel reinstallation was not timed."
+    },
+    {
+      "id": "m5-flat-fps-1024",
+      "availability": "released-code-snapshot",
+      "hardware": "Apple M5 Pro",
+      "operation": "fps",
+      "n": 1024,
+      "q": null,
+      "api": "flat",
+      "distribution": "batched synthetic, nonempty batches 0 and 2",
+      "fixture": {
+        "dtype": "float32",
+        "batch": 3,
+        "sampleRatio": 0.015625,
+        "k": null,
+        "radius": null
+      },
+      "environment": {
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "python": "3.12.13",
+        "memoryGiB": 48.0,
+        "math": "Safe",
+        "fallback": "off"
+      },
+      "method": {
+        "repetitions": 20,
+        "warmups": 5,
+        "timing": "public API; preloaded tensors; synchronized host wall time",
+        "comparisonScope": "same flat public API and fixture on preloaded CPU/MPS tensors",
+        "buildIncluded": null
+      },
+      "series": [
+        {
+          "id": "metal",
+          "label": "mps-pointops MPS",
+          "milliseconds": 2.6065,
+          "device": "MPS",
+          "kind": "ours"
+        },
+        {
+          "id": "cpu",
+          "label": "mps-pointops CPU",
+          "milliseconds": 0.212417,
+          "device": "CPU",
+          "kind": "baseline"
+        }
+      ],
+      "parity": {
+        "exactCpuMps": true
+      },
+      "source": {
+        "rawPath": "bench/results/2026-10-02-apple-m5-pro-flat-public-safe.json",
+        "sourceCommit": "584f4580b2ff899d2e73e4a2dcdaf0bf490912be",
+        "archiveCommit": "112016bc252ff41e7d4a37835848579538d22665",
+        "benchmarkScript": "bench/bench_flat_public.py",
+        "cleanSource": true,
+        "sourceHashesRecorded": true
+      },
+      "caution": "Small flat-API inputs include host/wrapper overhead; MPS can be slower than CPU here."
+    },
+    {
+      "id": "m5-flat-knn-1024",
+      "availability": "released-code-snapshot",
+      "hardware": "Apple M5 Pro",
+      "operation": "knn",
+      "n": 1024,
+      "q": 32,
+      "api": "flat",
+      "distribution": "batched synthetic, nonempty batches 0 and 2",
+      "fixture": {
+        "dtype": "float32",
+        "batch": 3,
+        "sampleRatio": null,
+        "k": 16,
+        "radius": null
+      },
+      "environment": {
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "python": "3.12.13",
+        "memoryGiB": 48.0,
+        "math": "Safe",
+        "fallback": "off"
+      },
+      "method": {
+        "repetitions": 20,
+        "warmups": 5,
+        "timing": "public API; preloaded tensors; synchronized host wall time",
+        "comparisonScope": "same flat public API and fixture on preloaded CPU/MPS tensors",
+        "buildIncluded": null
+      },
+      "series": [
+        {
+          "id": "metal",
+          "label": "mps-pointops MPS",
+          "milliseconds": 3.901042,
+          "device": "MPS",
+          "kind": "ours"
+        },
+        {
+          "id": "cpu",
+          "label": "mps-pointops CPU",
+          "milliseconds": 1.152083,
+          "device": "CPU",
+          "kind": "baseline"
+        }
+      ],
+      "parity": {
+        "exactCpuMps": true
+      },
+      "source": {
+        "rawPath": "bench/results/2026-10-02-apple-m5-pro-flat-public-safe.json",
+        "sourceCommit": "584f4580b2ff899d2e73e4a2dcdaf0bf490912be",
+        "archiveCommit": "112016bc252ff41e7d4a37835848579538d22665",
+        "benchmarkScript": "bench/bench_flat_public.py",
+        "cleanSource": true,
+        "sourceHashesRecorded": true
+      },
+      "caution": "Small flat-API inputs include host/wrapper overhead; MPS can be slower than CPU here."
+    },
+    {
+      "id": "m5-flat-radius-1024",
+      "availability": "released-code-snapshot",
+      "hardware": "Apple M5 Pro",
+      "operation": "ball-query",
+      "n": 1024,
+      "q": 32,
+      "api": "flat",
+      "distribution": "batched synthetic, nonempty batches 0 and 2",
+      "fixture": {
+        "dtype": "float32",
+        "batch": 3,
+        "sampleRatio": null,
+        "k": 16,
+        "radius": 2.0
+      },
+      "environment": {
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "python": "3.12.13",
+        "memoryGiB": 48.0,
+        "math": "Safe",
+        "fallback": "off"
+      },
+      "method": {
+        "repetitions": 20,
+        "warmups": 5,
+        "timing": "public API; preloaded tensors; synchronized host wall time",
+        "comparisonScope": "same flat public API and fixture on preloaded CPU/MPS tensors",
+        "buildIncluded": null
+      },
+      "series": [
+        {
+          "id": "metal",
+          "label": "mps-pointops MPS",
+          "milliseconds": 2.819417,
+          "device": "MPS",
+          "kind": "ours"
+        },
+        {
+          "id": "cpu",
+          "label": "mps-pointops CPU",
+          "milliseconds": 0.455979,
+          "device": "CPU",
+          "kind": "baseline"
+        }
+      ],
+      "parity": {
+        "exactCpuMps": true
+      },
+      "source": {
+        "rawPath": "bench/results/2026-10-02-apple-m5-pro-flat-public-safe.json",
+        "sourceCommit": "584f4580b2ff899d2e73e4a2dcdaf0bf490912be",
+        "archiveCommit": "112016bc252ff41e7d4a37835848579538d22665",
+        "benchmarkScript": "bench/bench_flat_public.py",
+        "cleanSource": true,
+        "sourceHashesRecorded": true
+      },
+      "caution": "Small flat-API inputs include host/wrapper overhead; MPS can be slower than CPU here."
+    },
+    {
+      "id": "m5-flat-fps-4096",
+      "availability": "released-code-snapshot",
+      "hardware": "Apple M5 Pro",
+      "operation": "fps",
+      "n": 4096,
+      "q": null,
+      "api": "flat",
+      "distribution": "batched synthetic, nonempty batches 0 and 2",
+      "fixture": {
+        "dtype": "float32",
+        "batch": 3,
+        "sampleRatio": 0.015625,
+        "k": null,
+        "radius": null
+      },
+      "environment": {
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "python": "3.12.13",
+        "memoryGiB": 48.0,
+        "math": "Safe",
+        "fallback": "off"
+      },
+      "method": {
+        "repetitions": 20,
+        "warmups": 5,
+        "timing": "public API; preloaded tensors; synchronized host wall time",
+        "comparisonScope": "same flat public API and fixture on preloaded CPU/MPS tensors",
+        "buildIncluded": null
+      },
+      "series": [
+        {
+          "id": "metal",
+          "label": "mps-pointops MPS",
+          "milliseconds": 2.312334,
+          "device": "MPS",
+          "kind": "ours"
+        },
+        {
+          "id": "cpu",
+          "label": "mps-pointops CPU",
+          "milliseconds": 1.447104,
+          "device": "CPU",
+          "kind": "baseline"
+        }
+      ],
+      "parity": {
+        "exactCpuMps": true
+      },
+      "source": {
+        "rawPath": "bench/results/2026-10-02-apple-m5-pro-flat-public-safe.json",
+        "sourceCommit": "584f4580b2ff899d2e73e4a2dcdaf0bf490912be",
+        "archiveCommit": "112016bc252ff41e7d4a37835848579538d22665",
+        "benchmarkScript": "bench/bench_flat_public.py",
+        "cleanSource": true,
+        "sourceHashesRecorded": true
+      },
+      "caution": "Small flat-API inputs include host/wrapper overhead; MPS can be slower than CPU here."
+    },
+    {
+      "id": "m5-flat-knn-4096",
+      "availability": "released-code-snapshot",
+      "hardware": "Apple M5 Pro",
+      "operation": "knn",
+      "n": 4096,
+      "q": 128,
+      "api": "flat",
+      "distribution": "batched synthetic, nonempty batches 0 and 2",
+      "fixture": {
+        "dtype": "float32",
+        "batch": 3,
+        "sampleRatio": null,
+        "k": 16,
+        "radius": null
+      },
+      "environment": {
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "python": "3.12.13",
+        "memoryGiB": 48.0,
+        "math": "Safe",
+        "fallback": "off"
+      },
+      "method": {
+        "repetitions": 20,
+        "warmups": 5,
+        "timing": "public API; preloaded tensors; synchronized host wall time",
+        "comparisonScope": "same flat public API and fixture on preloaded CPU/MPS tensors",
+        "buildIncluded": null
+      },
+      "series": [
+        {
+          "id": "metal",
+          "label": "mps-pointops MPS",
+          "milliseconds": 4.377104,
+          "device": "MPS",
+          "kind": "ours"
+        },
+        {
+          "id": "cpu",
+          "label": "mps-pointops CPU",
+          "milliseconds": 19.665042,
+          "device": "CPU",
+          "kind": "baseline"
+        }
+      ],
+      "parity": {
+        "exactCpuMps": true
+      },
+      "source": {
+        "rawPath": "bench/results/2026-10-02-apple-m5-pro-flat-public-safe.json",
+        "sourceCommit": "584f4580b2ff899d2e73e4a2dcdaf0bf490912be",
+        "archiveCommit": "112016bc252ff41e7d4a37835848579538d22665",
+        "benchmarkScript": "bench/bench_flat_public.py",
+        "cleanSource": true,
+        "sourceHashesRecorded": true
+      },
+      "caution": "Small flat-API inputs include host/wrapper overhead; MPS can be slower than CPU here."
+    },
+    {
+      "id": "m5-flat-radius-4096",
+      "availability": "released-code-snapshot",
+      "hardware": "Apple M5 Pro",
+      "operation": "ball-query",
+      "n": 4096,
+      "q": 128,
+      "api": "flat",
+      "distribution": "batched synthetic, nonempty batches 0 and 2",
+      "fixture": {
+        "dtype": "float32",
+        "batch": 3,
+        "sampleRatio": null,
+        "k": 16,
+        "radius": 2.0
+      },
+      "environment": {
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "python": "3.12.13",
+        "memoryGiB": 48.0,
+        "math": "Safe",
+        "fallback": "off"
+      },
+      "method": {
+        "repetitions": 20,
+        "warmups": 5,
+        "timing": "public API; preloaded tensors; synchronized host wall time",
+        "comparisonScope": "same flat public API and fixture on preloaded CPU/MPS tensors",
+        "buildIncluded": null
+      },
+      "series": [
+        {
+          "id": "metal",
+          "label": "mps-pointops MPS",
+          "milliseconds": 4.297376,
+          "device": "MPS",
+          "kind": "ours"
+        },
+        {
+          "id": "cpu",
+          "label": "mps-pointops CPU",
+          "milliseconds": 3.101729,
+          "device": "CPU",
+          "kind": "baseline"
+        }
+      ],
+      "parity": {
+        "exactCpuMps": true
+      },
+      "source": {
+        "rawPath": "bench/results/2026-10-02-apple-m5-pro-flat-public-safe.json",
+        "sourceCommit": "584f4580b2ff899d2e73e4a2dcdaf0bf490912be",
+        "archiveCommit": "112016bc252ff41e7d4a37835848579538d22665",
+        "benchmarkScript": "bench/bench_flat_public.py",
+        "cleanSource": true,
+        "sourceHashesRecorded": true
+      },
+      "caution": "Small flat-API inputs include host/wrapper overhead; MPS can be slower than CPU here."
+    },
+    {
+      "id": "m1-fps-500000",
+      "availability": "released-code-snapshot",
+      "hardware": "Apple M1",
+      "operation": "fps",
+      "n": 500000,
+      "q": null,
+      "api": "dense",
+      "distribution": "standard-normal, seed 42",
+      "fixture": {
+        "dtype": "float32",
+        "batch": 1,
+        "sampleCount": 1024,
+        "seed": 42
+      },
+      "environment": {
+        "macos": "26.5.2",
+        "pytorch": "2.12.0",
+        "python": "3.10.6",
+        "memoryGiB": 8.0,
+        "math": "Safe",
+        "fallback": "not recorded"
+      },
+      "method": {
+        "repetitions": 5,
+        "warmups": 3,
+        "timing": "wall-clock ms, Python launch included, torch.mps.synchronize immediately before and after",
+        "comparisonScope": "same B=1 fixture, alternating single/multigroup runs",
+        "buildIncluded": null
+      },
+      "series": [
+        {
+          "id": "multigroup",
+          "label": "Metal multigroup",
+          "milliseconds": 117.34525003703311,
+          "device": "MPS",
+          "kind": "ours"
+        },
+        {
+          "id": "single",
+          "label": "Metal single group",
+          "milliseconds": 361.99762497562915,
+          "device": "MPS",
+          "kind": "baseline"
+        }
+      ],
+      "parity": {
+        "indexMismatches": 0
+      },
+      "source": {
+        "rawPath": "bench/results/physical-m1-2026-10-02/mps-pointops-m1-safe-fps-production.json",
+        "sourceCommit": "f4a886a08938a8a3c9785ecaec962300efd298e0",
+        "archiveCommit": "f734bde878d682db03fd5ff676193df4a601c385",
+        "benchmarkScript": "bench/bench_fps_production.py",
+        "cleanSource": true,
+        "sourceHashesRecorded": true
+      },
+      "caution": "B=1 only; this is a same-device kernel ablation, not a CPU speed comparison."
+    },
+    {
+      "id": "m1-fps-1000000",
+      "availability": "released-code-snapshot",
+      "hardware": "Apple M1",
+      "operation": "fps",
+      "n": 1000000,
+      "q": null,
+      "api": "dense",
+      "distribution": "standard-normal, seed 42",
+      "fixture": {
+        "dtype": "float32",
+        "batch": 1,
+        "sampleCount": 1024,
+        "seed": 42
+      },
+      "environment": {
+        "macos": "26.5.2",
+        "pytorch": "2.12.0",
+        "python": "3.10.6",
+        "memoryGiB": 8.0,
+        "math": "Safe",
+        "fallback": "not recorded"
+      },
+      "method": {
+        "repetitions": 5,
+        "warmups": 3,
+        "timing": "wall-clock ms, Python launch included, torch.mps.synchronize immediately before and after",
+        "comparisonScope": "same B=1 fixture, alternating single/multigroup runs",
+        "buildIncluded": null
+      },
+      "series": [
+        {
+          "id": "multigroup",
+          "label": "Metal multigroup",
+          "milliseconds": 385.04579197615385,
+          "device": "MPS",
+          "kind": "ours"
+        },
+        {
+          "id": "single",
+          "label": "Metal single group",
+          "milliseconds": 804.0068750269711,
+          "device": "MPS",
+          "kind": "baseline"
+        }
+      ],
+      "parity": {
+        "indexMismatches": 0
+      },
+      "source": {
+        "rawPath": "bench/results/physical-m1-2026-10-02/mps-pointops-m1-safe-fps-production.json",
+        "sourceCommit": "f4a886a08938a8a3c9785ecaec962300efd298e0",
+        "archiveCommit": "f734bde878d682db03fd5ff676193df4a601c385",
+        "benchmarkScript": "bench/bench_fps_production.py",
+        "cleanSource": true,
+        "sourceHashesRecorded": true
+      },
+      "caution": "B=1 only; this is a same-device kernel ablation, not a CPU speed comparison."
+    },
+    {
+      "id": "spatial-knn-uniform-independent-1m-q65536",
+      "availability": "unreleased-source",
+      "hardware": "Apple M5 Pro",
+      "operation": "knn",
+      "n": 1000000,
+      "q": 65536,
+      "api": "spatial-index",
+      "distribution": "uniform",
+      "fixture": {
+        "dtype": "float32",
+        "batch": 1,
+        "k": 16,
+        "radius": null,
+        "querySource": "independent"
+      },
+      "environment": {
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "memoryGiB": 48,
+        "math": "Safe",
+        "fallback": "off"
+      },
+      "method": {
+        "repetitions": 5,
+        "warmups": null,
+        "timing": "preloaded MPS inputs; synchronized host-wall steady query; shader compilation, transfer, and BVH build excluded",
+        "comparisonScope": "same fixture, API, and prebuilt-index steady query; first-call/build not compared",
+        "buildIncluded": false
+      },
+      "series": [
+        {
+          "id": "bvh",
+          "label": "MPS opt-in BVH",
+          "milliseconds": 164.0595,
+          "device": "MPS",
+          "kind": "ours"
+        },
+        {
+          "id": "scan",
+          "label": "MPS native full scan",
+          "milliseconds": 883.099167,
+          "device": "MPS",
+          "kind": "baseline"
+        },
+        {
+          "id": "auto",
+          "label": "Auto → bvh",
+          "milliseconds": 166.254959,
+          "device": "MPS",
+          "kind": "automatic"
+        }
+      ],
+      "parity": {
+        "mismatchedIndexSlots": 0,
+        "maxAbsoluteDistanceError": 0
+      },
+      "source": {
+        "rawPath": "bench/results/spatial-dispatch-v090-m5pro-clean/uniform-independent-n1m-q65536-safe.json",
+        "sourceCommit": "62fcc0f295e127be47a475fbc122d4de686b4c58",
+        "archiveCommit": "905fce5384c681b16db0ebd0fbcd892635544ead",
+        "benchmarkScript": "bench/bench_spatial_dispatch.py",
+        "cleanSource": true,
+        "sourceHashesRecorded": true
+      },
+      "caution": "v0.9 source measurement. BVH is opt-in; Auto may select scan. This path is absent from the published 0.8.0 wheel."
+    },
+    {
+      "id": "spatial-knn-coincident-1m-q65536",
+      "availability": "unreleased-source",
+      "hardware": "Apple M5 Pro",
+      "operation": "knn",
+      "n": 1000000,
+      "q": 65536,
+      "api": "spatial-index",
+      "distribution": "coincident",
+      "fixture": {
+        "dtype": "float32",
+        "batch": 1,
+        "k": 16,
+        "radius": null,
+        "querySource": "all-coincident"
+      },
+      "environment": {
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "memoryGiB": 48,
+        "math": "Safe",
+        "fallback": "off"
+      },
+      "method": {
+        "repetitions": 3,
+        "warmups": null,
+        "timing": "preloaded MPS inputs; synchronized host-wall steady query; shader compilation, transfer, and BVH build excluded",
+        "comparisonScope": "same fixture, API, and prebuilt-index steady query; first-call/build not compared",
+        "buildIncluded": false
+      },
+      "series": [
+        {
+          "id": "bvh",
+          "label": "MPS opt-in BVH",
+          "milliseconds": 1293.181375,
+          "device": "MPS",
+          "kind": "ours"
+        },
+        {
+          "id": "scan",
+          "label": "MPS native full scan",
+          "milliseconds": 863.551083,
+          "device": "MPS",
+          "kind": "baseline"
+        },
+        {
+          "id": "auto",
+          "label": "Auto → scan",
+          "milliseconds": 865.1105,
+          "device": "MPS",
+          "kind": "automatic"
+        }
+      ],
+      "parity": {
+        "mismatchedIndexSlots": 0,
+        "maxAbsoluteDistanceError": 0
+      },
+      "source": {
+        "rawPath": "bench/results/spatial-dispatch-v090-m5pro-clean/collapsed-n1m-q65536-safe.json",
+        "sourceCommit": "62fcc0f295e127be47a475fbc122d4de686b4c58",
+        "archiveCommit": "905fce5384c681b16db0ebd0fbcd892635544ead",
+        "benchmarkScript": "bench/bench_spatial_dispatch.py",
+        "cleanSource": true,
+        "sourceHashesRecorded": true
+      },
+      "caution": "v0.9 source measurement. BVH is opt-in; Auto may select scan. This path is absent from the published 0.8.0 wheel."
+    },
+    {
+      "id": "spatial-radius-uniform-independent-1m-q65536",
+      "availability": "unreleased-source",
+      "hardware": "Apple M5 Pro",
+      "operation": "ball-query",
+      "n": 1000000,
+      "q": 65536,
+      "api": "spatial-index",
+      "distribution": "uniform",
+      "fixture": {
+        "dtype": "float32",
+        "batch": 1,
+        "k": 16,
+        "radius": 12,
+        "querySource": "independent"
+      },
+      "environment": {
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "memoryGiB": 48,
+        "math": "Safe",
+        "fallback": "off"
+      },
+      "method": {
+        "repetitions": 3,
+        "warmups": null,
+        "timing": "preloaded MPS inputs; synchronized host-wall steady query; shader compilation, transfer, and BVH build excluded",
+        "comparisonScope": "same fixture, API, and prebuilt-index steady query; first-call/build not compared",
+        "buildIncluded": false
+      },
+      "series": [
+        {
+          "id": "bvh",
+          "label": "MPS opt-in BVH",
+          "milliseconds": 39.0935,
+          "device": "MPS",
+          "kind": "ours"
+        },
+        {
+          "id": "scan",
+          "label": "MPS native full scan",
+          "milliseconds": 2557.532417,
+          "device": "MPS",
+          "kind": "baseline"
+        },
+        {
+          "id": "auto",
+          "label": "Auto → scan",
+          "milliseconds": 2564.401666,
+          "device": "MPS",
+          "kind": "automatic"
+        }
+      ],
+      "parity": {
+        "mismatchedIndexSlots": 0,
+        "mismatchedSquaredDistanceBits": 0,
+        "originalIndexOrderViolations": 0
+      },
+      "source": {
+        "rawPath": "bench/results/spatial-radius-dispatch-v090-m5pro-clean/uniform-n1m-q65536-r12-safe.json",
+        "sourceCommit": "62fcc0f295e127be47a475fbc122d4de686b4c58",
+        "archiveCommit": "905fce5384c681b16db0ebd0fbcd892635544ead",
+        "benchmarkScript": "bench/bench_spatial_radius_dispatch.py",
+        "cleanSource": true,
+        "sourceHashesRecorded": true
+      },
+      "caution": "v0.9 source measurement. BVH is opt-in; Auto may select scan. This path is absent from the published 0.8.0 wheel."
+    }
+  ]
+}

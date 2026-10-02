@@ -1,0 +1,397 @@
+{
+  "env": {
+    "chip": "Apple M5 Pro",
+    "memory_gb": 48,
+    "macos": "26.5.2",
+    "python": "3.12.13",
+    "torch": "2.14.1",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "fpsample": "1.0.2",
+    "mps_fallback": "0",
+    "mps_fast_math": "unset",
+    "source_sha256": {
+      "bench/bench_pointops.py": "4df168f9c5c5d0630d55af4746aa7a522ebdabf6b01686cd050ef2e8eb11b71a",
+      "mps_pointops/ops.py": "fbd5218ab0323558fc2733abc1bf47fc0074b568df8927d48d5033f8e42b796a",
+      "mps_pointops/reference.py": "b0064150a5172d524d3ba9c84dfcea515846341517c830415d0d6c6780dd1657",
+      "mps_pointops/_ball_query_mps.py": "d2fb88bc22ed80bcea9a17906427192777fe468b6875a5beb2cb2ff4add3e8b6",
+      "mps_pointops/kernels/fps.metal": "c02ac7472eb5e27548824b34dc0996c361cbd2084989ceae9b715284ae59d44a",
+      "mps_pointops/kernels/knn.metal": "21a34b07630cde064c1653985d472deab6d107844b53905d40696e14fc4d9db9",
+      "mps_pointops/kernels/ball_query.metal": "2856fa046cbbafb71ec0cd688f071c7dc5d2280e9f04d00471241e24d6f85ba3"
+    }
+  },
+  "args": {
+    "sizes": "[20000, 100000]",
+    "ops": "['fps', 'knn', 'ball_query']",
+    "batch": "1",
+    "npoint": "1024",
+    "queries": "1024",
+    "k": "128",
+    "ball_k": "64",
+    "radius": "0.1",
+    "warmup": "2",
+    "repeat": "5",
+    "seed": "0",
+    "order": "random"
+  },
+  "rows": [
+    {
+      "op": "fps",
+      "n_points": 20000,
+      "batch": 1,
+      "impl": "torch (MPS)",
+      "device": "mps",
+      "median_ms": 43.11366600450128,
+      "min_ms": 42.80070890672505,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
+    },
+    {
+      "op": "fps",
+      "n_points": 20000,
+      "batch": 1,
+      "impl": "mps-pointops Metal (MPS)",
+      "device": "mps",
+      "median_ms": 5.632458021864295,
+      "min_ms": 5.60520903673023,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
+    },
+    {
+      "op": "fps",
+      "n_points": 20000,
+      "batch": 1,
+      "impl": "torch (CPU)",
+      "device": "cpu",
+      "median_ms": 102.023916086182,
+      "min_ms": 94.89341697189957,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
+    },
+    {
+      "op": "fps",
+      "n_points": 20000,
+      "batch": 1,
+      "impl": "fpsample vanilla (CPU)",
+      "device": "cpu",
+      "median_ms": 33.1078750314191,
+      "min_ms": 32.663875026628375,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
+    },
+    {
+      "op": "knn",
+      "n_points": 20000,
+      "batch": 1,
+      "impl": "torch cdist+topk (MPS)",
+      "device": "mps",
+      "median_ms": 9.534374927170575,
+      "min_ms": 9.472624980844557,
+      "check": {
+        "missing_neighbors": 0,
+        "position_mismatches": 48,
+        "total": 131072,
+        "max_dist_err": 0.00048828125,
+        "summary": "missing 0/131072, position mismatches 48, max dist err 4.9e-04"
+      }
+    },
+    {
+      "op": "knn",
+      "n_points": 20000,
+      "batch": 1,
+      "impl": "mps-pointops Metal (MPS)",
+      "device": "mps",
+      "median_ms": 2.1155000431463122,
+      "min_ms": 2.1125420462340117,
+      "check": {
+        "missing_neighbors": 0,
+        "position_mismatches": 0,
+        "total": 131072,
+        "max_dist_err": 0.0,
+        "summary": "missing 0/131072, position mismatches 0, max dist err 0.0e+00"
+      }
+    },
+    {
+      "op": "knn",
+      "n_points": 20000,
+      "batch": 1,
+      "impl": "torch cdist+topk (CPU)",
+      "device": "cpu",
+      "median_ms": 10.194792062975466,
+      "min_ms": 10.158499935641885,
+      "check": {
+        "missing_neighbors": 0,
+        "position_mismatches": 40,
+        "total": 131072,
+        "max_dist_err": 0.00048828125,
+        "summary": "missing 0/131072, position mismatches 40, max dist err 4.9e-04"
+      }
+    },
+    {
+      "op": "knn",
+      "n_points": 20000,
+      "batch": 1,
+      "impl": "scipy cKDTree build+query (CPU)",
+      "device": "cpu",
+      "median_ms": 4.7580000245943666,
+      "min_ms": 4.670291091315448,
+      "check": {
+        "missing_neighbors": 0,
+        "position_mismatches": 0,
+        "total": 131072,
+        "max_dist_err": 2.2060964638415115e-08,
+        "summary": "missing 0/131072, position mismatches 0, max dist err 2.2e-08"
+      }
+    },
+    {
+      "op": "ball_query",
+      "n_points": 20000,
+      "batch": 1,
+      "impl": "torch mask+topk (MPS)",
+      "device": "mps",
+      "median_ms": 25.630083051510155,
+      "min_ms": 25.57024999987334,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "max_dist2_err": 0.0,
+        "summary": "idx mismatches 0/65536, max dist^2 err 0.0e+00"
+      }
+    },
+    {
+      "op": "ball_query",
+      "n_points": 20000,
+      "batch": 1,
+      "impl": "mps-pointops Metal (MPS)",
+      "device": "mps",
+      "median_ms": 1.0737079428508878,
+      "min_ms": 1.0302920127287507,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "max_dist2_err": 1.862645149230957e-09,
+        "summary": "idx mismatches 0/65536, max dist^2 err 1.9e-09"
+      }
+    },
+    {
+      "op": "ball_query",
+      "n_points": 20000,
+      "batch": 1,
+      "impl": "torch mask+topk (CPU)",
+      "device": "cpu",
+      "median_ms": 30.748958000913262,
+      "min_ms": 30.368916923180223,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "max_dist2_err": 0.0,
+        "summary": "idx mismatches 0/65536, max dist^2 err 0.0e+00"
+      }
+    },
+    {
+      "op": "ball_query",
+      "n_points": 20000,
+      "batch": 1,
+      "impl": "scipy cKDTree build+query (CPU)",
+      "device": "cpu",
+      "median_ms": 4.845374962314963,
+      "min_ms": 4.655874916352332,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "summary": "idx mismatches 0/65536"
+      }
+    },
+    {
+      "op": "fps",
+      "n_points": 100000,
+      "batch": 1,
+      "impl": "torch (MPS)",
+      "device": "mps",
+      "median_ms": 84.72958405036479,
+      "min_ms": 84.45687498897314,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
+    },
+    {
+      "op": "fps",
+      "n_points": 100000,
+      "batch": 1,
+      "impl": "mps-pointops Metal (MPS)",
+      "device": "mps",
+      "median_ms": 25.152084068395197,
+      "min_ms": 25.090874987654388,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
+    },
+    {
+      "op": "fps",
+      "n_points": 100000,
+      "batch": 1,
+      "impl": "torch (CPU)",
+      "device": "cpu",
+      "median_ms": 270.55583300534636,
+      "min_ms": 268.945665913634,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
+    },
+    {
+      "op": "fps",
+      "n_points": 100000,
+      "batch": 1,
+      "impl": "fpsample vanilla (CPU)",
+      "device": "cpu",
+      "median_ms": 163.6662910459563,
+      "min_ms": 163.45937503501773,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 1024,
+        "summary": "idx mismatches 0/1024"
+      }
+    },
+    {
+      "op": "knn",
+      "n_points": 100000,
+      "batch": 1,
+      "impl": "torch cdist+topk (MPS)",
+      "device": "mps",
+      "median_ms": 70.90745901223272,
+      "min_ms": 70.37895801477134,
+      "check": {
+        "missing_neighbors": 1,
+        "position_mismatches": 235,
+        "total": 131072,
+        "max_dist_err": 0.00048828125,
+        "summary": "missing 1/131072, position mismatches 235, max dist err 4.9e-04"
+      }
+    },
+    {
+      "op": "knn",
+      "n_points": 100000,
+      "batch": 1,
+      "impl": "mps-pointops Metal (MPS)",
+      "device": "mps",
+      "median_ms": 4.088709014467895,
+      "min_ms": 4.051957977935672,
+      "check": {
+        "missing_neighbors": 0,
+        "position_mismatches": 0,
+        "total": 131072,
+        "max_dist_err": 0.0,
+        "summary": "missing 0/131072, position mismatches 0, max dist err 0.0e+00"
+      }
+    },
+    {
+      "op": "knn",
+      "n_points": 100000,
+      "batch": 1,
+      "impl": "torch cdist+topk (CPU)",
+      "device": "cpu",
+      "median_ms": 38.761541014537215,
+      "min_ms": 36.99866705574095,
+      "check": {
+        "missing_neighbors": 2,
+        "position_mismatches": 242,
+        "total": 131072,
+        "max_dist_err": 0.00048828125,
+        "summary": "missing 2/131072, position mismatches 242, max dist err 4.9e-04"
+      }
+    },
+    {
+      "op": "knn",
+      "n_points": 100000,
+      "batch": 1,
+      "impl": "scipy cKDTree build+query (CPU)",
+      "device": "cpu",
+      "median_ms": 17.347667017020285,
+      "min_ms": 17.240875051356852,
+      "check": {
+        "missing_neighbors": 0,
+        "position_mismatches": 0,
+        "total": 131072,
+        "max_dist_err": 9.81005639222321e-09,
+        "summary": "missing 0/131072, position mismatches 0, max dist err 9.8e-09"
+      }
+    },
+    {
+      "op": "ball_query",
+      "n_points": 100000,
+      "batch": 1,
+      "impl": "torch mask+topk (MPS)",
+      "device": "mps",
+      "median_ms": 157.21233293879777,
+      "min_ms": 149.06079205684364,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "max_dist2_err": 0.0,
+        "summary": "idx mismatches 0/65536, max dist^2 err 0.0e+00"
+      }
+    },
+    {
+      "op": "ball_query",
+      "n_points": 100000,
+      "batch": 1,
+      "impl": "mps-pointops Metal (MPS)",
+      "device": "mps",
+      "median_ms": 1.4560000272467732,
+      "min_ms": 1.4032080071046948,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "max_dist2_err": 1.862645149230957e-09,
+        "summary": "idx mismatches 0/65536, max dist^2 err 1.9e-09"
+      }
+    },
+    {
+      "op": "ball_query",
+      "n_points": 100000,
+      "batch": 1,
+      "impl": "torch mask+topk (CPU)",
+      "device": "cpu",
+      "median_ms": 154.99262500088662,
+      "min_ms": 152.2943750023842,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "max_dist2_err": 0.0,
+        "summary": "idx mismatches 0/65536, max dist^2 err 0.0e+00"
+      }
+    },
+    {
+      "op": "ball_query",
+      "n_points": 100000,
+      "batch": 1,
+      "impl": "scipy cKDTree build+query (CPU)",
+      "device": "cpu",
+      "median_ms": 19.906874978914857,
+      "min_ms": 19.65620811097324,
+      "check": {
+        "idx_mismatches": 0,
+        "total": 65536,
+        "summary": "idx mismatches 0/65536"
+      }
+    }
+  ]
+}

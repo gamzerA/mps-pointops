@@ -1,0 +1,610 @@
+{
+  "schemaVersion": 1,
+  "meta": {
+    "project": "mps-pointops",
+    "publishedVersion": "0.8.0",
+    "mainMergeCommit": "905fce5384c681b16db0ebd0fbcd892635544ead",
+    "developmentSourceCommit": "62fcc0f295e127be47a475fbc122d4de686b4c58",
+    "snapshotDate": "2026-10-02",
+    "minimumPython": "3.10",
+    "minimumPyTorch": "2.7",
+    "minimumMacOS": {
+      "status": "pending"
+    },
+    "license": "Project Apache-2.0; Ball Query portions MIT",
+    "installation": "python -m pip install mps-pointops==0.8.0"
+  },
+  "demo": {
+    "mortonBitsPerAxis": 21,
+    "mortonGridSide": 16,
+    "pruningPointCount": 2000,
+    "pruningBrickSize": 16,
+    "sourceBvhBrickSize": 128,
+    "seed": 20261002
+  },
+  "routing": {
+    "hardware": "Apple M5 Pro",
+    "n": 1000000,
+    "k": 16,
+    "qMin": 8192,
+    "qMax": 65536,
+    "sampledCellFractionBelow": 0.05,
+    "forcedBvhMaxN": 1000000,
+    "forcedBvhMaxK": 32,
+    "mathMode": "Safe"
+  },
+  "benchmarks": [
+    {
+      "id": "grid-radius-uniform-1m-q1024",
+      "status": "measured",
+      "scope": "research-prototype",
+      "operation": "radius",
+      "distribution": "uniform",
+      "conditions": {
+        "hardware": "Apple M5 Pro",
+        "memoryGiB": 48,
+        "macos": "26.5.2",
+        "python": "3.12.13",
+        "pytorch": "2.14.1",
+        "scipy": "1.18.1",
+        "dtype": "float32",
+        "n": 1000000,
+        "q": 1024,
+        "k": 16,
+        "radius": 16,
+        "cellSize": 16,
+        "repetitions": 5,
+        "statistic": "sum-of-separate-stage-medians",
+        "inputResidence": "preloaded-cpu-and-mps",
+        "mpsFallback": false,
+        "mpsFastMath": false,
+        "shaderCompilationIncluded": false,
+        "hostToDeviceTransferIncluded": false,
+        "measurementDateUtc": "2026-10-02T00:05:33.732198+00:00",
+        "sourceCommit": "1f1613a17c9b340464de92b6ae82180e8421d993",
+        "sourcePath": "bench/results/2026-10-02-m5-pro-morton-uniform-1m-safe.json",
+        "benchmarkScript": "bench/bench_spatial_morton.py",
+        "ckdtreeWorkers": 1,
+        "ckdtreeReturnSorted": true
+      },
+      "baselines": [
+        {
+          "id": "ckdtree",
+          "name": "SciPy cKDTree",
+          "buildMs": 252.358042,
+          "queryMs": 3.817417
+        }
+      ],
+      "ours": {
+        "id": "morton-grid",
+        "name": "MPS sorted Morton grid prototype",
+        "buildMs": 4.080417,
+        "queryMs": 2.589
+      },
+      "parity": {
+        "mismatchedIndexSlots": 0,
+        "nativeFullScanSampleQueries": 8,
+        "nativeFullScanSampleEqual": true
+      }
+    },
+    {
+      "id": "spatial-knn-uniform-independent-1m-q65536",
+      "status": "measured",
+      "scope": "unreleased-public-source",
+      "operation": "knn",
+      "distribution": "uniform",
+      "conditions": {
+        "hardware": "Apple M5 Pro",
+        "memoryGiB": 48,
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "dtype": "float32",
+        "n": 1000000,
+        "q": 65536,
+        "k": 16,
+        "repetitions": 5,
+        "statistic": "median-of-synchronized-query-samples",
+        "querySource": "independent",
+        "inputResidence": "preloaded-mps",
+        "mpsFallback": false,
+        "mpsFastMath": false,
+        "shaderCompilationIncluded": false,
+        "measurementDateUtc": "2026-10-02T02:12:14.484445+00:00",
+        "sourceCommit": "62fcc0f295e127be47a475fbc122d4de686b4c58",
+        "sourcePath": "bench/results/spatial-dispatch-v090-m5pro-clean/uniform-independent-n1m-q65536-safe.json",
+        "benchmarkScript": "bench/bench_spatial_dispatch.py"
+      },
+      "baselines": [
+        {
+          "id": "native-scan",
+          "name": "MPS native full scan",
+          "queryMs": 883.099167
+        }
+      ],
+      "ours": {
+        "id": "bvh",
+        "name": "MPS opt-in BVH",
+        "queryMs": 164.0595
+      },
+      "auto": {
+        "selectedBackend": "bvh",
+        "queryMs": 166.254959
+      },
+      "parity": {
+        "mismatchedIndexSlots": 0,
+        "maxAbsoluteDistanceError": 0
+      }
+    },
+    {
+      "id": "spatial-knn-coincident-1m-q65536",
+      "status": "measured",
+      "scope": "unreleased-public-source",
+      "operation": "knn",
+      "distribution": "coincident",
+      "conditions": {
+        "hardware": "Apple M5 Pro",
+        "memoryGiB": 48,
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "dtype": "float32",
+        "n": 1000000,
+        "q": 65536,
+        "k": 16,
+        "repetitions": 3,
+        "statistic": "median-of-synchronized-query-samples",
+        "querySource": "all-coincident",
+        "inputResidence": "preloaded-mps",
+        "mpsFallback": false,
+        "mpsFastMath": false,
+        "shaderCompilationIncluded": false,
+        "measurementDateUtc": "2026-10-02T02:12:04.106638+00:00",
+        "sourceCommit": "62fcc0f295e127be47a475fbc122d4de686b4c58",
+        "sourcePath": "bench/results/spatial-dispatch-v090-m5pro-clean/collapsed-n1m-q65536-safe.json",
+        "benchmarkScript": "bench/bench_spatial_dispatch.py"
+      },
+      "baselines": [
+        {
+          "id": "native-scan",
+          "name": "MPS native full scan",
+          "queryMs": 863.551083
+        }
+      ],
+      "ours": {
+        "id": "bvh",
+        "name": "MPS opt-in BVH",
+        "queryMs": 1293.181375
+      },
+      "auto": {
+        "selectedBackend": "scan",
+        "queryMs": 865.1105
+      },
+      "parity": {
+        "mismatchedIndexSlots": 0,
+        "maxAbsoluteDistanceError": 0
+      }
+    },
+    {
+      "id": "spatial-radius-uniform-independent-1m-q65536",
+      "status": "measured",
+      "scope": "unreleased-public-source",
+      "operation": "radius",
+      "distribution": "uniform",
+      "conditions": {
+        "hardware": "Apple M5 Pro",
+        "memoryGiB": 48,
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "dtype": "float32",
+        "n": 1000000,
+        "q": 65536,
+        "k": 16,
+        "radius": 12,
+        "repetitions": 3,
+        "statistic": "median-of-synchronized-query-samples",
+        "querySource": "independent",
+        "inputResidence": "preloaded-mps",
+        "mpsFallback": false,
+        "mpsFastMath": false,
+        "shaderCompilationIncluded": false,
+        "measurementDateUtc": "2026-10-02T02:13:12.835999+00:00",
+        "sourceCommit": "62fcc0f295e127be47a475fbc122d4de686b4c58",
+        "sourcePath": "bench/results/spatial-radius-dispatch-v090-m5pro-clean/uniform-n1m-q65536-r12-safe.json",
+        "benchmarkScript": "bench/bench_spatial_radius_dispatch.py"
+      },
+      "baselines": [
+        {
+          "id": "native-scan",
+          "name": "MPS native full scan",
+          "queryMs": 2557.532417
+        }
+      ],
+      "ours": {
+        "id": "bvh",
+        "name": "MPS opt-in BVH",
+        "queryMs": 39.0935
+      },
+      "auto": {
+        "selectedBackend": "scan",
+        "queryMs": 2564.401666
+      },
+      "parity": {
+        "mismatchedIndexSlots": 0,
+        "mismatchedSquaredDistanceBits": 0,
+        "originalIndexOrderViolations": 0
+      }
+    },
+    {
+      "id": "m1-spatial-knn-uniform-1m-q65536",
+      "status": "measured",
+      "scope": "unreleased-public-source",
+      "operation": "knn",
+      "distribution": "uniform",
+      "conditions": {
+        "hardware": "Apple M1",
+        "memoryGiB": 8,
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "dtype": "float32",
+        "n": 1000000,
+        "q": 65536,
+        "k": 16,
+        "repetitions": 3,
+        "statistic": "median-of-synchronized-query-samples",
+        "querySource": "sampled-reference",
+        "inputResidence": "preloaded-mps",
+        "mpsFallback": false,
+        "mpsFastMath": false,
+        "shaderCompilationIncluded": false,
+        "hostToDeviceTransferIncluded": false,
+        "measurementDateUtc": "2026-10-02T09:13:12.168113+00:00",
+        "sourceCommit": "ef07a9337b40065c18a6c950bda4240c789f31f1",
+        "sourcePath": "bench/results/spatial-v090-m1/knn-uniform-1m-q65536-ef07a933.json",
+        "benchmarkScript": "bench/bench_spatial_dispatch.py"
+      },
+      "baselines": [
+        {
+          "id": "native-scan",
+          "name": "MPS native full scan",
+          "queryMs": 4762.5115
+        }
+      ],
+      "ours": {
+        "id": "bvh",
+        "name": "MPS opt-in BVH",
+        "queryMs": 784.613041
+      },
+      "auto": {
+        "selectedBackend": "scan",
+        "queryMs": 4832.069083
+      },
+      "parity": {
+        "mismatchedIndexSlots": 0,
+        "maxAbsoluteDistanceError": 0.0
+      }
+    },
+    {
+      "id": "m1-spatial-knn-cluster-sparse-1m-q65536",
+      "status": "measured",
+      "scope": "unreleased-public-source",
+      "operation": "knn",
+      "distribution": "cluster-sparse",
+      "conditions": {
+        "hardware": "Apple M1",
+        "memoryGiB": 8,
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "dtype": "float32",
+        "n": 1000000,
+        "q": 65536,
+        "k": 16,
+        "repetitions": 3,
+        "statistic": "median-of-synchronized-query-samples",
+        "querySource": "sampled-reference",
+        "inputResidence": "preloaded-mps",
+        "mpsFallback": false,
+        "mpsFastMath": false,
+        "shaderCompilationIncluded": false,
+        "hostToDeviceTransferIncluded": false,
+        "measurementDateUtc": "2026-10-02T09:14:01.632459+00:00",
+        "sourceCommit": "ef07a9337b40065c18a6c950bda4240c789f31f1",
+        "sourcePath": "bench/results/spatial-v090-m1/knn-cluster-sparse-1m-q65536-ef07a933.json",
+        "benchmarkScript": "bench/bench_spatial_dispatch.py"
+      },
+      "baselines": [
+        {
+          "id": "native-scan",
+          "name": "MPS native full scan",
+          "queryMs": 4867.691917
+        }
+      ],
+      "ours": {
+        "id": "bvh",
+        "name": "MPS opt-in BVH",
+        "queryMs": 901.545333
+      },
+      "auto": {
+        "selectedBackend": "scan",
+        "queryMs": 4873.365625
+      },
+      "parity": {
+        "mismatchedIndexSlots": 0,
+        "maxAbsoluteDistanceError": 0.0
+      }
+    },
+    {
+      "id": "m1-spatial-knn-collapsed-1m-q65536",
+      "status": "measured",
+      "scope": "unreleased-public-source",
+      "operation": "knn",
+      "distribution": "collapsed",
+      "conditions": {
+        "hardware": "Apple M1",
+        "memoryGiB": 8,
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "dtype": "float32",
+        "n": 1000000,
+        "q": 65536,
+        "k": 16,
+        "repetitions": 3,
+        "statistic": "median-of-synchronized-query-samples",
+        "querySource": "all coincident with all references",
+        "inputResidence": "preloaded-mps",
+        "mpsFallback": false,
+        "mpsFastMath": false,
+        "shaderCompilationIncluded": false,
+        "hostToDeviceTransferIncluded": false,
+        "measurementDateUtc": "2026-10-02T09:15:04.935129+00:00",
+        "sourceCommit": "ef07a9337b40065c18a6c950bda4240c789f31f1",
+        "sourcePath": "bench/results/spatial-v090-m1/knn-collapsed-1m-q65536-ef07a933.json",
+        "benchmarkScript": "bench/bench_spatial_dispatch.py"
+      },
+      "baselines": [
+        {
+          "id": "native-scan",
+          "name": "MPS native full scan",
+          "queryMs": 4753.23775
+        }
+      ],
+      "ours": {
+        "id": "bvh",
+        "name": "MPS opt-in BVH",
+        "queryMs": 6038.435625
+      },
+      "auto": {
+        "selectedBackend": "scan",
+        "queryMs": 4807.050625
+      },
+      "parity": {
+        "mismatchedIndexSlots": 0,
+        "maxAbsoluteDistanceError": 0.0
+      }
+    },
+    {
+      "id": "m1-spatial-radius-uniform-1m-q65536",
+      "status": "measured",
+      "scope": "unreleased-public-source",
+      "operation": "radius",
+      "distribution": "uniform",
+      "conditions": {
+        "hardware": "Apple M1",
+        "memoryGiB": 8,
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "dtype": "float32",
+        "n": 1000000,
+        "q": 65536,
+        "k": 16,
+        "repetitions": 3,
+        "statistic": "median-of-synchronized-query-samples",
+        "querySource": "independent",
+        "inputResidence": "preloaded-mps",
+        "mpsFallback": false,
+        "mpsFastMath": false,
+        "shaderCompilationIncluded": false,
+        "hostToDeviceTransferIncluded": false,
+        "measurementDateUtc": "2026-10-02T09:18:45.534554+00:00",
+        "sourceCommit": "ef07a9337b40065c18a6c950bda4240c789f31f1",
+        "sourcePath": "bench/results/spatial-v090-m1/radius-uniform-1m-q65536-ef07a933.json",
+        "benchmarkScript": "bench/bench_spatial_radius_dispatch.py",
+        "radius": 12.0
+      },
+      "baselines": [
+        {
+          "id": "native-scan",
+          "name": "MPS native full scan",
+          "queryMs": 11461.166042
+        }
+      ],
+      "ours": {
+        "id": "bvh",
+        "name": "MPS opt-in BVH",
+        "queryMs": 159.030917
+      },
+      "auto": {
+        "selectedBackend": "scan",
+        "queryMs": 11461.242042
+      },
+      "parity": {
+        "mismatchedIndexSlots": 0,
+        "mismatchedSquaredDistanceBits": 0,
+        "originalIndexOrderViolations": 0
+      }
+    },
+    {
+      "id": "m1-spatial-radius-cluster-sparse-1m-q65536",
+      "status": "measured",
+      "scope": "unreleased-public-source",
+      "operation": "radius",
+      "distribution": "cluster-sparse",
+      "conditions": {
+        "hardware": "Apple M1",
+        "memoryGiB": 8,
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "dtype": "float32",
+        "n": 1000000,
+        "q": 65536,
+        "k": 16,
+        "repetitions": 3,
+        "statistic": "median-of-synchronized-query-samples",
+        "querySource": "independent",
+        "inputResidence": "preloaded-mps",
+        "mpsFallback": false,
+        "mpsFastMath": false,
+        "shaderCompilationIncluded": false,
+        "hostToDeviceTransferIncluded": false,
+        "measurementDateUtc": "2026-10-02T09:19:39.683792+00:00",
+        "sourceCommit": "ef07a9337b40065c18a6c950bda4240c789f31f1",
+        "sourcePath": "bench/results/spatial-v090-m1/radius-cluster-sparse-1m-q65536-ef07a933.json",
+        "benchmarkScript": "bench/bench_spatial_radius_dispatch.py",
+        "radius": 0.029999999329447746
+      },
+      "baselines": [
+        {
+          "id": "native-scan",
+          "name": "MPS native full scan",
+          "queryMs": 6595.0145
+        }
+      ],
+      "ours": {
+        "id": "bvh",
+        "name": "MPS opt-in BVH",
+        "queryMs": 204.420458
+      },
+      "auto": {
+        "selectedBackend": "scan",
+        "queryMs": 6594.604541
+      },
+      "parity": {
+        "mismatchedIndexSlots": 0,
+        "mismatchedSquaredDistanceBits": 0,
+        "originalIndexOrderViolations": 0
+      }
+    },
+    {
+      "id": "m1-spatial-radius-collapsed-1m-q65536",
+      "status": "measured",
+      "scope": "unreleased-public-source",
+      "operation": "radius",
+      "distribution": "collapsed",
+      "conditions": {
+        "hardware": "Apple M1",
+        "memoryGiB": 8,
+        "macos": "26.5.2",
+        "pytorch": "2.14.1",
+        "dtype": "float32",
+        "n": 1000000,
+        "q": 65536,
+        "k": 16,
+        "repetitions": 3,
+        "statistic": "median-of-synchronized-query-samples",
+        "querySource": "first half coincident, second half displaced +1 on x",
+        "inputResidence": "preloaded-mps",
+        "mpsFallback": false,
+        "mpsFastMath": false,
+        "shaderCompilationIncluded": false,
+        "hostToDeviceTransferIncluded": false,
+        "measurementDateUtc": "2026-10-02T09:20:25.125710+00:00",
+        "sourceCommit": "ef07a9337b40065c18a6c950bda4240c789f31f1",
+        "sourcePath": "bench/results/spatial-v090-m1/radius-collapsed-1m-q65536-ef07a933.json",
+        "benchmarkScript": "bench/bench_spatial_radius_dispatch.py",
+        "radius": 0.5
+      },
+      "baselines": [
+        {
+          "id": "native-scan",
+          "name": "MPS native full scan",
+          "queryMs": 5736.899375
+        }
+      ],
+      "ours": {
+        "id": "bvh",
+        "name": "MPS opt-in BVH",
+        "queryMs": 2.367292
+      },
+      "auto": {
+        "selectedBackend": "scan",
+        "queryMs": 5734.344125
+      },
+      "parity": {
+        "mismatchedIndexSlots": 0,
+        "mismatchedSquaredDistanceBits": 0,
+        "originalIndexOrderViolations": 0
+      }
+    }
+  ],
+  "verification": {
+    "testRuns": [
+      {
+        "id": "safe",
+        "status": "measured",
+        "hardware": "Apple M5 Pro",
+        "pytorch": "2.14.1",
+        "passed": 515,
+        "skipped": 41,
+        "xfailed": 1,
+        "mpsFallback": false,
+        "mpsFastMath": false,
+        "sourceCommit": "62fcc0f295e127be47a475fbc122d4de686b4c58",
+        "logPath": "docs/evidence/spatial-v090/pytest-safe-m5pro.log"
+      },
+      {
+        "id": "fast",
+        "status": "measured",
+        "hardware": "Apple M5 Pro",
+        "pytorch": "2.14.1",
+        "passed": 488,
+        "skipped": 68,
+        "xfailed": 1,
+        "mpsFallback": false,
+        "mpsFastMath": true,
+        "sourceCommit": "62fcc0f295e127be47a475fbc122d4de686b4c58",
+        "logPath": "docs/evidence/spatial-v090/pytest-fast-m5pro.log"
+      }
+    ],
+    "ci": {
+      "status": "measured",
+      "passed": 7,
+      "total": 7,
+      "headCommit": "ef07a9337b40065c18a6c950bda4240c789f31f1",
+      "recordedAtUtc": "2026-10-02T02:34:16+00:00",
+      "pullRequest": 55,
+      "sourceUrl": "https://github.com/gamzerA/mps-pointops/pull/55/checks"
+    }
+  },
+  "support": [
+    {
+      "id": "m5pro-parity",
+      "status": "measured",
+      "hardware": "Apple M5 Pro",
+      "scope": "documented-fixtures"
+    },
+    {
+      "id": "m1-8gb-spatial",
+      "status": "measured",
+      "hardware": "Apple M1",
+      "memoryGiB": 8,
+      "scope": "six 1M-point source fixtures; Safe Math; Q=65536"
+    },
+    {
+      "id": "physical-gpu-peak",
+      "status": "pending"
+    },
+    {
+      "id": "spatial-index-pypi-080",
+      "status": "unsupported"
+    }
+  ],
+  "memoryEvidence": {
+    "hardware": "Apple M1",
+    "scope": "unreleased-public-source",
+    "sourceCommit": "ef07a9337b40065c18a6c950bda4240c789f31f1",
+    "sourcePath": "bench/results/spatial-v090-m1/memory-bvh-serial-uniform-1m-q65536-ef07a933.json",
+    "n": 1000000,
+    "q": 65536,
+    "allocatorTensorPeakBytes": 62604800,
+    "sampledDriverHighBytes": 1086160896,
+    "physicalGpuPeakStatus": "pending"
+  }
+}
