@@ -145,8 +145,10 @@ rejection; non-sorted input, batch isolation, exact kernel-offset pair order,
 dilation, padding, stride, empty input, and invalid parameters. For several
 3D kernels, an independently built dense occupancy convolution checks the
 active output set, and a dense feature convolution checks all rulebook
-gather/weight/reduction values. Direct `spconv` runtime parity has **not** been
-run because it is not installed in this environment. The Metal suite compares
+gather/weight/reduction values. This local environment did not have `spconv`;
+a later [bounded Windows CUDA toy probe](verification/spconv-toy-rtx2080.md)
+compared the private CPU reference with `spconv` 2.3.8 on three fixed fixtures.
+The Metal suite compares
 small batched, unsorted, dilated, biased, empty, and noncontiguous cases with
 dense PyTorch Conv3d at active output coordinates and compares first-order
 feature, weight, and bias gradients for batched, dilated, empty, sliced-view,
@@ -165,8 +167,10 @@ forward/backward prototypes, not performance or upstream `spconv` parity.
 
 ## Remaining gates before any compatibility claim
 
-1. Compare coordinates, feature values, and gradients against pinned spconv
-   2.x CPU and CUDA runs, including its output-order mapping and weight layout.
+1. Extend the fixed Windows `spconv` 2.3.8 CUDA probe to broader coordinates,
+   algorithm choices, dtypes, and full models. The toy probe compared complete
+   coordinate sets, values, first-order gradients, and its installed weight
+   layout; it does not cover the full compatibility contract.
 2. Specify duplicate-input handling, empty outputs, missing cells, and
    `indice_key` reuse against upstream behavior instead of assuming parity.
 3. Replace the quadratic GPU prototype with a scalable validated Metal
