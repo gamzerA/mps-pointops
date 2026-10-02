@@ -2,8 +2,8 @@
 
 Run this after the Strided/Inverse Metal PR and the private `spconv` adapter
 test suite have both been merged into a **clean, pinned checkout** on the M1
-Mac. Use the existing local Python 3.10+ environment with PyTorch 2.14.x and
-pytest; the runner installs nothing and does not use SSH or global settings.
+Mac. Use the existing local Python 3.10+ environment with PyTorch 2.7 or later
+and pytest; the runner installs nothing and does not use SSH or global settings.
 
 ```bash
 python tools/run_m1_sparse_validation.py \
@@ -20,8 +20,8 @@ only correctness checks. `--timeout-s` and `--bench-timeout-s` default to
 and outside the checkout so reruns cannot overwrite evidence.
 
 The runner checks the full 40-character HEAD commit, a clean working tree,
-Darwin/arm64 and an Apple M1-family CPU, PyTorch 2.14.x, and an available MPS
-backend. It runs the CPU sparse rulebook/reference, SubM GPU rulebook and
+Darwin/arm64 and an Apple M1-family CPU, PyTorch 2.7 or later, and an
+available MPS backend. It runs the CPU sparse rulebook/reference, SubM GPU rulebook and
 convolution, Strided/Inverse Metal, and adapter suites in separate Safe/Fast
 processes with `PYTORCH_ENABLE_MPS_FALLBACK=0`. A failed test, skip, missing
 suite, missing backend, timeout, or incomplete benchmark returns a nonzero

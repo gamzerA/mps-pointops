@@ -67,6 +67,12 @@ def validate_hardware(system: str, machine: str, cpu_brand: str) -> None:
         )
 
 
+def validate_torch_version(version: str) -> None:
+    match = re.match(r"^(\d+)\.(\d+)(?:\.|\+|$)", version)
+    if match is None or tuple(map(int, match.groups())) < (2, 7):
+        raise GateError(f"this checkout requires PyTorch 2.7 or later; found {version!r}")
+
+
 def parse_pytest_summary(output: str, returncode: int) -> int:
     """A zero exit alone is insufficient: even one skip invalidates the gate."""
     if returncode:
@@ -134,12 +140,11 @@ def _environment(root: Path, env: dict[str, str], output: Path,
     try:
         # Some torch builds print a one-line runtime warning before JSON.
         info = json.loads(result.stdout.strip().splitlines()[-1])
-    except json.JSONDecodeError as exc:
+    except (IndexError, json.JSONDecodeError) as exc:
         raise GateError("PyTorch/MPS environment probe did not emit JSON") from exc
     if not info.get("mps_available"):
         raise GateError("PyTorch MPS backend is unavailable")
-    if not str(info.get("torch", "")).split("+", 1)[0].startswith("2.14."):
-        raise GateError(f"this M1 run requires PyTorch 2.14.x; found {info.get('torch')}")
+    validate_torch_version(str(info.get("torch", "")))
     return info
 
 
@@ -195,7 +200,7 @@ def main(argv: list[str] | None = None) -> int:
             env = os.environ.copy()
             env["PYTORCH_ENABLE_MPS_FALLBACK"] = "0"
             env["PYTORCH_MPS_FAST_MATH"] = fast
-            environment_log = output / f"environment-{mode}.json"
+            environment_log = output / f"environment-{mode}.log"
             info = _environment(root, env, environment_log, min(args.timeout_s, 120))
             log = output / f"pytest-{mode}.log"
             result = _run_logged(
@@ -237,6 +242,10 @@ def main(argv: list[str] | None = None) -> int:
             )
         manifest["status"] = "passed"
         manifest["finished_utc"] = datetime.now(timezone.utc).isoformat()
+        manifest["artifacts_sha256"] = {
+            path.name: _sha256(path) for path in sorted(output.iterdir())
+            if path.is_file() and path.name != "manifest.json"
+        }
         (output / "manifest.json").write_text(
             json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
@@ -247,6 +256,10 @@ def main(argv: list[str] | None = None) -> int:
             manifest["status"] = "failed"
             manifest["failure"] = str(exc)
             manifest["finished_utc"] = datetime.now(timezone.utc).isoformat()
+            manifest["artifacts_sha256"] = {
+                path.name: _sha256(path) for path in sorted(output.iterdir())
+                if path.is_file() and path.name != "manifest.json"
+            }
             (output / "manifest.json").write_text(
                 json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
             )
