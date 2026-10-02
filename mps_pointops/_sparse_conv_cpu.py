@@ -7,7 +7,7 @@ spconv API or an MPS implementation.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import MutableMapping, Sequence
 
 import torch
@@ -30,6 +30,24 @@ MAX_CPU_CANDIDATES = 32768
 
 
 @dataclass(frozen=True)
+class SparseConvResult3D(SparseTensor3D):
+    """Sparse result carrying the saved coordinate lineage for inverse reuse.
+
+    Feature-only operations may call ``replace_features`` to preserve the
+    lineage. Reconstructing a plain ``SparseTensor3D`` does not do so and is
+    intentionally rejected by inverse, even if its coordinates happen to
+    match a cached output.
+    """
+
+    _lineage: tuple[tuple[str, object], ...] = field(default=(), repr=False, compare=False)
+
+    def replace_features(self, features: torch.Tensor) -> SparseConvResult3D:
+        return SparseConvResult3D(
+            self.indices, features, self.spatial_shape, self.batch_size, self._lineage
+        )
+
+
+@dataclass(frozen=True)
 class SparseConvIndiceData3D:
     """Snapshot of one ordinary sparse convolution's coordinate mapping.
 
@@ -49,14 +67,17 @@ class SparseConvIndiceData3D:
     padding: Triplet
     dilation: Triplet
     pairs: torch.Tensor
+    lineage_token: object = field(repr=False, compare=False)
+    parent_lineage: tuple[tuple[str, object], ...] = field(repr=False, compare=False)
 
 
 def _checked_sparse(sparse: SparseTensor3D) -> SparseTensor3D:
     if not isinstance(sparse, SparseTensor3D):
         raise TypeError("sparse must be a SparseTensor3D")
-    return validate_sparse_tensor_3d(
+    validate_sparse_tensor_3d(
         sparse.indices, sparse.features, sparse.spatial_shape, sparse.batch_size
     )
+    return sparse
 
 
 def _checked_weights(
@@ -153,7 +174,7 @@ def sparse_conv3d_forward_cpu(
     bias: torch.Tensor | None = None,
     indice_key: str | None = None,
     indice_cache: MutableMapping[str, SparseConvIndiceData3D] | None = None,
-) -> SparseTensor3D:
+) -> SparseConvResult3D:
     """Evaluate ordinary sparse cross-correlation and optionally save its pairs.
 
     Weights use PyTorch Conv3d layout ``[Cout,Cin,K0,K1,K2]``. A key may be
@@ -167,6 +188,9 @@ def sparse_conv3d_forward_cpu(
     _checked_key(indice_key, indice_cache, required=False)
     if indice_key is not None and indice_key in indice_cache:
         raise ValueError(f"indice_key {indice_key!r} already exists")
+    parent_lineage = sparse._lineage if isinstance(sparse, SparseConvResult3D) else ()
+    if indice_key is not None and any(key == indice_key for key, _ in parent_lineage):
+        raise ValueError(f"indice_key {indice_key!r} already exists in input lineage")
     steps = _triple("stride", stride, minimum=1)
     pads = _triple("padding", padding, minimum=0)
     dil = _triple("dilation", dilation, minimum=1)
@@ -179,7 +203,10 @@ def sparse_conv3d_forward_cpu(
         sparse.features, weights, bias, rulebook.pairs,
         rulebook.output_indices.shape[0], inverse=False,
     )
+    lineage: tuple[tuple[str, object], ...] = ()
     if indice_key is not None:
+        token = object()
+        lineage = parent_lineage + ((indice_key, token),)
         indice_cache[indice_key] = SparseConvIndiceData3D(
             input_indices=sparse.indices.clone(),
             output_indices=rulebook.output_indices.clone(),
@@ -191,10 +218,12 @@ def sparse_conv3d_forward_cpu(
             padding=pads,
             dilation=dil,
             pairs=rulebook.pairs.clone(),
+            lineage_token=token,
+            parent_lineage=parent_lineage,
         )
-    return SparseTensor3D(
+    return SparseConvResult3D(
         rulebook.output_indices, output_features,
-        rulebook.output_spatial_shape, sparse.batch_size,
+        rulebook.output_spatial_shape, sparse.batch_size, lineage,
     )
 
 
@@ -205,7 +234,7 @@ def sparse_inverse_conv3d_forward_cpu(
     indice_key: str,
     indice_cache: MutableMapping[str, SparseConvIndiceData3D],
     bias: torch.Tensor | None = None,
-) -> SparseTensor3D:
+) -> SparseConvResult3D:
     """Reverse a saved sparse-convolution mapping onto its original active set.
 
     This reuses *exactly* the saved pairs and original coordinate row order.
@@ -221,6 +250,18 @@ def sparse_inverse_conv3d_forward_cpu(
     saved = indice_cache[indice_key]
     if not isinstance(saved, SparseConvIndiceData3D):
         raise ValueError("indice_key does not reference an ordinary 3D convolution")
+    if (
+        not isinstance(sparse, SparseConvResult3D)
+        or len(sparse._lineage) != len(saved.parent_lineage) + 1
+        or sparse._lineage[-1][0] != indice_key
+        or sparse._lineage[-1][1] is not saved.lineage_token
+        or any(
+            key != saved_key or token is not saved_token
+            for (key, token), (saved_key, saved_token)
+            in zip(sparse._lineage[:-1], saved.parent_lineage)
+        )
+    ):
+        raise ValueError("inverse indice_key lineage does not match saved downsample result")
     if kernel != saved.kernel_size:
         raise ValueError("inverse kernel size differs from saved convolution")
     if sparse.batch_size != saved.batch_size:
@@ -233,7 +274,7 @@ def sparse_inverse_conv3d_forward_cpu(
         sparse.features, weights, bias, saved.pairs,
         saved.input_indices.shape[0], inverse=True,
     )
-    return SparseTensor3D(
+    return SparseConvResult3D(
         saved.input_indices.clone(), output_features,
-        saved.input_spatial_shape, saved.batch_size,
+        saved.input_spatial_shape, saved.batch_size, saved.parent_lineage,
     )

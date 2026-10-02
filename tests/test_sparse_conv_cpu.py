@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 import torch
 import torch.nn.functional as F
@@ -124,10 +126,7 @@ def test_inverse_restores_saved_rows_and_matches_dense_transpose_gradients(
     inverse_features = torch.randn_like(down.features)
     inverse_weights = torch.randn(2, 3, *kernel, dtype=torch.float64)
     inverse_bias = torch.randn(2, dtype=torch.float64)
-    inverse_input = SparseTensor3D(
-        down.indices.clone(), inverse_features.clone().requires_grad_(),
-        down.spatial_shape, down.batch_size,
-    )
+    inverse_input = down.replace_features(inverse_features.clone().requires_grad_())
     sparse_weights = inverse_weights.clone().requires_grad_()
     sparse_bias = inverse_bias.clone().requires_grad_()
     restored = sparse_inverse_conv3d_forward_cpu(
@@ -215,16 +214,12 @@ def test_inverse_rejects_missing_stale_or_mismatched_cache():
         sparse_conv3d_forward_cpu(
             sparse, weight, stride=(2, 1, 1), indice_key="down", indice_cache=cache,
         )
-    wrong_order = SparseTensor3D(
-        down.indices.flip(0), down.features.flip(0), down.spatial_shape, down.batch_size,
-    )
+    wrong_order = replace(down, indices=down.indices.flip(0), features=down.features.flip(0))
     with pytest.raises(ValueError, match="row order"):
         sparse_inverse_conv3d_forward_cpu(
             wrong_order, weight, indice_key="down", indice_cache=cache,
         )
-    wrong_shape = SparseTensor3D(
-        down.indices, down.features, (4, 1, 1), down.batch_size,
-    )
+    wrong_shape = replace(down, spatial_shape=(4, 1, 1))
     with pytest.raises(ValueError, match="spatial shape"):
         sparse_inverse_conv3d_forward_cpu(
             wrong_shape, weight, indice_key="down", indice_cache=cache,
@@ -257,7 +252,7 @@ def test_empty_pair_gradients_and_explicit_cpu_bounds():
     assert features.grad.shape == features.shape
 
     inverse_features = torch.empty((0, 3), dtype=torch.float64, requires_grad=True)
-    down = SparseTensor3D(down.indices, inverse_features, down.spatial_shape, down.batch_size)
+    down = down.replace_features(inverse_features)
     inverse_weight = torch.ones((2, 3, 1, 1, 1), dtype=torch.float64, requires_grad=True)
     restored = sparse_inverse_conv3d_forward_cpu(
         down, inverse_weight, indice_key="empty", indice_cache=cache,
@@ -297,3 +292,91 @@ def test_inverse_reuses_saved_pairs_without_reapplying_generation_candidate_limi
     )
     assert torch.equal(restored.indices, sparse.indices)
     assert restored.features[:, 0].tolist() == [125.0, 125.0, 125.0]
+
+
+def test_inverse_rejects_same_coordinates_from_unrelated_lineage():
+    weight = torch.ones((1, 1, 1, 1, 1), dtype=torch.float64)
+    original = _sparse(
+        [[0, 0, 0, 0], [0, 3, 0, 0]],
+        torch.ones((2, 1), dtype=torch.float64), shape=(5, 1, 1), batch_size=1,
+    )
+    cache = {}
+    down = sparse_conv3d_forward_cpu(
+        original, weight, stride=(2, 1, 1),
+        indice_key="down", indice_cache=cache,
+    )
+    other_original = _sparse(
+        [[0, 0, 0, 0], [0, 1, 0, 0]],
+        torch.full((2, 1), 2.0, dtype=torch.float64),
+        shape=(5, 1, 1), batch_size=1,
+    )
+    other_cache = {}
+    other_down = sparse_conv3d_forward_cpu(
+        other_original, weight, stride=(2, 1, 1),
+        indice_key="down", indice_cache=other_cache,
+    )
+    assert torch.equal(down.indices, other_down.indices)
+    assert down.spatial_shape == other_down.spatial_shape
+    with pytest.raises(ValueError, match="lineage"):
+        sparse_inverse_conv3d_forward_cpu(
+            other_down, weight, indice_key="down", indice_cache=cache,
+        )
+    copied_without_lineage = SparseTensor3D(
+        down.indices.clone(), down.features.clone(), down.spatial_shape, down.batch_size,
+    )
+    with pytest.raises(ValueError, match="lineage"):
+        sparse_inverse_conv3d_forward_cpu(
+            copied_without_lineage, weight, indice_key="down", indice_cache=cache,
+        )
+    replaced = down.replace_features(torch.full_like(down.features, 5.0))
+    restored = sparse_inverse_conv3d_forward_cpu(
+        replaced, weight, indice_key="down", indice_cache=cache,
+    )
+    assert torch.equal(restored.indices, original.indices)
+
+
+def test_nested_keys_require_inverse_in_lineage_order():
+    weight = torch.ones((1, 1, 1, 1, 1), dtype=torch.float64)
+    original = _sparse(
+        [[0, 4, 0, 0], [0, 0, 0, 0], [0, 2, 0, 0]],
+        torch.ones((3, 1), dtype=torch.float64), shape=(5, 1, 1), batch_size=1,
+    )
+    cache = {}
+    first = sparse_conv3d_forward_cpu(
+        original, weight, stride=(2, 1, 1), indice_key="first", indice_cache=cache,
+    )
+    second = sparse_conv3d_forward_cpu(
+        first, weight, stride=(2, 1, 1), indice_key="second", indice_cache=cache,
+    )
+    with pytest.raises(ValueError, match="lineage"):
+        sparse_inverse_conv3d_forward_cpu(
+            second, weight, indice_key="first", indice_cache=cache,
+        )
+    first_restored = sparse_inverse_conv3d_forward_cpu(
+        second, weight, indice_key="second", indice_cache=cache,
+    )
+    assert torch.equal(first_restored.indices, first.indices)
+    original_restored = sparse_inverse_conv3d_forward_cpu(
+        first_restored, weight, indice_key="first", indice_cache=cache,
+    )
+    assert torch.equal(original_restored.indices, original.indices)
+    # A geometry-changing operation without a key severs saved lineage, even
+    # when a 1x1 kernel happens to leave the coordinate rows unchanged.
+    unkeyed = sparse_conv3d_forward_cpu(first, weight)
+    assert torch.equal(unkeyed.indices, first.indices)
+    with pytest.raises(ValueError, match="lineage"):
+        sparse_inverse_conv3d_forward_cpu(
+            unkeyed, weight, indice_key="first", indice_cache=cache,
+        )
+
+
+def test_cpu_forward_reports_out_of_range_int32_output_coordinate():
+    sparse = _sparse(
+        [[0, 0, 0, 0]], torch.ones((1, 1), dtype=torch.float64),
+        shape=(1, 1, 1), batch_size=1,
+    )
+    weight = torch.ones((1, 1, 1, 1, 1), dtype=torch.float64)
+    with pytest.raises(ValueError, match="output coordinate exceeds int32"):
+        sparse_conv3d_forward_cpu(
+            sparse, weight, padding=(2**31, 0, 0)
+        )

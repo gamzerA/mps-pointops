@@ -178,6 +178,19 @@ def test_regular_output_is_independent_of_input_row_order():
     assert by_coordinate(first, a) == by_coordinate(second, b)
 
 
+def test_regular_output_coordinate_checks_int32_before_tensor_conversion():
+    sparse = _sparse([[0, 0, 0, 0]], shape=(1, 1, 1))
+    maximum = 2**31 - 1
+    at_boundary = generate_sparse_conv_rulebook(
+        sparse, kernel_size=1, padding=(maximum, 0, 0)
+    )
+    assert at_boundary.output_indices.tolist() == [[0, maximum, 0, 0]]
+    with pytest.raises(ValueError, match="output coordinate exceeds int32"):
+        generate_sparse_conv_rulebook(
+            sparse, kernel_size=1, padding=(maximum + 1, 0, 0)
+        )
+
+
 def test_empty_input_and_parameter_rejection():
     sparse = _sparse([], shape=(4, 4, 4), batch_size=0)
     subm = generate_subm_rulebook(sparse, kernel_size=3)

@@ -22,11 +22,21 @@ input_position = output_position * stride - padding + offset * dilation
 and lexicographically sorted active outputs. With a nonempty `indice_key`, the
 caller must pass a mutable `indice_cache` mapping. Forward saves independent
 snapshots of the input and output coordinate rows, shapes, geometry, and
-`(offset, old_row, downsampled_row)` pairs. A duplicate key fails.
+`(offset, old_row, downsampled_row)` pairs. It also attaches a private lineage
+token to the returned `SparseConvResult3D`. A duplicate key fails. Active
+output coordinates above signed `int32` range fail with `ValueError` before
+tensor conversion, even when a very large padding value makes the dense
+spatial shape itself larger than `int32`.
 
 `sparse_inverse_conv3d_forward_cpu` requires that key and cache. Its input
 coordinate rows, row order, spatial shape, and batch size must match the saved
-forward output; its kernel shape must match the saved kernel. It reverses each
+forward output; its kernel shape and lineage token must match the saved
+forward operation. A different sparse tensor with identical coordinates is
+rejected. Feature-only work can call `result.replace_features(new_features)`
+to retain the lineage; constructing a plain `SparseTensor3D` drops it.
+Nested keyed downsampling must be inversed in last-in-first-out order.
+An ordinary convolution without an `indice_key` clears saved lineage because
+it changes coordinate geometry without a reusable mapping. Inverse reverses each
 saved pair's row direction without changing its offset and writes output in
 the **original input row order**, including original points that had no
 forward pair. Those unmatched points receive bias alone. A missing or stale
@@ -50,14 +60,15 @@ With the project Python environment on 2026-10-02:
 python -m pytest -q tests/test_sparse_conv_cpu.py tests/test_sparse_rulebook.py
 ```
 
-The combined check passed **29 tests**. New tests compare ordinary stride
+The combined check passed **33 tests**. New tests compare ordinary stride
 output coordinates and values with dense occupancy and `torch.nn.functional.conv3d`
 across varied kernels, padding, and dilation. They compare first-order feature,
 weight, and bias gradients with dense PyTorch. Inverse tests use the saved
 mapping, compare restored values and gradients with `conv_transpose3d` sampled
 *only at the original active coordinates*, check an original point absent
 from the transposed active set, and reject missing, duplicate, stale, and
-mismatched keys. The dense transpose is a numerical reference at selected
+mismatched keys and lineage, nested key order, and signed `int32` output
+boundaries. The dense transpose is a numerical reference at selected
 positions; it is not the inverse coordinate-generation algorithm.
 
 ## Gaps before spconv compatibility or a release claim
