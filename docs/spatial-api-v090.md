@@ -68,8 +68,9 @@ checks pass; and no Morton cell contains at least 5% of a deterministic
 domain checks, and key validation also synchronize the host. It is a speed
 heuristic that rejects the measured all-coincident regression, **not** a proof
 that the selected path is faster for every distribution. On M1 or any
-unmeasured chip, Fast
-Math, other sizes/K, and every Ball Query call, `auto` retains GPU full scan.
+unmeasured chip, Fast Math, other sizes/K, and every Ball Query call, `auto`
+retains GPU full scan. The [physical M1 study](spatial-m1-v090.md) measured
+BVH and scan explicitly but did not establish a general automatic policy.
 Use `backend="bvh"` to evaluate the hierarchy deliberately. For `Q<=256`,
 the BVH kNN method uses the tested split-microtree query unless
 `parallel_microtrees=False` is passed.
@@ -95,6 +96,8 @@ edges, float16, or feature-space `D>3` through the BVH. Those callers keep
 their established kernels and numerical contracts. In particular, flat
 `radius` uses a different radius-square rounding rule. The [allocator memory
 study](spatial-memory-v090.md) reports PyTorch tensor peaks, while a total
-GPU physical-memory peak still requires an Instruments trace. M1 is
-temporarily unavailable, so neither cross-chip automatic routing nor v0.9/
-v1.0 release is justified by this M5-only study.
+GPU physical-memory peak still requires an Instruments trace. M1 Safe-Math
+correctness and selected performance fixtures have since been measured; the
+[large-radius M5 Pro counterexample](spatial-radius-dispatch-v090.md#large-radius-dispatch-counterexample)
+shows why Ball Query cannot automatically choose BVH from `N`, `Q`, and `K`
+alone. Those measurements do not close the v0.9/v1.0 release gates.
