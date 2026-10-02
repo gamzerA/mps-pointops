@@ -4,11 +4,15 @@ on:
   pull_request:
     paths:
       - website/**
+      - site-docs/**
+      - mkdocs.yml
       - .github/workflows/explainer-pages.yml
   push:
     branches: [main]
     paths:
       - website/**
+      - site-docs/**
+      - mkdocs.yml
       - .github/workflows/explainer-pages.yml
   workflow_dispatch:
 
@@ -30,6 +34,9 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
       - name: Verify explainer data and interactions
         env:
           MPS_POINTOPS_SOURCE_ROOT: ${{ github.workspace }}
@@ -40,6 +47,10 @@ jobs:
           cp website/index.html "$RUNNER_TEMP/explainer/"
           cp -R website/assets website/data website/evidence website/src "$RUNNER_TEMP/explainer/"
           find "$RUNNER_TEMP/explainer/src" -name '*.test.js' -delete
+      - name: Build API reference under /reference/
+        run: |
+          python -m pip install 'mkdocs==1.6.1'
+          python -m mkdocs build --strict --site-dir "$RUNNER_TEMP/explainer/reference"
       - name: Upload GitHub Pages artifact
         if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v4

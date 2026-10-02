@@ -1,0 +1,24 @@
+site_name: mps-pointops reference
+site_description: Versioned API, numerical contracts, and measured support scope
+site_url: https://gamzerA.github.io/mps-pointops/reference/
+repo_url: https://github.com/gamzerA/mps-pointops
+repo_name: gamzerA/mps-pointops
+edit_uri: edit/main/site-docs/
+docs_dir: site-docs
+site_dir: site-reference
+theme:
+  name: mkdocs
+  highlightjs: false
+nav:
+  - Overview: index.md
+  - API: api.md
+  - Numerical contracts: numerical.md
+  - Support matrix: support.md
+  - Benchmarks and evidence: evidence.md
+  - Migration and release scope: migration.md
+markdown_extensions:
+  - tables
+  - toc:
+      permalink: true
+extra_css:
+  - assets/reference.css

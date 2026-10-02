@@ -23,6 +23,7 @@ Compatibility stand-ins cover supported `pointnet2_ops`, `knn_cuda`, and
 </p>
 
 [Interactive explainer](https://gamzerA.github.io/mps-pointops/) ·
+[API reference](https://gamzerA.github.io/mps-pointops/reference/) ·
 [Quick start](#quick-start) · [Results](#benchmark) ·
 [Equations](#the-operators-in-equations) · [Compatibility](#compatibility) ·
 [Numerical contract](docs/ball-query-math.md) · [Citation](#citation)

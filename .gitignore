@@ -3,4 +3,5 @@ __pycache__/
 *.egg-info/
 build/
 dist/
+site-reference/
 .DS_Store
