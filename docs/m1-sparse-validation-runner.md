@@ -27,6 +27,9 @@ processes with `PYTORCH_ENABLE_MPS_FALLBACK=0`. A failed test, skip, missing
 suite, missing backend, timeout, or incomplete benchmark returns a nonzero
 exit status. It writes raw pytest logs, environment summaries, relative-path
 source SHA-256 values, optional benchmark JSON/logs, and a manifest with the
-source commit and file hashes. The M1 hardware check identifies the chip
+source commit and file hashes. It rechecks the clean commit and source hashes
+after both modes complete. Older supported PyTorch versions may not expose an
+MPS device-name API; the manifest then records a null device name alongside
+the verified Apple M1 CPU brand. The M1 hardware check identifies the chip
 family; the operator running it confirms that the Mac is the intended physical
 device. No M1 result is claimed until this command succeeds on that machine.

@@ -127,9 +127,11 @@ def _environment(root: Path, env: dict[str, str], output: Path,
                  timeout_s: int) -> dict:
     probe = (
         "import json,torch; "
+        "mps=torch.backends.mps; available=mps.is_available(); "
+        "get_name=getattr(mps,'get_name',None); "
         "print(json.dumps({'torch':torch.__version__,"
-        "'mps_available':torch.backends.mps.is_available(),"
-        "'mps_device':torch.backends.mps.get_name() if torch.backends.mps.is_available() else None}))"
+        "'mps_available':available,"
+        "'mps_device':get_name() if available and callable(get_name) else None}))"
     )
     result = _run_logged(
         [sys.executable, "-c", probe], root=root, env=env,
@@ -240,6 +242,9 @@ def main(argv: list[str] | None = None) -> int:
             (output / "manifest.json").write_text(
                 json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
             )
+        verify_checkout(root, args.commit)
+        if _source_hashes(root) != manifest["source_sha256"]:
+            raise GateError("source files changed during M1 sparse validation")
         manifest["status"] = "passed"
         manifest["finished_utc"] = datetime.now(timezone.utc).isoformat()
         manifest["artifacts_sha256"] = {

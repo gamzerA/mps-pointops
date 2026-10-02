@@ -106,3 +106,46 @@ def test_failed_pytest_keeps_log_and_failed_manifest(tmp_path, monkeypatch):
     assert manifest["artifacts_sha256"]["pytest-safe.log"] == runner._sha256(
         output / "pytest-safe.log"
     )
+
+
+def test_source_change_after_both_modes_invalidates_result(tmp_path, monkeypatch):
+    output = tmp_path / "evidence"
+    calls = {"checkout": 0, "hashes": 0}
+
+    def checkout(*_args):
+        calls["checkout"] += 1
+
+    def hashes(*_args):
+        calls["hashes"] += 1
+        return {"fixture.py": "old" if calls["hashes"] == 1 else "changed"}
+
+    monkeypatch.setattr(runner, "verify_checkout", checkout)
+    monkeypatch.setattr(runner, "_source_hashes", hashes)
+    monkeypatch.setattr(runner, "validate_hardware", lambda *_: None)
+    monkeypatch.setattr(runner, "SUITES", ("tests/test_sparse_rulebook.py",))
+    def fake_environment(_root, _env, destination, _timeout):
+        destination.write_text("{}\n")
+        return {"torch": "2.7.0", "mps_device": None, "mps_available": True}
+
+    monkeypatch.setattr(runner, "_environment", fake_environment)
+
+    def fake_platform_command(command, **_kwargs):
+        if command[:2] == ["sysctl", "-n"]:
+            return SimpleNamespace(stdout="Apple M1\n")
+        if command[:2] == ["sw_vers", "-productVersion"]:
+            return SimpleNamespace(stdout="26.5.2\n")
+        raise AssertionError(command)
+
+    def fake_pytest(command, *, destination, **_kwargs):
+        destination.write_text("1 passed in 0.01s\n")
+        return SimpleNamespace(stdout="1 passed in 0.01s\n", returncode=0)
+
+    monkeypatch.setattr(runner.subprocess, "run", fake_platform_command)
+    monkeypatch.setattr(runner, "_run_logged", fake_pytest)
+    assert runner.main(["--commit", "0" * 40, "--output", str(output)]) == 1
+    manifest = json.loads((output / "manifest.json").read_text())
+    assert calls == {"checkout": 2, "hashes": 2}
+    assert manifest["status"] == "failed"
+    assert "source files changed" in manifest["failure"]
+    assert "pytest-safe.log" in manifest["artifacts_sha256"]
+    assert "pytest-fast.log" in manifest["artifacts_sha256"]
