@@ -1,0 +1,179 @@
+{
+  "source_commit": "98ba436537e7905fc45c666ea8a7cf7b1a3878fb",
+  "backend": "cuda",
+  "torch": "2.14.0+cu132",
+  "torch_cuda": "13.2",
+  "python": "3.11.16",
+  "platform": "Windows-10-10.0.19045-SP0",
+  "tolerances": {
+    "rtol": 0.0001,
+    "atol": 0.00001
+  },
+  "scope": "two tiny SubM fixtures plus one keyed stride/inverse chain on CUDA; SubM only on MPS; fixture construction only on CPU",
+  "cases": [
+    {
+      "fixture": "subm_unsorted_batched_boundary",
+      "indices": 7,
+      "pairs": 17,
+      "weight_layout": "KRSC",
+      "comparisons": [
+        {
+          "name": "forward",
+          "shape": [
+            7,
+            4
+          ],
+          "max_abs_error": 0
+        },
+        {
+          "name": "features_grad",
+          "shape": [
+            7,
+            2
+          ],
+          "max_abs_error": 0
+        },
+        {
+          "name": "weights_grad",
+          "shape": [
+            4,
+            2,
+            3,
+            3,
+            3
+          ],
+          "max_abs_error": 0
+        },
+        {
+          "name": "bias_grad",
+          "shape": [
+            4
+          ],
+          "max_abs_error": 0
+        }
+      ],
+      "status": "pass"
+    },
+    {
+      "fixture": "subm_dilated_isolated",
+      "indices": 4,
+      "pairs": 8,
+      "weight_layout": "KRSC",
+      "comparisons": [
+        {
+          "name": "forward",
+          "shape": [
+            4,
+            4
+          ],
+          "max_abs_error": 0
+        },
+        {
+          "name": "features_grad",
+          "shape": [
+            4,
+            2
+          ],
+          "max_abs_error": 0
+        },
+        {
+          "name": "weights_grad",
+          "shape": [
+            4,
+            2,
+            3,
+            1,
+            1
+          ],
+          "max_abs_error": 0
+        },
+        {
+          "name": "bias_grad",
+          "shape": [
+            4
+          ],
+          "max_abs_error": 0
+        }
+      ],
+      "status": "pass"
+    },
+    {
+      "fixture": "stride2_inverse_batched",
+      "input_indices": 8,
+      "down_indices": 21,
+      "inverse_indices": 8,
+      "down_weight_layout": "KRSC",
+      "inverse_weight_layout": "KRSC",
+      "comparisons": [
+        {
+          "name": "stride_forward",
+          "shape": [
+            21,
+            4
+          ],
+          "max_abs_error": 0
+        },
+        {
+          "name": "inverse_forward",
+          "shape": [
+            8,
+            2
+          ],
+          "max_abs_error": 0
+        },
+        {
+          "name": "features_grad",
+          "shape": [
+            8,
+            2
+          ],
+          "max_abs_error": 0
+        },
+        {
+          "name": "stride_weights_grad",
+          "shape": [
+            4,
+            2,
+            3,
+            3,
+            3
+          ],
+          "max_abs_error": 0
+        },
+        {
+          "name": "stride_bias_grad",
+          "shape": [
+            4
+          ],
+          "max_abs_error": 0
+        },
+        {
+          "name": "inverse_weights_grad",
+          "shape": [
+            2,
+            4,
+            3,
+            3,
+            3
+          ],
+          "max_abs_error": 0
+        },
+        {
+          "name": "inverse_bias_grad",
+          "shape": [
+            2
+          ],
+          "max_abs_error": 0
+        }
+      ],
+      "status": "pass"
+    }
+  ],
+  "failures": [],
+  "spconv": "2.3.8",
+  "gpu": "NVIDIA GeForce RTX 2080",
+  "gpu_total_bytes": 8589475840,
+  "cuda_memory_fraction_limit": 0.25,
+  "cuda_peak_allocated_bytes": 17056768,
+  "cuda_peak_reserved_bytes": 23068672
+}

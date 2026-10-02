@@ -74,9 +74,11 @@ positions; it is not the inverse coordinate-generation algorithm.
 
 ## Gaps before spconv compatibility or a release claim
 
-1. Run pinned spconv 2.x CPU and CUDA oracle comparisons for exact coordinate
-   membership and ordering, values, first-order gradients, and actual weight
-   layout conversions. spconv is not installed in this local environment.
+1. Extend the [bounded Windows `spconv` 2.3.8 CUDA toy probe](verification/spconv-toy-rtx2080.md)
+   beyond one keyed stride/inverse chain to cover empty outputs, alternate
+   algorithms, dtypes, and model-level reuse. That probe compared complete
+   coordinate membership, values, first-order gradients, and its installed
+   weight layout; `spconv` is not installed in this local environment.
 2. Implement and validate scalable Metal ordinary stride and inverse paths,
    including device-resident rulebook generation and backward. This module
    performs all coordinate work and feature arithmetic on CPU.

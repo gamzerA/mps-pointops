@@ -180,6 +180,8 @@ versus 128.186 ms and 4.737 ms for CPU rulebook construction and transfer.
 These private-case timings do not establish upstream `spconv` performance.
 Direct `spconv` runtime parity has **not** been run on this M5 Pro host because
 `spconv` is not installed here.
+A separate [bounded Windows CUDA toy probe](verification/spconv-toy-rtx2080.md)
+compared the private CPU reference with `spconv` 2.3.8 on three fixed fixtures.
 
 Before the sorted builder, the 1,024-row quadratic prototype was independently
 run on a physical Apple M1 (8 GiB, macOS 26.5.2, PyTorch 2.14.1) with MPS CPU
@@ -190,8 +192,10 @@ convolution wrapper or upstream `spconv` parity.
 
 ## Remaining gates before any compatibility claim
 
-1. Compare coordinates, feature values, and gradients against pinned spconv
-   2.x CPU and CUDA runs, including its output-order mapping and weight layout.
+1. Extend the fixed Windows `spconv` 2.3.8 CUDA probe to broader coordinates,
+   algorithm choices, dtypes, and full models. The toy probe compared complete
+   coordinate sets, values, first-order gradients, and its installed weight
+   layout; it does not cover the full compatibility contract.
 2. Specify duplicate-input handling, empty outputs, missing cells, and
    `indice_key` reuse against upstream behavior instead of assuming parity.
 3. Profile the integrated SubM path across dense and sparse large clouds and
