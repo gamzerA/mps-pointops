@@ -1,7 +1,7 @@
-# Reusable spatial search API (v0.9 development)
+# Reusable spatial search API (v1.0 experimental opt-in)
 
-`mps_pointops.SpatialIndex` is an **unreleased, opt-in** single-cloud API in
-the v0.9 development branch. The existing dense `knn` and `ball_query` and
+`mps_pointops.SpatialIndex` is an **experimental, opt-in** single-cloud API
+included in the bounded v1.0.0 release. The existing dense `knn` and `ball_query` and
 the flat/PyG adapters keep their signatures and default kernels. Building an
 index does not register a global replacement or move the input point cloud
 to CPU. Automatic kNN routing reads back at most 4,096 Morton keys (32 KiB)
@@ -95,9 +95,14 @@ This API does not route batched dense tensors, flat `torch_cluster`/PyG
 edges, float16, or feature-space `D>3` through the BVH. Those callers keep
 their established kernels and numerical contracts. In particular, flat
 `radius` uses a different radius-square rounding rule. The [allocator memory
-study](spatial-memory-v090.md) reports PyTorch tensor peaks, while a total
-GPU physical-memory peak still requires an Instruments trace. M1 Safe-Math
+study](spatial-memory-v090.md) reports PyTorch tensor peaks. The later
+[Instruments study](spatial-instruments-v090.md) separately records sampled
+Metal allocations, process footprint, and query-level GPU Active intervals;
+these do not establish an exact total physical GPU-memory peak or shader
+occupancy. M1 Safe-Math
 correctness and selected performance fixtures have since been measured; the
 [large-radius M5 Pro counterexample](spatial-radius-dispatch-v090.md#large-radius-dispatch-counterexample)
 shows why Ball Query cannot automatically choose BVH from `N`, `Q`, and `K`
-alone. Those measurements do not close the v0.9/v1.0 release gates.
+alone. Those measurements do not establish a universal BVH speedup or the
+full spatial milestone proposed before v1.0.0. The documented bounded API
+is released without claiming that broader milestone complete.

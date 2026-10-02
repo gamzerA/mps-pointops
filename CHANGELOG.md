@@ -1,51 +1,72 @@
 # Changelog
 
-## Unreleased
+## 1.0.0 — 2026-10-02
 
-- Add an opt-in, reusable single-cloud `SpatialIndex` with explicit Metal
-  full-scan/BVH selection. Existing dense and flat entry points keep their
-  signatures and default kernels. Automatic BVH routing is restricted to a
-  measured M5 Pro Safe Math kNN window and a sampled hot-cell guard; other
-  inputs retain the existing scan path.
-- Extend the private two-level Morton BVH to PyTorch3D-style first-K Ball
-  Query. The bounded MPS float32 path preserves original-index order, strict
-  radius comparison, `(0,-1)` padding, and first-order coordinate gradients
-  through the public index facade. Adversarial M5 Pro tests compare full
-  indices and selected squared-distance bits to the existing dense kernel.
-- Record an [M5 Pro radius crossover sweep](docs/spatial-radius-dispatch-v090.md)
-  on 1M references and 4,096 independent queries. At radius 12, the opt-in
-  BVH query median was 6.649 ms versus 170.983 ms for scan; at radius 1,024,
-  scan was 0.186 ms versus 14.927 ms for BVH. The existing automatic radius
-  path remains scan because a validated dispatch rule has not been selected.
-- Record stage-separated PyTorch MPS allocator peaks and sampled driver
-  allocation in a [source-pinned memory study](docs/spatial-memory-v090.md).
-  A [physical M1 spatial study](docs/spatial-m1-v090.md) now records bounded
-  correctness and timing fixtures. A total GPU physical-memory peak still
-  needs an Instruments trace, and these changes do not constitute a v0.9 or
-  v1.0 release.
+This release freezes the documented, tested **public API subset**. The
+previously proposed v0.9.0 spatial/Chamfer and v0.10.0 sparse milestones were
+planning targets; neither version was tagged. Their incomplete items remain
+explicitly experimental or private in this combined release. This is not a
+claim of complete PyTorch3D, PyG, Pointcept, or `spconv` compatibility.
+
+### Public spatial and geometry paths
+
+- Add opt-in, single-cloud [`SpatialIndex`](docs/spatial-api-v090.md) with
+  explicit Metal full scan or two-level Morton BVH. Existing dense and flat
+  calls keep their signatures and default kernels. Automatic BVH selection is
+  limited to the measured M5 Pro Safe Math kNN window and a sampled hot-cell
+  guard; other inputs retain the scan path. The explicit BVH is a bounded
+  experimental backend within the public facade.
+- Extend the BVH to first-K dense Ball Query. The bounded MPS float32 path
+  preserves original-reference order, strict radius comparison, `(0,-1)`
+  padding, and first-order coordinate gradients. Differential tests compare
+  full indices and selected squared-distance bits to the established dense
+  kernel; this does not route flat/PyG calls through the BVH.
+- Publish the [M5 Pro radius crossover](docs/spatial-radius-dispatch-v090.md),
+  [physical M1 spatial fixtures](docs/spatial-m1-v090.md), and
+  [stage-separated allocator](docs/spatial-memory-v090.md) and
+  [Instruments studies](docs/spatial-instruments-v090.md). At 1M
+  references and 4,096 queries, the opt-in BVH query median was 6.649 ms
+  versus 170.983 ms for scan at radius 12; at radius 1,024, scan was
+  0.186 ms versus 14.927 ms for BVH. Automatic radius routing remains scan.
+  Their allocator peaks, sampled Metal allocations, process footprint, and
+  query-level GPU Active intervals have distinct meanings; none is an exact
+  total physical GPU-memory peak or a measured shader occupancy value.
 - Add experimental L1, normal-vector, `Pointclouds`, and variable-dimension
-  tensor Chamfer paths. A [physical M1 direct PyTorch3D comparison](docs/evidence/chamfer-v090-m1-upstream/README.md)
-  passed 732 cases per Safe/Fast mode for the stated subset; the
-  [variable-dimension M5 Pro matrix](docs/chamfer-variable-dim-prototype.md)
-  covers D=1, 2, and 4. Neither result establishes every PyTorch3D API
-  combination or a high-dimensional speedup.
-- Add a private [SubM sparse-convolution prototype](docs/sparse-conv-foundation-v0.10.md)
-  with first-order feature/weight/bias gradients and a bounded MPS-native
-  rulebook. At the earlier quadratic-builder source, M5 Pro and
-  [physical M1](docs/evidence/subm-m1-prototype-2026-10-02/README.md) each
-  passed 47 tests per Safe/Fast mode. Those M1 results do not validate the
-  later sorted builder.
-- Replace the private standalone SubM rulebook builder's quadratic coordinate
-  scan with stable MPS sorts and Metal binary search. The
-  [M5 Pro source-pinned record](docs/evidence/subm-scalable-m5pro-2026-10-02/README.md)
-  passed 51 tests per Safe/Fast mode, including 10,000-row inputs. The private
-  SubM convolution wrapper still builds its rulebook on CPU; sorted-builder
-  M1 validation, Metal strided/inverse paths, direct `spconv` CUDA parity, and
-  sparse-backbone validation remain open.
-- Add a private, bounded [CPU strided/inverse sparse-convolution reference](docs/sparse-conv-stride-inverse-cpu.md)
-  with saved `indice_key` mappings and first-order feature/weight/bias
-  gradients. Its 33 committed tests compare the supported CPU behavior with
-  dense PyTorch. This does not provide a Metal path or direct `spconv` parity.
+  tensor Chamfer paths. The [physical M1 direct PyTorch3D comparison](docs/evidence/chamfer-v090-m1-upstream/README.md)
+  passed 732 cases in each Safe/Fast mode for its stated finite float32
+  subset; the [M5 Pro dimension matrix](docs/chamfer-variable-dim-prototype.md)
+  covers D=1, 2, and 4. The v0.8 squared-L2 CI gate remains in place. Full
+  upstream argument/error-path coverage and high-dimensional speedup are not
+  established.
+
+### Private sparse research paths
+
+- Add a private [SubM convolution and sorted MPS rulebook](docs/sparse-conv-foundation-v0.10.md)
+  with first-order feature, weight, and bias gradients. The integrated GPU
+  rulebook is tested on M5 Pro at up to 10,000 active rows. The
+  [current-source physical M1 archive](docs/evidence/m1-sparse-2026-10-03/README.md)
+  records 92 passing tests with no skips in each Safe/Fast mode at clean
+  commit `6959fd59`, plus a synchronized 1,025/10,000-row SubM benchmark.
+  Its CPU/MPS rows compare rulebook construction; both perform convolution
+  feature arithmetic on MPS.
+- Add bounded private [CPU](docs/sparse-conv-stride-inverse-cpu.md) and
+  [Metal](docs/sparse-conv-stride-inverse-mps.md) ordinary strided and
+  saved-key inverse convolution with first-order feature/weight/bias
+  gradients. Strided/inverse coordinate rulebooks still build on CPU and
+  transfer to MPS; unsupported bounds raise instead of silently moving
+  feature arithmetic to CPU.
+- Record a three-fixture [direct `spconv` 2.3.8 CUDA toy comparison](docs/verification/spconv-toy-rtx2080.md)
+  against the private CPU reference on RTX 2080. Its fixed fixtures matched
+  coordinates, outputs, and first gradients; they do not prove general MPS
+  versus CUDA parity. A private
+  [OpenPCDet adapter](docs/sparse-openpcdet-local-integration.md) passed
+  fixed synthetic `VoxelBackBone8x` and `UNetV2` CPU–MPS forward and first
+  gradient comparisons on M5 Pro. It is neither a trained-model result nor a
+  public `spconv` package or import shim.
+
+The M1 archive includes raw Safe/Fast logs, a manifest, and 93 independently
+checked source hashes. Sparse transpose convolution, broader `spconv` CUDA
+parity, and full model compatibility remain future work.
 
 ## 0.8.0 — 2026-10-02
 

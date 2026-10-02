@@ -12,9 +12,11 @@
 
 **Point-cloud operators for PyTorch on Apple Silicon.** Native Metal kernels
 run farthest point sampling, k nearest neighbors, and Ball Query on MPS.
-Version 0.8.0 also provides experimental PointNet++ feature propagation,
-squared-L2 Chamfer distance, feature-space kNN, graph/grid interfaces, and a
-bounded opt-in Pointcept PTv1 compatibility subset.
+Version 1.0.0 freezes the documented, tested public API subset. It includes
+PointNet++ feature propagation, feature-space kNN, graph/grid interfaces, a
+bounded opt-in Pointcept PTv1 compatibility subset, and an experimental
+reusable spatial index. Chamfer has a tested squared-L2 subset and additional
+experimental metrics and inputs.
 Compatibility stand-ins cover supported `pointnet2_ops`, `knn_cuda`, and
 `torch_cluster` call sites; CPU tensors use PyTorch reference implementations.
 
@@ -42,24 +44,26 @@ kernels compile on first use.
 python -m pip install mps-pointops
 ```
 
-Version 0.8.0 includes dense SIMD Ball Query, the PyTorch3D-style Ball Query
-adapter, and the large-cloud FPS path for a single cloud. Experimental
-`three_nn`, `three_interpolate`, squared-L2 `chamfer_distance`, and
-feature-space kNN APIs are available; the graph and voxel interfaces have
-bounded input contracts. Compact voxel downsampling now includes an opt-in
-Metal CSR pooling prototype. The supported propagation and loss inputs and
-their differences from upstream are specified in the
+Version 1.0.0 includes dense SIMD Ball Query, the PyTorch3D-style Ball Query
+adapter, and the large-cloud FPS path for a single cloud. The available
+`three_nn`, `three_interpolate`, feature-space kNN, graph, voxel, and Chamfer
+interfaces have bounded input contracts. Compact voxel downsampling includes
+an experimental opt-in Metal CSR pooling prototype. The supported
+propagation and loss inputs and their differences from upstream are in the
 [PointNet++ propagation](docs/pointnet2-propagation.md) and
 [Chamfer](docs/chamfer-contract.md) contracts.
 The supported squared-L2 Chamfer subset is checked against a pinned official
 PyTorch3D CPU oracle in [dedicated MPS CI](docs/chamfer-upstream-ci.md), and an
 opt-in [Pointcept PTv1 Seg26 subset](docs/pointcept-ptv1-subset.md) covers one
 documented synthetic model path.
-This development branch also contains an [L1 Chamfer prototype](docs/chamfer-l1-v0.9-prototype.md),
-a [variable-dimension tensor Chamfer prototype](docs/chamfer-variable-dim-prototype.md),
-and an opt-in [reusable spatial index](docs/spatial-api-v090.md) with a
-two-level Morton BVH. These additions are not part of the published v0.8.0
-package; the linked Chamfer contract above describes that historical release.
+The [L1](docs/chamfer-l1-v0.9-prototype.md),
+[normal-vector and `Pointclouds`](docs/chamfer-normals-pointclouds-v0.9-prototype.md),
+and [variable-dimension](docs/chamfer-variable-dim-prototype.md) Chamfer paths
+remain experimental beyond the tested upstream subsets. The opt-in
+[reusable spatial index](docs/spatial-api-v090.md) exposes a bounded two-level
+Morton BVH; ordinary dense and flat calls retain their established kernels.
+Private sparse convolution modules and the local OpenPCDet adapter are not a
+public `spconv` replacement. See the [v1.0 release scope](site-docs/migration.md).
 Direct comparisons against the
 [original PointNet++ CUDA extension](docs/parity/pointnet2-upstream.md) and
 [PyTorch3D Chamfer](docs/chamfer-upstream-parity-0.5.0.md) record the tested
@@ -89,7 +93,7 @@ assert radius_idx.tolist() == [[[0, 1], [1, 2]]]
 print("MPS point ops OK")
 ```
 
-### Reusable spatial index (v0.9 development branch)
+### Reusable spatial index (experimental opt-in)
 
 The opt-in `SpatialIndex` borrows one `[N,3]` reference cloud and can reuse a
 Metal BVH across queries. Existing dense and flat calls retain their kernels.
@@ -114,8 +118,10 @@ single-cloud MPS float32, `N<=1M`, `K<=32` and a bounded finite coordinate
 domain. See the [API and dispatch contract](docs/spatial-api-v090.md) and
 the synchronized M5 Pro [kNN dispatch](docs/spatial-dispatch-v090.md),
 [Ball Query](docs/spatial-radius-dispatch-v090.md), and
-[allocator-memory](docs/spatial-memory-v090.md) studies. This branch has no
-v0.9 tag.
+[allocator-memory](docs/spatial-memory-v090.md) and
+[Instruments](docs/spatial-instruments-v090.md) studies. The proposed v0.9.0
+milestone was folded into this bounded v1.0.0 release; its unfinished research
+goals remain open.
 
 The PointNet++ and Chamfer operators introduced in v0.5.0 can be called
 directly:
@@ -1020,7 +1026,11 @@ original implementation.
       M5 Pro Safe/Fast forward and first-order backward compared with CPU
       after [one documented CUDA constructor substitution](docs/pointcept-ptv1-subset.md).
       Other Point Transformer models and training-mode convergence are open.
-- [ ] A sparse-convolution model (Phase 5)
+- [~] OpenPCDet `VoxelBackBone8x` and `UNetV2`, fixed synthetic 13-voxel
+      diagnostic fixture: private adapter CPU–MPS forward and first gradients
+      passed on M5 Pro with pinned upstream model source. No trained model,
+      official CUDA model comparison, or public `spconv` import replacement
+      is claimed ([scope and raw evidence](docs/sparse-openpcdet-local-integration.md)).
 
 ### Phase 1: Core precision and parity (0.4.0)
 
@@ -1160,16 +1170,17 @@ correctness and timing evidence without extending claims to M2–M4.
       not register PyG 2.8 `torch.ops.pyg.random_walk` for `Node2Vec` or
       establish CUDA-biased parity or a performance gain.
 
-### Phase 4: Geometry losses and large-scale search (target 0.8.0 to 0.9.0)
+### Phase 4: Geometry losses and large-scale search (bounded v1.0 paths)
 
-The proposed v0.9.0 spatial-search and Chamfer expansion gates, followed by
-v0.10.0 sparse convolution and a bounded v1.0.0 support contract, are tracked
-in the [v0.9–v1.0 acceptance plan](docs/milestones-v0.9-v1.0.md). Target
-versions do not indicate completed support.
+The proposed v0.9.0 spatial-search/Chamfer and v0.10.0 sparse milestones were
+planning targets, not published tags. This bounded v1.0.0 release includes
+their tested public subsets while keeping incomplete items experimental or
+private. Their original gates remain in the
+[v0.9–v1.0 acceptance plan](docs/milestones-v0.9-v1.0.md).
 
 - [~] Experimental bidirectional Chamfer distance: squared-L2 was introduced
-      in 0.5.0 (#18), and an L1 search/backward prototype is under
-      [v0.9 development](docs/chamfer-l1-v0.9-prototype.md). Metal returns
+      in 0.5.0 (#18), and an L1 search/backward path is included as a bounded
+      [experimental v1.0 scope](docs/chamfer-l1-v0.9-prototype.md). Metal returns
       nearest indices and distances; PyTorch's native `scatter_add_`
       accumulates both backward directions. Supported
       `lengths` mask padding in forward and backward, and point/batch
@@ -1240,16 +1251,25 @@ versions do not indicate completed support.
       (Sinkhorn). Specify its numerical contract separately from exact Earth
       Mover's Distance.
 
-### Phase 5: Sparse 3D and upstream convergence (target 0.10.0 to 1.0.0)
+### Phase 5: Sparse 3D and upstream convergence (private research paths)
 
-- [ ] Sparse convolution with an `spconv`-compatible interface, in order:
-      sparse tensor structure and rulebook, `SubMConv3d`, strided
-      `SparseConv3d`, then `SparseInverseConv3d` with indice-key reuse.
-      `SparseConvTranspose3d` is a separate operator. Done when a pinned
-      spconv CUDA oracle and one real model pass forward and backward under
-      the [v0.10 gate](docs/milestones-v0.9-v1.0.md).
+- [~] Private sparse tensor/rulebook, Metal `SubMConv3d`, ordinary strided
+      `SparseConv3d`, and saved-key `SparseInverseConv3d` prototypes with
+      bounded first-order gradients. SubM has an integrated sorted MPS
+      rulebook; strided/inverse still build coordinates on CPU. A pinned
+      `spconv` 2.3.8 CUDA probe passed three toy fixtures against the private
+      CPU reference, and the local OpenPCDet adapter passed a fixed synthetic
+      CPU–MPS forward/backward fixture. A clean-source
+      [physical M1 archive](docs/evidence/m1-sparse-2026-10-03/README.md)
+      passed 92 targeted tests in each math mode. There is no public `spconv` shim or
+      general CUDA model parity; `SparseConvTranspose3d` is separate and
+      unimplemented. See the [private sparse scope](docs/sparse-conv-foundation-v0.10.md),
+      [CUDA toy comparison](docs/verification/spconv-toy-rtx2080.md), and
+      [model fixture](docs/sparse-openpcdet-local-integration.md).
 - [ ] Pull requests upstream, following the Phase 2 discussions.
-- [ ] API freeze, versioning policy and 1.0.
+- [x] Freeze the documented, tested public API subset in v1.0.0. Private
+      sparse modules and experimental backends are outside that freeze; their
+      supported limits remain explicit in the reference documentation.
 
 ### Across all phases
 
@@ -1258,7 +1278,8 @@ versions do not indicate completed support.
   virtualized and too noisy for timing.
 - A documentation site with the API reference and per-operator contracts.
 - A stated policy for supported PyTorch and macOS versions.
-- One release per phase step, so development history stays continuous.
+- Every release records its exact scope and evidence. The untagged v0.9.0 and
+  v0.10.0 plans are combined in v1.0.0 without marking unfinished phases done.
 
 ## Contributing
 
@@ -1267,9 +1288,11 @@ local Safe/Fast Math tests, and the seven required CI checks for `main`.
 
 ## Citation
 
-For v0.8.0, cite its
-[version DOI (10.5281/zenodo.23092167)](https://doi.org/10.5281/zenodo.23092167)
-once the archive is public. For results using v0.7.0, cite its archived
+For v1.0.0, cite its reserved
+[version DOI (10.5281/zenodo.23107348)](https://doi.org/10.5281/zenodo.23107348)
+after the Zenodo archive is published. [CITATION.cff](CITATION.cff) records
+the same version and DOI. For results using v0.8.0, cite its archived
+[version DOI (10.5281/zenodo.23092167)](https://doi.org/10.5281/zenodo.23092167). For results using v0.7.0, cite its archived
 [version DOI (10.5281/zenodo.23087369)](https://doi.org/10.5281/zenodo.23087369).
 For results using v0.6.0, cite its archived
 [version DOI (10.5281/zenodo.23086417)](https://doi.org/10.5281/zenodo.23086417).

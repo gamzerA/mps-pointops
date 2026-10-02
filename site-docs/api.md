@@ -50,13 +50,18 @@ compared with tolerances. See the [voxel contract](https://github.com/gamzerA/mp
 
 `SpatialIndex(points, backend="auto")` borrows one `[N,3]` cloud and exposes
 `.knn(query, k)` and `.ball_query(query, radius, K)`. Its explicit BVH path is
-**unreleased research scope**, limited to MPS float32, `N<=1,000,000`,
+**experimental opt-in scope** in v1.0.0, limited to MPS float32, `N<=1,000,000`,
 `K<=32`, bounded finite coordinates, and Safe Math explicitly set before
 Python starts. Automatic routing uses the BVH only for a narrow measured M5
 Pro kNN case; other calls retain the scan path. Read the
 [spatial API contract](https://github.com/gamzerA/mps-pointops/blob/main/docs/spatial-api-v090.md).
 
-The sparse convolution rulebook and SubM modules are **private prototypes**.
-They are not exported as a public `spconv` replacement. Strided and inverse
-Metal convolution, transpose convolution, and model-level equivalence remain
-release gates. See [sparse convolution scope](https://github.com/gamzerA/mps-pointops/blob/main/docs/sparse-conv-foundation-v0.10.md).
+The sparse convolution rulebook, SubM, strided/inverse Metal, and local
+OpenPCDet adapter modules are **private prototypes**. They are not exported
+as a public `spconv` replacement. Strided/inverse coordinates still build on
+CPU; `SparseConvTranspose3d`, general `spconv` CUDA parity, and a trained
+model check remain open. The pinned Windows CUDA probe covers three toy
+fixtures against the private CPU reference, while the M5 Pro model check is
+a separate fixed synthetic CPU–MPS comparison. See the
+[sparse convolution scope](https://github.com/gamzerA/mps-pointops/blob/main/docs/sparse-conv-foundation-v0.10.md)
+and [model fixture](https://github.com/gamzerA/mps-pointops/blob/main/docs/sparse-openpcdet-local-integration.md).
