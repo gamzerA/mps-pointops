@@ -155,8 +155,11 @@ each separately launched Safe and Fast Math process on 2026-10-02. Of these,
 points), noncontiguous input, empty input, an `int32` coordinate boundary,
 post-call input mutation, explicit limits, and direct use of its CSR by the
 Metal forward shader.
-These tests establish bounded integer-order and forward/backward prototypes,
-not performance or upstream `spconv` parity.
+The same fixed source tree was independently run on a physical Apple M1
+(8 GiB, macOS 26.5.2, PyTorch 2.14.1) with MPS CPU fallback disabled. Safe
+and Fast each passed **47 tests**. The [raw M1 logs and source provenance](evidence/subm-m1-prototype-2026-10-02/README.md)
+are archived. These tests establish bounded integer-order and
+forward/backward prototypes, not performance or upstream `spconv` parity.
 
 ## Remaining gates before any compatibility claim
 
@@ -170,5 +173,5 @@ not performance or upstream `spconv` parity.
    rulebook path. Implement strided backward and separate inverse and
    transpose paths.
 4. Verify at least one pinned sparse 3D backbone end to end on supported
-   Apple Silicon hardware. This sparse prototype has not been checked on the
-   physical M1 yet.
+   Apple Silicon hardware. The physical M1 test above covers only small
+   operator fixtures, not a backbone or large-cloud workload.
