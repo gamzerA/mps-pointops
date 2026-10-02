@@ -8,6 +8,31 @@ those JSONs. It regenerates their exact fixtures, makes one private BVH
 radius call and one native Metal full-scan call per fixture, then records the
 overflow count, row indices, and output parity.
 
+## Physical M5 Pro result, 2026-10-03
+
+The complete [nine-case raw matrix](../bench/results/spatial-radius-overflow-m5pro-20261003/manifest.json)
+ran on Apple M5 Pro with macOS 26.5.2, PyTorch 2.14.1, Safe Math, and MPS
+CPU fallback disabled. It used clean diagnostic source commit
+`4bfcb9192c468f0928842a7332fa84bde465e29c`. The manifest pins the
+SHA-256 of each case JSON; each case pins the old performance JSON, fixture
+input arrays, current wrappers, and Metal shader sources. The archived JSONs
+were not changed.
+
+| Distribution | Q=4,096 | Q=8,192 | Q=65,536 |
+| --- | ---: | ---: | ---: |
+| Uniform | 0 / 4,096 | 0 / 8,192 | 0 / 65,536 |
+| Cluster–sparse | 0 / 4,096 | 0 / 8,192 | 0 / 65,536 |
+| Collapsed | 0 / 4,096 | 0 / 8,192 | 0 / 65,536 |
+
+The numerator is the count of `stats[:,4] == 1` stack-overflow full-scan
+fallback rows. Across 233,472 query rows, the observed count was zero. For
+every case, BVH and native scan int64 neighbor indices matched exactly,
+selected squared-distance float32 bits matched, output index order was valid,
+and neighbor row-count categories matched the old record. This confirms these
+fixed M5 inputs; it does not claim a measured M1 frequency or universal
+absence of overflow on arbitrary inputs. The source-level stack bound is a
+separate argument. This run has no latency or GPU occupancy measurement.
+
 Run from a clean checkout with the package dependencies installed. Safe Math
 and disabled MPS CPU fallback must be set **before** Python starts. Each
 fixture runs in its own child process with a 180-second default wall limit;

@@ -1,0 +1,62 @@
+{
+  "schema": "mps-pointops-spatial-radius-overflow-matrix-v1",
+  "matrix": "m5",
+  "status": "pass",
+  "expected_cases": 9,
+  "completed_cases": [
+    {
+      "case": "cluster-sparse-n1m-q4096-r0p03-safe",
+      "file": "cluster-sparse-n1m-q4096-r0p03-safe-overflow.json",
+      "sha256": "bab62a0a334cdb535adc505561b76906d480b7a51f5f9169af7c20b040abcde5",
+      "status": "pass"
+    },
+    {
+      "case": "collapsed-n1m-q4096-r0p5-safe",
+      "file": "collapsed-n1m-q4096-r0p5-safe-overflow.json",
+      "sha256": "3a287e602185d97e0df0a5e31008f586b04777228c3a58f157aae8b7d5408fcc",
+      "status": "pass"
+    },
+    {
+      "case": "uniform-n1m-q4096-r12-safe",
+      "file": "uniform-n1m-q4096-r12-safe-overflow.json",
+      "sha256": "630a8d202a187f68dbf060189cf8938c1a7fdc6d70ed5f511bdd2b87138d3385",
+      "status": "pass"
+    },
+    {
+      "case": "cluster-sparse-n1m-q8192-r0p03-safe",
+      "file": "cluster-sparse-n1m-q8192-r0p03-safe-overflow.json",
+      "sha256": "1fd7da6ef32fb109643f432d3164fa6b6ba1a829e6f1c6093ffd77ecf52bacfe",
+      "status": "pass"
+    },
+    {
+      "case": "collapsed-n1m-q8192-r0p5-safe",
+      "file": "collapsed-n1m-q8192-r0p5-safe-overflow.json",
+      "sha256": "899579c2f747e983f9fd64af501ab289510d8ff69e1af54d3dd6f0e7ef93b3e7",
+      "status": "pass"
+    },
+    {
+      "case": "uniform-n1m-q8192-r12-safe",
+      "file": "uniform-n1m-q8192-r12-safe-overflow.json",
+      "sha256": "dcd645c82e67a3c886c31c567ac92c2ee14c05b141da1487dd2325b79dc4b931",
+      "status": "pass"
+    },
+    {
+      "case": "cluster-sparse-n1m-q65536-r0p03-safe",
+      "file": "cluster-sparse-n1m-q65536-r0p03-safe-overflow.json",
+      "sha256": "6c1f828a59dd186fff44a7294e398706f08d049a156474b384802bc936468625",
+      "status": "pass"
+    },
+    {
+      "case": "collapsed-n1m-q65536-r0p5-safe",
+      "file": "collapsed-n1m-q65536-r0p5-safe-overflow.json",
+      "sha256": "6c90758d1fc82768b435114bf2c6637d31bbb67470f94644ee9d6dff7771fef3",
+      "status": "pass"
+    },
+    {
+      "case": "uniform-n1m-q65536-r12-safe",
+      "file": "uniform-n1m-q65536-r12-safe-overflow.json",
+      "sha256": "12015c384c9ea906ee7463f9324256f63003f5d9c8639382bf002dce36e977f3",
+      "status": "pass"
+    }
+  ]
+}
