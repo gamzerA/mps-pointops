@@ -53,6 +53,7 @@ const COPY = {
     parity: '동일 인덱스 슬롯 불일치',
     distanceParity: '거리 제곱 비트 불일치',
     orderParity: '입력 순서 위반',
+    stackFallback: 'BVH 스택 대체 처리 행',
     mathMode: 'MPS 수학 모드',
     fallback: 'MPS CPU fallback',
     safeMath: 'Safe math',
@@ -111,6 +112,7 @@ const COPY = {
     parity: 'Mismatched index slots',
     distanceParity: 'Squared-distance bit mismatches',
     orderParity: 'Input-order violations',
+    stackFallback: 'BVH stack fallback rows',
     mathMode: 'MPS math mode',
     fallback: 'MPS CPU fallback',
     safeMath: 'Safe math',
@@ -168,7 +170,8 @@ function optionText(record, language) {
   const condition = record.conditions;
   const operation = t.operation[record.operation] ?? record.operation;
   const distribution = t.distribution[record.distribution] ?? record.distribution;
-  return `${operation} · ${distribution} · N ${formatNumber(condition.n, language)} · Q ${formatNumber(condition.q, language)}`;
+  const radius = Number.isFinite(condition.radius) ? ` · r ${formatNumber(condition.radius, language)}` : '';
+  return `${operation} · ${distribution}${radius} · N ${formatNumber(condition.n, language)} · Q ${formatNumber(condition.q, language)}`;
 }
 
 function detailFact(list, label, value) {
@@ -207,6 +210,9 @@ function renderDetail(root, model, language) {
   }
   if (record.parity?.originalIndexOrderViolations !== undefined) {
     detailFact(list, t.orderParity, String(record.parity.originalIndexOrderViolations));
+  }
+  if (record.parity?.bvhStackFallbackRows !== undefined) {
+    detailFact(list, t.stackFallback, String(record.parity.bvhStackFallbackRows));
   }
   if (record.ours.buildMs !== undefined || record.baselines.some(item => item.buildMs !== undefined)) {
     const builds = [...record.baselines, record.ours].filter(item => item.buildMs !== undefined)
@@ -345,7 +351,9 @@ export function mountMeasurementsDashboard(root, data, { language: initialLangua
       button.setAttribute('aria-pressed', String(record.id === selectedId));
       const operation = t.operation[record.operation] ?? record.operation;
       const distribution = t.distribution[record.distribution] ?? record.distribution;
-      const title = element('strong', 'measurement-record-title', `${operation} · ${distribution}`);
+      const radius = Number.isFinite(record.conditions.radius)
+        ? ` · r ${formatNumber(record.conditions.radius, language)}` : '';
+      const title = element('strong', 'measurement-record-title', `${operation} · ${distribution}${radius}`);
       const counts = element('span', 'measurement-record-counts',
         `N ${formatNumber(record.conditions.n, language)} · Q ${formatNumber(record.conditions.q, language)}`);
       const scope = element('span', 'measurement-record-scope',

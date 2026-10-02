@@ -6,7 +6,7 @@ import { mountExecutionStory, mountPhaseStory } from './narratives.js?rev=202610
 import { mountCapabilityMap } from './capability-map.js';
 import { mountEcosystemPanels } from './ecosystem-panels.js?rev=20261002j';
 import { mountMethodsPanels } from './methods-panels.js?rev=20261002b';
-import { mountMeasurementsDashboard } from './measurements-dashboard.js?rev=20261002m1b';
+import { mountMeasurementsDashboard } from './measurements-dashboard.js?rev=20261002radius';
 import { applyPageCopy } from './page-copy.js?rev=20261002x';
 
 const $ = selector => document.querySelector(selector);
