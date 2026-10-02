@@ -1,9 +1,9 @@
-"""Experimental MPS construction of a bounded SubM sparse rulebook.
+"""Experimental MPS construction of a SubM sparse rulebook.
 
-This private prototype intentionally uses an O(K*N*N) integer lookup. It
-generates exact CPU-oracle pair order for prevalidated unique coordinates,
-without a CPU rulebook or a device-to-host count transfer. It is groundwork
-for a future scalable Metal hash/radix index, not a public ``spconv`` API.
+Four stable device sorts make a lexicographic index over the full int32
+coordinate tuple. Each Metal lookup then uses binary search, for
+O(N log N + K*N log N) work instead of a scan over all input rows. Pair
+compaction and the logical count remain on the MPS device.
 """
 
 from __future__ import annotations
@@ -21,8 +21,11 @@ from ._sparse_rulebook import _triple
 
 
 _GROUP_SIZE = 256
-_MAX_ROWS = 1024
-_MAX_SLOTS = 27 * _MAX_ROWS
+# The lookup and compaction kernels use a uint grid position. Leave one
+# position for output_ptr[N] when the kernel volume is one. Each slot also
+# needs several temporary/padded tensors, so the device allocator may reject
+# large requests well before this dispatch limit.
+_MAX_SLOTS = 2**32 - 2
 
 
 @dataclass(frozen=True)
@@ -59,7 +62,7 @@ def generate_subm_rulebook_mps(
     kernel_size: int | Sequence[int],
     dilation: int | Sequence[int] = 1,
 ) -> SubmRulebookMPS:
-    """Create a private, bounded SubM rulebook entirely on the MPS device.
+    """Create a private SubM rulebook entirely on the MPS device.
 
     Input must be unique, valid MPS int32 coordinates ``[N,4]`` with columns
     ``[batch, axis0, axis1, axis2]``. Device-side coordinate validation and
@@ -68,9 +71,10 @@ def generate_subm_rulebook_mps(
     this precondition. Input row order becomes output coordinate row order.
 
     Odd kernels and positive dilations follow ``generate_subm_rulebook``.
-    At most 1024 active rows and 27648 (kernel offset, output row) slots are
-    accepted; these are prototype limits, not hardware limits. Lookup work is
-    quadratic in the active row count, so this is not a scalable path.
+    The one-dimensional Metal dispatch supports at most 2**32-2
+    (kernel offset, output row) slots. Device memory can impose a lower
+    practical limit. Coordinates use all four signed int32 fields as the
+    search key; target coordinates outside int32 cannot match any input.
     """
     if not isinstance(indices, Tensor):
         raise TypeError("indices must be a torch.Tensor")
@@ -85,10 +89,8 @@ def generate_subm_rulebook_mps(
     rows = indices.shape[0]
     volume = kernel[0] * kernel[1] * kernel[2]
     slots = rows * volume
-    if rows > _MAX_ROWS or slots > _MAX_SLOTS:
-        raise ValueError(
-            f"bounded MPS rulebook supports at most {_MAX_ROWS} rows and {_MAX_SLOTS} slots"
-        )
+    if volume > _MAX_SLOTS or slots > _MAX_SLOTS:
+        raise ValueError(f"MPS rulebook exceeds the Metal 1-D dispatch limit of {_MAX_SLOTS} slots")
 
     device = indices.device
     # CPU oracle output_indices is a clone. Preserve the same snapshot even
@@ -106,10 +108,20 @@ def generate_subm_rulebook_mps(
             output_ptr, output_sources, output_offsets, kernel,
         )
 
+    # Stable sorts from the last coordinate field to the first produce a
+    # lexicographic row permutation. The input is a snapshot, and sorting
+    # only row IDs leaves both the output order and source row IDs unchanged.
+    sorted_rows = torch.arange(rows, dtype=torch.int64, device=device)
+    for axis in (3, 2, 1, 0):
+        axis_values = stable_indices.index_select(0, sorted_rows)[:, axis]
+        sorted_rows = sorted_rows.index_select(
+            0, torch.argsort(axis_values, stable=True)
+        )
+
     dense_sources = torch.empty((slots,), dtype=torch.int64, device=device)
     valid_offset = torch.empty((slots,), dtype=torch.int32, device=device)
     _library().subm_rulebook_lookup_i32(
-        stable_indices, dense_sources, valid_offset,
+        stable_indices, sorted_rows, dense_sources, valid_offset,
         rows, *kernel, *dil,
         threads=slots, group_size=min(slots, _GROUP_SIZE),
     )
