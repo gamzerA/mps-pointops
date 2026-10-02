@@ -95,8 +95,11 @@ return structure, error path, and first-order derivative is tested. Otherwise
 label the exact supported subset. Safe and Fast Math run in separate processes
 with MPS CPU fallback disabled.
 The L1 prototype has passed the [direct pinned-upstream parity matrix](chamfer-l1-v0.9-prototype.md)
-on CPU and M5 Pro Safe/Fast. Normals and `Pointclouds` remain open, so the
-full-compatibility gate remains open.
+on CPU and M5 Pro Safe/Fast. Normal loss and optional `Pointclouds` inputs
+have a separate [development parity matrix](chamfer-normals-pointclouds-v0.9-prototype.md)
+from a clean source commit. These finite float32 fixtures do not establish
+every upstream argument/error combination or physical M1 behavior, so the
+full-compatibility release gate remains open.
 
 ### Optional optimal transport research
 

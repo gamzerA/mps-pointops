@@ -59,10 +59,9 @@ Raw records: [CPU](evidence/chamfer-v090-extended/chamfer-extended-cpu.json),
 [M5 Pro Safe](evidence/chamfer-v090-extended/chamfer-extended-mps-safe.json),
 [M5 Pro Fast](evidence/chamfer-v090-extended/chamfer-extended-mps-fast.json).
 Each includes the upstream commit, port commit and dirty-worktree flag,
-source hashes, environment, and per-case checks. These first records were
-made in an uncommitted development worktree; the source hashes identify
-the measured code until a clean post-commit run replaces them. The
-physical M1 was unavailable for this gate.
+source hashes, environment, and per-case checks. These records were made
+from clean source commit `2e3e5523a7999628a8e25446adb882aed581c4f3`
+in an isolated worktree. The physical M1 was unavailable for this gate.
 
 Reproduce from a checkout with the pinned upstream CPU extension built:
 
