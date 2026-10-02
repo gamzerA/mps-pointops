@@ -124,7 +124,7 @@ was archived; their missing field must not be interpreted as a measured zero.
 The twelve physical M1 radius-dispatch JSONs have the same evidence gap.
 
 To close the empirical part without changing old timing records, regenerate
-the fixed independent-query fixtures with seed `20261002` in a clean Safe-Math
+the fixed query fixtures with seed `20261002` in a clean Safe-Math
 process on each chip. For the original M5 matrix, use `N=1M`, `K=16`, and
 `Q∈{4,096,8,192,65,536}` for uniform (`r=12`), cluster–sparse (`r=0.03`),
 and collapsed (`r=0.5`) inputs. For M1, also include its 20k, 100k, and 1M
