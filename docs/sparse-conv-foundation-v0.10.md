@@ -1,6 +1,7 @@
 # Experimental sparse convolution coordinate oracle (v0.10 groundwork)
 
-Status: **CPU rulebook plus experimental Metal SubM forward.** These private
+Status: **CPU rulebook plus experimental Metal SubM forward and first-order
+backward.** These private
 modules (`mps_pointops._sparse_rulebook` and `_subm_conv_mps`) are not exported
 by `mps_pointops` and are not an `spconv` replacement. The v0.10 release gate
 remains open.
@@ -64,9 +65,29 @@ visits rulebook pairs in increasing kernel-offset order, then input-channel
 order, applying `fma(feature, weight, total)` on each term. Both Safe and Fast
 Math are exercised in separate processes. Sparse floating-point output need
 only be close to dense PyTorch, since its convolution reduction order may
-differ. Any input requiring autograd raises an explicit error. CPU rulebook
-construction, gradient propagation, strided/inverse/transpose convolution,
-and source-compatible `spconv` APIs are still missing.
+differ. For upstream output gradient `G[o,d]`, the supported first-order
+backward is defined on the exact same integer rulebook pairs `(k,i,o)`:
+
+```text
+dX[i,c]     = sum_{(k,i,o)} sum_d G[o,d] * W[d,c,k]
+dW[d,c,k]   = sum_{(k,i,o)} G[o,d] * X[i,c]
+db[d]       = sum_o G[o,d]
+```
+
+The implementation groups pairs by kernel offset, gathers the corresponding
+source features and output gradients, computes matrix products for each
+weight slice, and uses native MPS `index_add_` for feature gradients. Bias is
+added once per output, including outputs with no active input pairs. Empty
+input returns empty output and zero first-order weight/bias gradients. The
+integer pair mapping and output coordinate row order are exact; floating-point
+gradient bits are **not** claimed to match dense CPU `Conv3d` because MPS
+matrix reduction and `index_add_` accumulation order can differ, especially
+when one input contributes to several outputs. Tests use `rtol=1e-4,
+atol=1e-5` for float32 forward and backward. The Metal shader's forward
+uses explicit FMA and Safe math, while `PYTORCH_MPS_FAST_MATH` controls the
+PyTorch backward operations in separate processes. Higher-order gradients,
+coordinate gradients, Metal rulebook construction, strided/inverse/transpose
+convolution, and source-compatible `spconv` APIs remain unsupported.
 
 ## Reproducible local check
 
@@ -74,6 +95,10 @@ On the 2026-10-02 workspace with PyTorch 2.14.1, run:
 
 ```bash
 python -m pytest -q tests/test_sparse_rulebook.py
+PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=0 \
+  python -m pytest -q tests/test_sparse_rulebook.py tests/test_subm_metal.py
+PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=1 \
+  python -m pytest -q tests/test_sparse_rulebook.py tests/test_subm_metal.py
 ```
 
 The initial rulebook suite passed **20 tests**. It covers duplicate/out-of-range
@@ -84,10 +109,13 @@ active output set, and a dense feature convolution checks all rulebook
 gather/weight/reduction values. Direct `spconv` runtime parity has **not** been
 run because it is not installed in this environment. The Metal suite compares
 small batched, unsorted, dilated, biased, empty, and noncontiguous cases with
-dense PyTorch Conv3d at active output coordinates. On the local Apple Silicon
-GPU with `PYTORCH_ENABLE_MPS_FALLBACK=0`, the combined suites passed in both
-separately launched Safe and Fast Math processes. These tests establish a
-bounded forward prototype, not performance or upstream parity.
+dense PyTorch Conv3d at active output coordinates and compares first-order
+feature, weight, and bias gradients for batched, dilated, empty, and
+noncontiguous-view fixtures. On the local Apple Silicon GPU with
+`PYTORCH_ENABLE_MPS_FALLBACK=0`, the combined suites passed **31 tests** in
+each separately launched Safe and Fast Math process on 2026-10-02. These
+tests establish a bounded forward/backward prototype, not performance or
+upstream `spconv` parity.
 
 ## Remaining gates before any compatibility claim
 
@@ -96,8 +124,8 @@ bounded forward prototype, not performance or upstream parity.
 2. Specify duplicate-input handling, empty outputs, missing cells, and
    `indice_key` reuse against upstream behavior instead of assuming parity.
 3. Replace CPU rulebook generation with a scalable Metal path and profile the
-   full call (including CSR transfer). Implement SubM and strided backward.
-   Add separate inverse and transpose paths.
+   full call (including CSR transfer and native MPS backward). Implement
+   strided backward and separate inverse and transpose paths.
 4. Verify at least one pinned sparse 3D backbone end to end on supported
    Apple Silicon hardware. Physical M1 measurement is deferred while the
    remote device is available for later validation.
