@@ -256,9 +256,14 @@ def sparse_inverse_conv3d_forward_mps(
         raise ValueError("inverse spatial shape differs from saved convolution output")
     if not torch.equal(sparse.indices, saved.output_indices):
         raise ValueError("inverse indices or row order differ from saved convolution output")
+    output_count = saved.input_indices.shape[0]
+    if output_count > MAX_CPU_POINTS:
+        raise ValueError(f"bounded rulebook supports at most {MAX_CPU_POINTS} active outputs")
+    if output_count * weights.shape[0] >= 2**32:
+        raise ValueError("output scalar count exceeds Metal dispatch limit")
     values = _apply(
         sparse.features, weights, bias, saved.pairs,
-        input_count=sparse.indices.shape[0], output_count=saved.input_indices.shape[0],
+        input_count=sparse.indices.shape[0], output_count=output_count,
         inverse=True,
     )
     return SparseConvResult3D(
