@@ -32,9 +32,25 @@ def git_head(path: Path) -> str:
 
 
 def make_clouds(device: str, seed: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    generator = torch.Generator().manual_seed(seed)
-    x = torch.randn(2, 7, 3, generator=generator, dtype=torch.float32)
-    y = torch.randn(2, 6, 3, generator=generator, dtype=torch.float32)
+    if seed == 101:
+        # L1/L2 ranking disagreement, exact ties, and equal coordinates
+        # exercise kNN selection and its -1 cusp subgradient in every reduction.
+        x = torch.tensor([
+            [[0., 0., 0.], [2., 0., 0.], [0., 0., 0.], [1., 1., 0.],
+             [-1., 0., 0.], [2., 2., 0.], [5., 5., 5.]],
+            [[0., 0., 0.], [0., 0., 0.], [2., 2., 0.], [3., 0., 0.],
+             [0., 0., 0.], [0., 0., 0.], [0., 0., 0.]],
+        ], dtype=torch.float32)
+        y = torch.tensor([
+            [[1., 0., 0.], [-1., 0., 0.], [1., 0., 0.], [4., 4., 0.],
+             [2., 2., 0.], [5., 5., 5.]],
+            [[3., 0., 0.], [2., 2., 0.], [-10., 0., 0.],
+             [0., 0., 0.], [0., 0., 0.], [0., 0., 0.]],
+        ], dtype=torch.float32)
+    else:
+        generator = torch.Generator().manual_seed(seed)
+        x = torch.randn(2, 7, 3, generator=generator, dtype=torch.float32)
+        y = torch.randn(2, 6, 3, generator=generator, dtype=torch.float32)
     # Uneven lengths and faraway but finite padding exercise forward masking
     # and ensure padded coordinates have zero gradients.
     x[1, 4:] = torch.tensor([11.0, 12.0, 13.0])
@@ -65,7 +81,7 @@ def flatten_loss(loss: torch.Tensor | tuple[torch.Tensor, torch.Tensor]) -> list
 
 
 def run_one(fn, device: str, seed: int, point: str | None, batch: str | None,
-            directional: bool, weight_mode: str) -> dict[str, object]:
+            directional: bool, weight_mode: str, norm: int) -> dict[str, object]:
     x, y, lx, ly = make_clouds(device, seed)
     weights = None
     if weight_mode != "none":
@@ -74,7 +90,7 @@ def run_one(fn, device: str, seed: int, point: str | None, batch: str | None,
         weights = torch.tensor(values, dtype=x.dtype, device=device, requires_grad=True)
     loss, normals = fn(
         x, y, x_lengths=lx, y_lengths=ly, weights=weights,
-        batch_reduction=batch, point_reduction=point, norm=2,
+        batch_reduction=batch, point_reduction=point, norm=norm,
         single_directional=directional,
     )
     inputs = (x, y) if weights is None else (x, y, weights)
@@ -151,19 +167,19 @@ def main() -> int:
         parser.error("MPS parity requires PYTORCH_ENABLE_MPS_FALLBACK=0")
     cases = []
     modes = itertools.product(
-        (11, 29), ("mean", "sum", "max", None),
+        (1, 2), (11, 29, 101), ("mean", "sum", "max", None),
         ("mean", "sum", None), (False, True),
         ("none", "positive", "mixed_zero", "all_zero"),
     )
-    for seed, point, batch, directional, weight_mode in modes:
+    for norm, seed, point, batch, directional, weight_mode in modes:
         if point is None and batch is not None:
             continue
-        ref = run_one(upstream_chamfer, "cpu", seed, point, batch, directional, weight_mode)
-        entry = {"seed": seed, "point_reduction": point,
+        ref = run_one(upstream_chamfer, "cpu", seed, point, batch, directional, weight_mode, norm)
+        entry = {"norm": norm, "seed": seed, "point_reduction": point,
                  "batch_reduction": batch, "single_directional": directional,
                  "weights": weight_mode, "checks": {}}
         for target in targets:
-            actual = run_one(port_chamfer, target, seed, point, batch, directional, weight_mode)
+            actual = run_one(port_chamfer, target, seed, point, batch, directional, weight_mode, norm)
             checks = {}
             for field in ref:
                 if field in ("loss_shapes", "normals_signature", "gradient_present"):
@@ -199,7 +215,7 @@ def main() -> int:
                         "mps_available": torch.backends.mps.is_available(),
                         "mps_fast_math": os.getenv("PYTORCH_MPS_FAST_MATH", "0"),
                         "mps_fallback": os.getenv("PYTORCH_ENABLE_MPS_FALLBACK", "unset")},
-        "test_design": {"seeds": [11, 29], "batch_size": 2,
+        "test_design": {"norm": [1, 2], "seeds": [11, 29, 101], "batch_size": 2,
                         "x_shape": [2, 7, 3], "y_shape": [2, 6, 3],
                         "x_lengths": [7, 4], "y_lengths": [6, 3],
                         "point_reduction": ["mean", "sum", "max", None],
@@ -207,7 +223,7 @@ def main() -> int:
                         "single_directional": [False, True],
                         "weights": ["none", "positive", "mixed_zero", "all_zero"],
                         "atol": ATOL, "rtol": RTOL,
-                        "scope": "finite float32 point clouds, forward loss and x/y/weight first derivatives; no normals or norm=1"},
+                        "scope": "finite float32 point clouds, L1 and squared-L2 forward loss and x/y/weight first derivatives; no normals"},
         "summary": summary, "cases": cases,
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)

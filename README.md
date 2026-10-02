@@ -53,6 +53,9 @@ The supported squared-L2 Chamfer subset is checked against a pinned official
 PyTorch3D CPU oracle in [dedicated MPS CI](docs/chamfer-upstream-ci.md), and an
 opt-in [Pointcept PTv1 Seg26 subset](docs/pointcept-ptv1-subset.md) covers one
 documented synthetic model path.
+This development branch also contains an [L1 Chamfer prototype](docs/chamfer-l1-v0.9-prototype.md)
+and a [sorted-Morton radius research index](docs/milestones-v0.9-v1.0.md);
+neither is part of the published v0.8.0 package.
 Direct comparisons against the
 [original PointNet++ CUDA extension](docs/parity/pointnet2-upstream.md) and
 [PyTorch3D Chamfer](docs/chamfer-upstream-parity-0.5.0.md) record the tested
@@ -1127,9 +1130,16 @@ correctness and timing evidence without extending claims to M2–M4.
 
 ### Phase 4: Geometry losses and large-scale search (target 0.8.0 to 0.9.0)
 
-- [~] Experimental bidirectional squared-L2 Chamfer distance (introduced in
-      0.5.0; #18). Metal returns nearest indices and squared distances; PyTorch's
-      native `scatter_add_` accumulates both backward directions. Supported
+The proposed v0.9.0 spatial-search and Chamfer expansion gates, followed by
+v0.10.0 sparse convolution and a bounded v1.0.0 support contract, are tracked
+in the [v0.9–v1.0 acceptance plan](docs/milestones-v0.9-v1.0.md). Target
+versions do not indicate completed support.
+
+- [~] Experimental bidirectional Chamfer distance: squared-L2 was introduced
+      in 0.5.0 (#18), and an L1 search/backward prototype is under
+      [v0.9 development](docs/chamfer-l1-v0.9-prototype.md). Metal returns
+      nearest indices and distances; PyTorch's native `scatter_add_`
+      accumulates both backward directions. Supported
       `lengths` mask padding in forward and backward, and point/batch
       reductions scale gradients according to the [contract](docs/chamfer-contract.md).
       For the un-reduced sum, let `a(i)` be the nearest point in `x` to `q[i]`,
@@ -1167,7 +1177,10 @@ correctness and timing evidence without extending claims to M2–M4.
       [dedicated MPS CI](docs/chamfer-upstream-ci.md). Separate Safe/Fast runs
       passed 160 cases and 1,080 output/gradient checks each, including
       `lengths`, weights, and supported point/batch reductions. This does not
-      cover L1, normals, or `Pointclouds` inputs.
+      cover normals or `Pointclouds` inputs. The new L1 development path passed
+      [480 cases and 3,240 checks per CPU/MPS target](docs/chamfer-l1-v0.9-prototype.md),
+      including ties and coincident-point subgradients. It has not yet been
+      promoted to the release CI gate.
 - [~] Extend the Chamfer contention study: [physical M5 Pro and M1 Safe/Fast
       large bidirectional cases](docs/chamfer-large-contention-2026-10-02.md)
       cover up to 65,536 points with synchronized full-loss and native scatter
@@ -1179,17 +1192,22 @@ correctness and timing evidence without extending claims to M2–M4.
       temporary CUDA-constructor substitution; broader Pointcept signatures,
       unchanged upstream imports, and CUDA binary parity remain open.
 - [ ] Spatial acceleration structures (uniform grid or BVH) for clouds of
-      1M+ points. Done when: faster than a CPU KD-tree at 1M points.
+      1M+ points. Done when: exact API semantics and memory bounds pass the
+      [v0.9 gate](docs/milestones-v0.9-v1.0.md), and synchronized build-plus-query
+      timings beat a CPU KD-tree on a specified 1M-point workload on both
+      M5 Pro and a physical M1. M1 performance is pending reconnection.
 - [ ] Stretch: approximate optimal transport via entropic regularization
       (Sinkhorn). Specify its numerical contract separately from exact Earth
       Mover's Distance.
 
-### Phase 5: Sparse 3D and upstream convergence (target 1.0)
+### Phase 5: Sparse 3D and upstream convergence (target 0.10.0 to 1.0.0)
 
 - [ ] Sparse convolution with an `spconv`-compatible interface, in order:
-      sparse tensor structure and submanifold convolution, then strided
-      convolution, then inverse convolution.
-      Done when: outputs match `spconv` and one real model runs inference.
+      sparse tensor structure and rulebook, `SubMConv3d`, strided
+      `SparseConv3d`, then `SparseInverseConv3d` with indice-key reuse.
+      `SparseConvTranspose3d` is a separate operator. Done when a pinned
+      spconv CUDA oracle and one real model pass forward and backward under
+      the [v0.10 gate](docs/milestones-v0.9-v1.0.md).
 - [ ] Pull requests upstream, following the Phase 2 discussions.
 - [ ] API freeze, versioning policy and 1.0.
 

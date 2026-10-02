@@ -1,8 +1,8 @@
-"""Bidirectional squared-L2 Chamfer loss on CPU and PyTorch MPS.
+"""Bidirectional L1 or squared-L2 Chamfer loss on CPU and PyTorch MPS.
 
 MPS uses a native Metal nearest-neighbor search; other devices use a tiled
-PyTorch search. The selected distances are evaluated with differentiable
-PyTorch operations so gather backward accumulates both directions.
+PyTorch search. L1 uses a custom first-order backward to match PyTorch3D's
+subgradient at equal coordinates; bidirectional loss accumulates both searches.
 """
 
 from __future__ import annotations
@@ -72,9 +72,10 @@ def _metal_library():
 
 @torch.no_grad()
 def _nearest_mps(
-    query: Tensor, ref: Tensor, query_lengths: Tensor, ref_lengths: Tensor
+    query: Tensor, ref: Tensor, query_lengths: Tensor, ref_lengths: Tensor,
+    norm: int = 2,
 ) -> tuple[Tensor, Tensor]:
-    """Return squared distance and first-minimum index from native Metal."""
+    """Return distance and first-minimum index from native Metal."""
     batch, query_count, _ = query.shape
     ref_count = ref.shape[1]
     if ref_count >= 2**32:
@@ -83,7 +84,11 @@ def _nearest_mps(
     indices = torch.empty((batch, query_count), device=query.device, dtype=torch.int64)
     if distances.numel():
         group_count = (batch * query_count + _QUERIES_PER_GROUP - 1) // _QUERIES_PER_GROUP
-        _metal_library().chamfer_nearest_f32(
+        kernel = (
+            _metal_library().chamfer_nearest_l1_f32
+            if norm == 1 else _metal_library().chamfer_nearest_f32
+        )
+        kernel(
             query.contiguous(), ref.contiguous(), query_lengths.contiguous(),
             ref_lengths.contiguous(), distances, indices, batch, query_count,
             ref_count, threads=[group_count * _GROUP_SIZE, 1, 1],
@@ -94,11 +99,12 @@ def _nearest_mps(
 
 @torch.no_grad()
 def _nearest_indices(
-    query: Tensor, ref: Tensor, query_lengths: Tensor, ref_lengths: Tensor
+    query: Tensor, ref: Tensor, query_lengths: Tensor, ref_lengths: Tensor,
+    norm: int = 2,
 ) -> Tensor:
-    """Find the first minimum under direct coordinate-wise squared distance."""
+    """Find the first minimum under the requested coordinate-wise distance."""
     if query.device.type == "mps":
-        return _nearest_mps(query, ref, query_lengths, ref_lengths)[1]
+        return _nearest_mps(query, ref, query_lengths, ref_lengths, norm)[1]
     batch, query_count, _ = query.shape
     ref_count = ref.shape[1]
     if batch == 0 or query_count == 0:
@@ -115,9 +121,14 @@ def _nearest_indices(
         for r0 in range(0, ref_count, ref_step):
             r = ref[:, r0 : r0 + ref_step, :]
             delta = q[:, :, None, :] - r[:, None, :, :]
-            dist = delta[..., 0] * delta[..., 0]
-            dist = dist + delta[..., 1] * delta[..., 1]
-            dist = dist + delta[..., 2] * delta[..., 2]
+            if norm == 1:
+                dist = delta[..., 0].abs()
+                dist = dist + delta[..., 1].abs()
+                dist = dist + delta[..., 2].abs()
+            else:
+                dist = delta[..., 0] * delta[..., 0]
+                dist = dist + delta[..., 1] * delta[..., 1]
+                dist = dist + delta[..., 2] * delta[..., 2]
             ref_index = torch.arange(r0, r0 + r.shape[1], device=ref.device)
             dist = dist.masked_fill(ref_index[None, None, :] >= ref_lengths[:, None, None], float("inf"))
             tile_dist, local_index = dist.min(dim=-1)
@@ -166,6 +177,47 @@ class _MetalNearestSquared(torch.autograd.Function):
         return query_grad, ref_grad, None, None
 
 
+class _NearestL1(torch.autograd.Function):
+    """L1 nearest distance with PyTorch3D's selected-pair subgradient."""
+
+    @staticmethod
+    def forward(
+        ctx, query: Tensor, ref: Tensor, query_lengths: Tensor, ref_lengths: Tensor
+    ) -> Tensor:
+        if query.device.type == "mps":
+            distances, indices = _nearest_mps(query, ref, query_lengths, ref_lengths, norm=1)
+        else:
+            indices = _nearest_indices(query, ref, query_lengths, ref_lengths, norm=1)
+            distances = _selected_l1_distance(query, ref, indices, query_lengths)
+        ctx.save_for_backward(query, ref, indices, query_lengths)
+        return distances
+
+    @staticmethod
+    @once_differentiable
+    def backward(ctx, grad_distances: Tensor | None):
+        if grad_distances is None:
+            return None, None, None, None
+        query, ref, indices, query_lengths = ctx.saved_tensors
+        if not indices.numel():
+            return torch.zeros_like(query), torch.zeros_like(ref), None, None
+
+        valid = (indices >= 0) & (
+            torch.arange(query.shape[1], device=query.device)[None] < query_lengths[:, None]
+        )
+        safe_indices = indices.clamp_min(0)
+        selected = ref.gather(1, safe_indices.unsqueeze(-1).expand(-1, -1, 3))
+        # The pinned PyTorch3D CPU/CUDA kNN backward chooses -1 at equality.
+        # torch.abs backward chooses zero there, so it cannot provide parity.
+        sign = torch.where(query > selected, 1.0, -1.0)
+        scale = torch.where(valid, grad_distances, torch.zeros_like(grad_distances))
+        query_grad = sign * scale.unsqueeze(-1)
+        ref_grad = torch.zeros_like(ref, memory_format=torch.contiguous_format)
+        ref_grad.scatter_add_(
+            1, safe_indices.unsqueeze(-1).expand(-1, -1, 3), -query_grad
+        )
+        return query_grad, ref_grad, None, None
+
+
 def _selected_squared_distance(query: Tensor, ref: Tensor, index: Tensor, lengths: Tensor) -> Tensor:
     valid = torch.arange(query.shape[1], device=query.device)[None] < lengths[:, None]
     safe_query = torch.where(valid.unsqueeze(-1), query, torch.zeros_like(query))
@@ -174,6 +226,17 @@ def _selected_squared_distance(query: Tensor, ref: Tensor, index: Tensor, length
     dist = delta[..., 0] * delta[..., 0]
     dist = dist + delta[..., 1] * delta[..., 1]
     dist = dist + delta[..., 2] * delta[..., 2]
+    return torch.where(valid, dist, torch.zeros_like(dist))
+
+
+def _selected_l1_distance(query: Tensor, ref: Tensor, index: Tensor, lengths: Tensor) -> Tensor:
+    valid = torch.arange(query.shape[1], device=query.device)[None] < lengths[:, None]
+    safe_query = torch.where(valid.unsqueeze(-1), query, torch.zeros_like(query))
+    near = ref.gather(1, index.clamp_min(0).unsqueeze(-1).expand(-1, -1, 3))
+    delta = safe_query - near
+    dist = delta[..., 0].abs()
+    dist = dist + delta[..., 1].abs()
+    dist = dist + delta[..., 2].abs()
     return torch.where(valid, dist, torch.zeros_like(dist))
 
 
@@ -208,11 +271,11 @@ def chamfer_distance(
     single_directional: bool = False,
     abs_cosine: bool = True,
 ) -> tuple[Tensor | tuple[Tensor, Tensor], None]:
-    """Squared-L2 Chamfer loss with the PyTorch3D reduction conventions.
+    """L1 or squared-L2 Chamfer loss with PyTorch3D reduction conventions.
 
     Returns ``(loss, None)`` for ordinary inputs. For all-zero batch weights,
     the observed PyTorch3D special case instead returns zero normal output
-    except for bidirectional ``point_reduction="max"``. Normals and L1 are not
+    except for bidirectional ``point_reduction="max"``. Normals are not
     implemented. With
     ``point_reduction=None``, ``loss`` is a pair of padded per-point distance
     tensors (one tensor if ``single_directional=True``) and batch reduction
@@ -222,8 +285,8 @@ def chamfer_distance(
     reference index on a rounded-distance tie. The tiled search bounds its
     temporary pair storage but still takes O(B * P * Q) time.
     """
-    if norm != 2:
-        raise NotImplementedError("only squared-L2 Chamfer distance (norm=2) is supported")
+    if norm not in (1, 2):
+        raise ValueError("Support for 1 or 2 norm.")
     if x_normals is not None or y_normals is not None:
         raise NotImplementedError("normal-distance terms are not supported")
     if batch_reduction not in (None, "mean", "sum"):
@@ -268,7 +331,9 @@ def chamfer_distance(
                     zero_normals = zero_normals.sum()
             return zero_loss, zero_normals
 
-    if x.device.type == "mps":
+    if norm == 1:
+        dx = _NearestL1.apply(x, y, lx, ly)
+    elif x.device.type == "mps":
         dx = _MetalNearestSquared.apply(x, y, lx, ly)
     else:
         ix = _nearest_indices(x, y, lx, ly)
@@ -279,7 +344,9 @@ def chamfer_distance(
     if single_directional:
         loss: Tensor | tuple[Tensor, Tensor] = rx
     else:
-        if x.device.type == "mps":
+        if norm == 1:
+            dy = _NearestL1.apply(y, x, ly, lx)
+        elif x.device.type == "mps":
             dy = _MetalNearestSquared.apply(y, x, ly, lx)
         else:
             iy = _nearest_indices(y, x, ly, lx)
