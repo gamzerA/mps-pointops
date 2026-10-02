@@ -24,10 +24,10 @@ function series(record, id) {
 
 test('every displayed card is measured and links a bundled raw file', () => {
   assert.equal(data.schemaVersion, 1);
-  assert.equal(data.publishedPackageVersion, '0.8.0');
+  assert.equal(data.publishedPackageVersion, '1.0.0');
   assert.equal(new Set(data.records.map(record => record.id)).size, data.records.length);
   assert.ok(data.records.some(record => record.hardware === 'Apple M1'));
-  assert.ok(data.records.some(record => record.availability === 'unreleased-source'));
+  assert.ok(data.records.every(record => record.availability === 'released-code-snapshot'));
   assert.ok(data.records.some(record => record.availability === 'released-code-snapshot'));
   for (const record of data.records) {
     assert.ok(['fps', 'knn', 'ball-query'].includes(record.operation));
@@ -98,14 +98,14 @@ test('M1 FPS pairs use one clean source and matching B=1 inputs', () => {
   }
 });
 
-test('unreleased BVH rows match exact steady-query medians and backend choice', () => {
+test('historical BVH rows match exact steady-query medians and backend choice', () => {
   function median(values) {
     const sorted = [...values].sort((a, b) => a - b);
     const middle = Math.floor(sorted.length / 2);
     return sorted.length % 2 ? sorted[middle]
       : (sorted[middle - 1] + sorted[middle]) / 2;
   }
-  for (const record of data.records.filter(item => item.availability === 'unreleased-source')) {
+  for (const record of data.records.filter(item => item.api === 'spatial-index')) {
     const source = raw(record.source.rawPath);
     assert.equal(source.source_dirty, false);
     assert.equal(source.source_commit, record.source.sourceCommit);

@@ -47,7 +47,7 @@ test('capability data pins the merged source separately from the published packa
   assert.deepEqual(data.items.map(item => item.id),
     ['pointnet2', 'pytorch3d', 'pyg', 'dgcnn', 'pointcept', 'sparse-3d']);
   assert.equal(data.items.find(item => item.id === 'pointcept').releaseStatus, 'experimental');
-  assert.equal(data.items.find(item => item.id === 'sparse-3d').validationStatus, 'unverified');
+  assert.equal(data.items.find(item => item.id === 'sparse-3d').validationStatus, 'model-fixture');
   for (const item of data.items) {
     assert.ok(item.releaseScope.ko && item.releaseScope.en);
     assert.ok(item.fixture.ko && item.fixture.en);
@@ -75,7 +75,7 @@ test('selection and KO/EN switch update details without conflating release and v
     const root = new FakeElement('div');
     const map = mountCapabilityMap(root, data);
     assert.equal(map.getSelectedId(), 'pointnet2');
-    assert.match(root.children[0].textContent, /PyPI 0\.8\.0 \/ 병합 소스 905fce53/);
+    assert.ok(root.children[0].textContent.includes(`PyPI ${data.source.publishedVersion} / 병합 소스 ${data.source.mainCommit.slice(0, 8)}`));
     const buttons = descendants(root).filter(element => element.className.includes('capability-option ')
       || element.className === 'capability-option');
     assert.equal(buttons.length, 6);
@@ -83,20 +83,20 @@ test('selection and KO/EN switch update details without conflating release and v
     sparseButton.click();
     assert.equal(map.getSelectedId(), 'sparse-3d');
     assert.equal(sparseButton.getAttribute('aria-pressed'), 'true');
-    assert.match(root.children[2].textContent, /계획 단계/);
-    assert.match(root.children[2].textContent, /검증 기록 없음/);
-    assert.doesNotMatch(root.children[2].textContent, /모델 사례 통과/);
+    assert.match(root.children[2].textContent, /실험적 부분집합/);
+    assert.match(root.children[2].textContent, /모델 사례 통과/);
+    assert.match(root.children[2].textContent, /비공개/);
     map.setLanguage('en');
-    assert.match(root.children[2].textContent, /Planned/);
-    assert.match(root.children[2].textContent, /No validation record/);
-    assert.match(root.children[0].textContent, /merged source 905fce53/);
+    assert.match(root.children[2].textContent, /Experimental subset/);
+    assert.match(root.children[2].textContent, /Model fixture passed/);
+    assert.ok(root.children[0].textContent.includes(`merged source ${data.source.mainCommit.slice(0, 8)}`));
     assert.equal(map.select('missing'), false);
     assert.equal(map.select('pyg'), true);
     assert.match(root.children[2].textContent, /bounded operator suite/);
     map.setLanguage('ko');
     assert.match(root.children[2].textContent, /한정된 연산자 스위트/);
     const evidence = descendants(root).find(element => element.tagName === 'a');
-    assert.match(evidence.href, /^https:\/\/github\.com\/gamzerA\/mps-pointops\/blob\/905fce53[0-9a-f]{32}\/docs\//);
+    assert.ok(evidence.href.startsWith(`https://github.com/gamzerA/mps-pointops/blob/${data.source.mainCommit}/docs/`));
     assert.equal(evidence.rel, 'noopener noreferrer');
   } finally {
     if (previousDocument === undefined) delete globalThis.document;

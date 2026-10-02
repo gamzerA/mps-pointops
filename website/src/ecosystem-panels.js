@@ -8,7 +8,7 @@ const COPY = {
   en: {
     group: 'Choose What runs content',
     capability: ['Model paths', 'Shipped · tested scope'],
-    phases: ['Compute stack', 'Now · research · planned'],
+    phases: ['Compute stack', 'Public APIs · bounded experiments'],
     capabilityRegion: 'Model validation scope',
   },
 };

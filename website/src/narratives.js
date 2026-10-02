@@ -72,17 +72,17 @@ const PHASES = [
     label: { ko: '단계 04', en: 'PHASE 04' },
     name: { ko: '기하 관계', en: 'Geometry and scale' },
     detail: { ko: 'Chamfer 부분집합 · 대규모 BVH 연구', en: 'Chamfer subset · large-scale BVH research' },
-    status: { ko: '배포 기능과 미배포 연구 경로 혼재', en: 'Published loss subset and unreleased research path' },
+    status: { ko: '배포된 손실 부분집합과 제한된 선택형 BVH 경로', en: 'Shipped loss subset and bounded opt-in BVH path' },
     buttonTitle: { ko: '기하와 대규모 탐색', en: 'Geometry and scale' },
     stepHint: { ko: '거리 손실과 공간 인덱스', en: 'Geometry loss and spatial indexing' },
   },
   {
-    label: { ko: '단계 05 · 계획', en: 'PHASE 05 · PLANNED' },
+    label: { ko: '단계 05 · 실험', en: 'PHASE 05 · EXPERIMENTAL' },
     name: { ko: '희소 3D 계산', en: 'Sparse 3D computation' },
     detail: { ko: '복셀 rulebook → sparse convolution', en: 'Voxel rulebook → sparse convolution' },
-    status: { ko: '계획 단계 · Metal 희소 합성곱 미구현', en: 'Planned · Metal sparse convolution not implemented' },
+    status: { ko: '비공개 실험 API · 제한된 Metal 희소 합성곱', en: 'Private experimental API · bounded Metal sparse convolution' },
     buttonTitle: { ko: '희소 3D', en: 'Sparse 3D' },
-    stepHint: { ko: 'Metal 합성곱은 미구현', en: 'Metal convolution is not implemented' },
+    stepHint: { ko: '작은 사례의 순방향·1차 역전파 검증', en: 'Tiny-fixture forward and first-gradient checks' },
   },
 ];
 
