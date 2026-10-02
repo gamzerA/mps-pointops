@@ -100,6 +100,7 @@ class _Sampler:
 def _stage(action: Callable[[], Any], period_ms: float) -> tuple[Any, dict[str, Any]]:
     torch.mps.synchronize()
     torch.accelerator.reset_peak_memory_stats()
+    started_unix_ns = time.time_ns()
     start = time.perf_counter_ns()
     with _Sampler(period_ms) as sampler:
         value = action()
@@ -109,6 +110,8 @@ def _stage(action: Callable[[], Any], period_ms: float) -> tuple[Any, dict[str, 
         "tensor_bytes": int(torch.accelerator.max_memory_allocated()),
         "reserved_bytes": int(torch.accelerator.max_memory_reserved()),
     }
+    summary["started_unix_ns"] = started_unix_ns
+    summary["finished_unix_ns"] = time.time_ns()
     summary["host_wall_ms_with_sampling"] = (time.perf_counter_ns() - start) / 1e6
     return value, summary
 
@@ -245,7 +248,7 @@ def main() -> None:
         "result_tensor_storage_bytes": result_storage_bytes,
         "allocator_high_water_is_total_gpu_peak": False,
         "sampled_driver_high_water_is_true_driver_peak": False,
-        "memory_scope": "PyTorch allocator peak counters include transient tensor allocations; driver counter is polled and may miss transients; neither is whole-process/OS GPU memory peak; no Instruments capture",
+        "memory_scope": "PyTorch allocator peak counters include transient tensor allocations; driver counter is polled and may miss transients; neither is whole-process/OS GPU memory peak; external Instruments captures, if any, are archived separately",
         "timing_scope": "sampling perturbs wall time; do not use host_wall_ms_with_sampling as a performance benchmark",
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
