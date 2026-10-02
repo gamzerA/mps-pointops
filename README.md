@@ -1195,7 +1195,9 @@ versions do not indicate completed support.
       1M+ points. Done when: exact API semantics and memory bounds pass the
       [v0.9 gate](docs/milestones-v0.9-v1.0.md), and synchronized build-plus-query
       timings beat a CPU KD-tree on a specified 1M-point workload on both
-      M5 Pro and a physical M1. M1 performance is pending reconnection.
+      M5 Pro and a physical M1. The [M5 Pro sorted-Morton prototype](docs/spatial-1m-v0.9-prototype.md)
+      is fast on uniform points but exposes a one-cell cluster slowdown;
+      exact kNN traversal and M1 performance remain pending.
 - [ ] Stretch: approximate optimal transport via entropic regularization
       (Sinkhorn). Specify its numerical contract separately from exact Earth
       Mover's Distance.

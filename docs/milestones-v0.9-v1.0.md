@@ -34,13 +34,14 @@ The initial [CPU research grid](../bench/spatial_grid_reference.py) checks
 candidate coverage, original-index ordering, exact kNN termination, and
 explicit degenerate fallback. It uses binary64 distances and is **not** a
 Metal speed result or the flat API's final float32 numerical contract.
-Preliminary M5 Pro Safe-Math runs on an uncommitted prototype found that
-uniform 1M-point data with 1,024 queries took about 1.8 ms to build and
-2.4 ms to query, compared with about 255 ms plus 3.7 ms for cKDTree. With 1M
-points concentrated in one cell and 16 queries, the grid query took about
-375 ms, exceeding cKDTree's roughly 255 ms build plus 0.03 ms query. These
-results motivate the LBVH target; they are not release benchmarks until a
-clean source commit, repeated Safe/Fast runs, and M1 measurements exist.
+The [clean-commit M5 Pro study](spatial-1m-v0.9-prototype.md) measured five
+Safe/Fast samples at 1M points and found exact first-K agreement for its
+random fixtures. Uniform 1M-point data with 1,024 queries took 4.080 ms to
+build and 2.589 ms to query in Safe Math, compared with 252.358 ms plus
+3.817 ms for cKDTree. With 1M points concentrated in one cell and 16 queries,
+the grid query took 376.175 ms in Safe Math, exceeding cKDTree's 242.007 ms
+build plus 0.019 ms query. These are prototype-specific workloads and do not
+complete the radius/kNN or cross-device release gates; they motivate LBVH.
 
 For radius search, inspect every cell intersecting the query ball and check
 the original coordinates with the existing radius comparison policy. Cell
