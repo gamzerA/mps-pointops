@@ -84,10 +84,13 @@ kernel void spatial_brick_knn_f32(
     device const float *bounds [[buffer(3)]],
     device float *out_dist [[buffer(4)]],
     device long *out_idx [[buffer(5)]],
-    constant long &query_count [[buffer(6)]],
-    constant long &point_count [[buffer(7)]],
-    constant long &brick_count [[buffer(8)]],
-    constant long &K [[buffer(9)]],
+    device uint *audit_counts [[buffer(6)]],
+    constant long &query_count [[buffer(7)]],
+    constant long &point_count [[buffer(8)]],
+    constant long &brick_count [[buffer(9)]],
+    constant long &K [[buffer(10)]],
+    constant uint &prune_aabbs [[buffer(11)]],
+    constant uint &audit_enabled [[buffer(12)]],
     uint qi [[thread_position_in_grid]]) {
     if (ulong(qi) >= ulong(query_count)) return;
     const uint k = uint(K);
@@ -100,7 +103,9 @@ kernel void spatial_brick_knn_f32(
         best_i[j] = UINT_MAX;
     }
     uint found = 0;
-    if (all(isfinite(q)) && brick_count > 0) {
+    uint pruned_count = 0;
+    uint bad_count = 0;
+    if (all(isfinite(q)) && brick_count > 0 && prune_aabbs != 0) {
         // Seed near the closest brick box, then test all other boxes. The
         // second pass is exhaustive over AABBs; only a strict bound may
         // prune, so equal-distance candidates with smaller IDs survive.
@@ -121,7 +126,32 @@ kernel void spatial_brick_knn_f32(
             const float3 lo = float3(bounds[off], bounds[off + 1], bounds[off + 2]);
             const float3 hi = float3(bounds[off + 3], bounds[off + 4], bounds[off + 5]);
             const float lb = lower_bound_sq(q, lo, hi);
-            if (found == k && lb > best_d[k - 1]) continue;
+            if (found == k && lb > best_d[k - 1]) {
+                ++pruned_count;
+                if (audit_enabled != 0) {
+                    // Debug-only independent point scan of every pruned box.
+                    // Compare to the best pair *at the time of the prune*.
+                    const ulong begin = b * BRICK_SIZE;
+                    const ulong end = min(begin + BRICK_SIZE, ulong(point_count));
+                    for (ulong p = begin; p < end; ++p) {
+                        const uint source = uint(sorted_indices[p]);
+                        const ulong xoff = ulong(source) * 3;
+                        const float3 x = float3(points[xoff], points[xoff + 1], points[xoff + 2]);
+                        const float d = squared_norm(x - q);
+                        if (isfinite(d) && before(d, source, best_d[k - 1], best_i[k - 1])) {
+                            ++bad_count;
+                        }
+                    }
+                }
+                continue;
+            }
+            scan_brick(q, uint(b), ulong(point_count), points, sorted_indices,
+                       best_d, best_i, k, found);
+        }
+    } else if (all(isfinite(q))) {
+        // Fast Math may reassociate one distance path independently of the
+        // box path. Do not use an unproved box comparison to discard points.
+        for (ulong b = 0; b < ulong(brick_count); ++b) {
             scan_brick(q, uint(b), ulong(point_count), points, sorted_indices,
                        best_d, best_i, k, found);
         }
@@ -131,4 +161,6 @@ kernel void spatial_brick_knn_f32(
         out_dist[row + j] = best_d[j];
         out_idx[row + j] = best_i[j] == UINT_MAX ? -1 : long(best_i[j]);
     }
+    audit_counts[ulong(qi) * 2] = pruned_count;
+    audit_counts[ulong(qi) * 2 + 1] = bad_count;
 }

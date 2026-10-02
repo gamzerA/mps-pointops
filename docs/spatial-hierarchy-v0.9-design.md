@@ -98,6 +98,28 @@ path. Large `Q` requires enough query parallelism; a single serial traversal
 per query and a giant cluster may still cause SIMD divergence. Keep build,
 query, transfers and fallback count separate in measurements.
 
+### Concrete two-level experiment
+
+At one million points and 128 points per brick, pad the 7,813 bricks to 8,192
+leaves. Group them into 128 microtrees of 64 bricks each, and build a macro
+tree over those 128 roots. A Metal build pass can reduce actual-coordinate
+leaf boxes and original-index minima within each microtree; a second pass
+unions the macro nodes. The padded leaves are marked empty. This gives at
+most 16,383 nodes and avoids quantized cell faces as pruning bounds.
+
+For `Q >= 256`, first measure one query per worker with near-child-first
+depth-first traversal and a bounded local stack. A node can be skipped when
+its certified float32 lower bound exceeds the current Kth distance. At equal
+distance it can also be skipped when its minimum original index is no smaller
+than the Kth chosen index; this rule requires a correct subtree index
+minimum. Safe and Fast Math need separate proofs or a full-scan fallback.
+For `Q = 16`, compare that serial traversal with a split by microtree:
+`Q × 128` independent tasks produce local top-K lists, followed by one
+deterministic `(distance, original index)` merge per query. The extra buffer
+for `Q=16, K=16` is roughly 262 KiB for 64-bit pairs before alignment, and
+its extra dispatch may outweigh the parallelism. These are proposed Metal
+experiments, not results from the CPU reference or an enabled public path.
+
 ## Measurements required before routing public kNN/radius
 
 At `N=1,000,000`, measure `Q={16,256,2048,8192,65536}` where feasible, with
