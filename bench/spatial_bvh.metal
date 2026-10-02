@@ -154,7 +154,9 @@ kernel void bvh_build_macro_f32(
 static inline void insert_candidate(
     float distance, uint source, thread float *best_d, thread uint *best_i,
     uint k, thread uint &found) {
-    if (!isfinite(distance) || !before(distance, source, best_d[k - 1], best_i[k - 1])) return;
+    // A finite coordinate difference can square to +inf. The native dense
+    // kNN still ranks that candidate ahead of the (inf, UINT_MAX) sentinel.
+    if (isnan(distance) || !before(distance, source, best_d[k - 1], best_i[k - 1])) return;
     uint position = 0;
     while (position < found && before(best_d[position], best_i[position], distance, source)) ++position;
     if (position >= k) return;
@@ -192,7 +194,7 @@ static inline uint audit_node(
         const ulong off = ulong(source) * 3;
         const float3 x = float3(points[off], points[off + 1], points[off + 2]);
         const float d = squared_norm(x - q);
-        bad += uint(isfinite(d) && before(d, source, worst_d, worst_i));
+        bad += uint(!isnan(d) && before(d, source, worst_d, worst_i));
     }
     return bad;
 }

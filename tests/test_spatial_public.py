@@ -129,6 +129,25 @@ def test_mps_public_bvh_empty_and_zero_radius_match_scan() -> None:
 
 
 @pytest.mark.skipif(
+    not torch.backends.mps.is_available() or os.environ.get("PYTORCH_MPS_FAST_MATH") != "0"
+    or os.environ.get("PYTORCH_ENABLE_MPS_FALLBACK") != "0",
+    reason="requires isolated MPS Safe Math with fallback disabled",
+)
+def test_public_bvh_knn_keeps_overflowed_distance_candidates() -> None:
+    huge = float(2**60)
+    points = torch.tensor([[0.0, 0.0, 0.0], [huge, 0.0, 0.0],
+                           [-huge, 0.0, 0.0]], device="mps")
+    query = points[:1].clone()
+    index = SpatialIndex(points, backend="bvh")
+    expected = SpatialIndex(points, backend="scan").knn(query, 3)
+    assert expected[1].tolist() == [[0, 1, 2]]
+    for parallel in (False, True):
+        actual = index.knn(query, 3, parallel_microtrees=parallel)
+        assert torch.equal(actual[1], expected[1])
+        assert torch.equal(actual[0].view(torch.int32), expected[0].view(torch.int32))
+
+
+@pytest.mark.skipif(
     not torch.backends.mps.is_available() or os.environ.get("PYTORCH_MPS_FAST_MATH") != "1",
     reason="requires isolated MPS Fast Math",
 )

@@ -2,8 +2,10 @@
 
 This design accompanies the **experimental** exact CPU
 [`HierarchicalMortonReference`](../bench/spatial_hierarchy_reference.py) and
-private Metal [`MortonTwoLevelBVH`](../bench/spatial_bvh.py). Neither is wired
-into the public package. M5 Pro results below are fixture-specific; the
+private Metal [`MortonTwoLevelBVH`](../bench/spatial_bvh.py). The Metal BVH is
+now exposed through the unreleased, opt-in single-cloud
+[`SpatialIndex`](spatial-api-v090.md); it does not replace the existing dense
+or flat operators. M5 Pro results below are fixture-specific; the
 physical M1 is currently unavailable and its gate remains pending.
 
 ## Structure and contracts
@@ -67,7 +69,8 @@ overestimated lower bound can discard a true winner even when the box itself
 contains every point. A production pruning predicate must use a proved
 downward bound on the **same distance contract** as its candidate kernel,
 including Safe/Fast compile settings and subnormals. If that certificate
-cannot be established for an input (for example, overflow, nonfinite or an
+cannot be established for an input (for example, an unresolved overflow,
+nonfinite value, or an
 unresolved underflow band), it must set the lower bound to zero or route to an
 explicit full-scan path. An empirical epsilon alone is not a proof.
 
@@ -83,6 +86,12 @@ uses the conditional Safe Math contract in the
 [spatial prototype report](spatial-1m-v0.9-prototype.md) and rejects Fast
 Math until that mode has an independently justified pruning bound.
 
+Finite coordinates may yield a float32 squared distance of `+∞`. The dense
+Metal kNN ranks those candidates by original index after finite-distance
+matches; the BVH must do the same. A `+∞` node bound does not prune against
+an `+∞` Kth distance because the rule is strictly `LB > τ`. Serial and split
+microtree regression tests cover this case across multiple leaves.
+
 ## Work and memory
 
 For `N` points, brick size `L`, and `M = ceil(N/L)` leaves, key generation
@@ -94,11 +103,13 @@ matches in `O(E log E)`. In the worst case `V=O(M)` and `C=N`; fallback is
 another `O(N)` scan. Exact-rational CPU arithmetic is intentionally slow and
 is excluded from GPU speed comparisons.
 
-The private Metal prototype implements Morton key generation, stable
+The Metal prototype implements Morton key generation, stable
 key/index sorting, per-brick actual-coordinate AABB reduction, bottom-up
 microtree and macro-tree union, and bounded per-query traversal. A stack
 overflow returns a visible status and performs a full exact scan instead of
-returning a partial row. It has no public routing or Fast Math traversal.
+returning a partial row. The unreleased `SpatialIndex` routes explicit BVH
+requests and a narrow measured M5 Pro kNN window to it; no flat/batched
+public entry point or Fast Math path routes to this traversal.
 Keep build, query, transfers and fallback count separate in measurements.
 
 ### Concrete two-level experiment

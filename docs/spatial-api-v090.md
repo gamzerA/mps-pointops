@@ -41,6 +41,9 @@ borrowed, and in-place mutation after construction raises an error.
 The explicit BVH accepts one MPS float32 cloud, `N<=1,000,000`, `K<=32`,
 finite normal-or-zero coordinates with `|coordinate|<=2**60`, a valid 21-bit
 Morton domain, and `PYTORCH_MPS_FAST_MATH=0` **set before Python starts**.
+Finite coordinates can still produce `+∞` float32 squared distance; kNN
+ranks such candidates by original index, matching the dense Metal sentinel
+rule, instead of treating them as absent.
 These are research bounds, not hardware limits. The optional `origin` and
 `cell_size` constructor arguments control Morton **ordering**, never the
 distance predicate. By default the origin is the coordinate minimum and a
@@ -57,9 +60,9 @@ and `8192<=Q<=65536`; both tensors are MPS float32; the bounded BVH input
 checks pass; and no Morton cell contains at least 5% of a deterministic
 4,096-point sample. The sample-key readback is at most 32 KiB; grid sizing,
 domain checks, and key validation also synchronize the host. It is a speed
-heuristic that rejects
-the measured all-coincident regression, **not** a proof that the selected
-path is faster for every distribution. On M1 or any unmeasured chip, Fast
+heuristic that rejects the measured all-coincident regression, **not** a proof
+that the selected path is faster for every distribution. On M1 or any
+unmeasured chip, Fast
 Math, other sizes/K, and every Ball Query call, `auto` retains GPU full scan.
 Use `backend="bvh"` to evaluate the hierarchy deliberately. For `Q<=256`,
 the BVH kNN method uses the tested split-microtree query unless

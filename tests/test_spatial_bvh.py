@@ -18,6 +18,7 @@ if "bench" not in sys.modules:
 from bench.spatial_bvh import MortonTwoLevelBVH
 from bench.spatial_selected_distances import selected_sqdist_f32
 from mps_pointops._flat_search_mps import knn_indices
+from mps_pointops.ops import knn as dense_knn
 
 
 pytestmark = pytest.mark.skipif(
@@ -109,6 +110,48 @@ def test_reject_subnormal_coordinate_bits() -> None:
     points.view(torch.int32)[0, 0] = 1
     with pytest.raises(ValueError, match="normal-or-zero"):
         MortonTwoLevelBVH.build(points, torch.zeros(3, device="mps"), 1.0)
+
+
+def test_finite_coordinates_with_infinite_squared_distance_keep_indices() -> None:
+    # float32 distance overflows even though all coordinates are finite and
+    # within the BVH's documented coordinate domain.
+    huge = float(2**60)
+    points = torch.tensor([[0.0, 0.0, 0.0], [huge, 0.0, 0.0],
+                           [-huge, 0.0, 0.0]], device="mps")
+    query = points[:1].clone()
+    index = MortonTwoLevelBVH.build(
+        points, torch.tensor([-huge, 0.0, 0.0], device="mps"), float(2**41)
+    )
+    expected_d, expected_i = dense_knn(query.unsqueeze(0), points.unsqueeze(0), 3)
+    assert expected_i[0].tolist() == [[0, 1, 2]]
+    for parallel in (False, True):
+        squared, indices, stats = index.knn(query, 3, parallel_microtrees=parallel,
+                                             audit=not parallel)
+        assert torch.equal(indices, expected_i[0])
+        assert torch.equal(torch.sqrt(squared).view(torch.int32),
+                           expected_d[0].view(torch.int32))
+        assert torch.all(stats[:, 3:] == 0)
+
+
+def test_infinite_distance_ties_merge_across_microtrees() -> None:
+    huge = float(2**60)
+    points = torch.zeros((8193, 3), device="mps")
+    points[::2, 0] = -huge
+    points[1::2, 0] = huge
+    query = torch.zeros((1, 3), device="mps")
+    index = MortonTwoLevelBVH.build(
+        points, torch.tensor([-huge, 0.0, 0.0], device="mps"), float(2**41)
+    )
+    assert index.padded_leaves > 64
+    expected_d, expected_i = dense_knn(query.unsqueeze(0), points.unsqueeze(0), 16)
+    assert expected_i[0].tolist() == [list(range(16))]
+    for parallel in (False, True):
+        squared, indices, stats = index.knn(query, 16, parallel_microtrees=parallel,
+                                             audit=not parallel)
+        assert torch.equal(indices, expected_i[0])
+        assert torch.equal(torch.sqrt(squared).view(torch.int32),
+                           expected_d[0].view(torch.int32))
+        assert torch.all(stats[:, 3:] == 0)
 
 
 def test_empty_and_short_reference_rows_are_fully_written() -> None:
