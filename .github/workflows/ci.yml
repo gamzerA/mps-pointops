@@ -73,52 +73,19 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - name: Build sdist and wheel
+      - name: Build and validate release artifacts
         run: |
-          python -m pip install build
+          python -m pip install build twine PyYAML
+          python -m unittest discover -s tools -p test_validate_release.py
+          python tools/validate_release.py
           python -m build
-      - name: Check distribution contents
-        run: |
-          python - <<'EOF'
-          import glob, tarfile, zipfile
-          names = set(zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist())
-          required = {
-              "mps_pointops/kernels/fps.metal",
-              "mps_pointops/kernels/fps_multigroup.metal",
-              "mps_pointops/kernels/knn.metal",
-              "mps_pointops/kernels/feature_knn.metal",
-              "mps_pointops/kernels/nearest.metal",
-              "mps_pointops/kernels/graclus.metal",
-              "mps_pointops/kernels/ball_query.metal",
-              "mps_pointops/kernels/fps_flat.metal",
-              "mps_pointops/kernels/flat_search.metal",
-              "mps_pointops/kernels/pointnet2.metal",
-              "mps_pointops/kernels/chamfer_nn.metal",
-              "mps_pointops/kernels/voxel_pool.metal",
-              "mps_pointops/kernels/spatial_keys.metal",
-              "mps_pointops/kernels/spatial_bvh.metal",
-              "mps_pointops/pytorch3d.py",
-              "mps_pointops/pointnet2.py",
-              "mps_pointops/chamfer.py",
-              "mps_pointops/pointcept.py",
-              "mps_pointops/nearest.py",
-              "mps_pointops/graclus.py",
-              "mps_pointops/random_walk.py",
-              "mps_pointops/voxel.py",
-              "mps_pointops/spatial.py",
-              "mps_pointops/_spatial_keys.py",
-              "mps_pointops/_spatial_bvh.py",
-          }
-          missing = required - names
-          licenses = [n for n in names if "/licenses/" in n]
-          print("licenses:", licenses)
-          assert not missing, f"missing from wheel: {missing}"
-          assert len(licenses) >= 2, "LICENSE files missing from wheel"
-          with tarfile.open(glob.glob("dist/*.tar.gz")[0]) as archive:
-              sdist_names = archive.getnames()
-          assert any(name.endswith("/CITATION.cff") for name in sdist_names), \
-              "CITATION.cff missing from source distribution"
-          EOF
+          python -m twine check dist/*
+          python tools/validate_release.py --dist dist --output release-validation.json
+      - uses: actions/upload-artifact@v5
+        with:
+          name: release-validation-${{ github.run_id }}
+          path: release-validation.json
+          if-no-files-found: error
 
   pyg-2-8:
     name: PyG 2.8 MPS operators

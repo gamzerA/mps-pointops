@@ -18,26 +18,21 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - name: Check that the release tag matches the package version
+      - name: Build and validate the release
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          python - <<'PY'
-          import os
-          import pathlib
-          import tomllib
-
-          version = tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"]
-          expected = f"v{version}"
-          actual = os.environ["RELEASE_TAG"]
-          if actual != expected:
-              raise SystemExit(f"Release tag {actual!r} does not match {expected!r}")
-          PY
-      - name: Build and check distributions
-        run: |
-          python -m pip install build twine
+          python -m pip install build twine PyYAML
+          python -m unittest discover -s tools -p test_validate_release.py
+          python tools/validate_release.py --tag "$RELEASE_TAG"
           python -m build
           python -m twine check dist/*
+          python tools/validate_release.py --tag "$RELEASE_TAG" --dist dist --output release-validation.json
+      - uses: actions/upload-artifact@v5
+        with:
+          name: release-validation
+          path: release-validation.json
+          if-no-files-found: error
       - uses: actions/upload-artifact@v5
         with:
           name: python-distributions

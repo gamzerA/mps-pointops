@@ -127,6 +127,26 @@ following [Zenodo's versioning guide](https://help.zenodo.org/docs/deposit/manag
    GitHub/PyPI release identity. Put the version DOI in the GitHub release
    notes. The README concept DOI badge stays unchanged.
 
+The required `package` CI check and the publishing workflow run the same
+offline release validator. It checks `pyproject.toml`, the package
+`__version__`, and `CITATION.cff` for matching versions, release URLs, and a
+version DOI. It compares every packaged Python/Metal file and both license
+notices byte-for-byte with the checkout, then records wheel and sdist SHA-256
+hashes in a `release-validation` workflow artifact. Reproduce it using
+Python 3.11 or newer in a clean build directory:
+
+```bash
+python -m pip install build twine PyYAML
+python -m unittest discover -s tools -p test_validate_release.py
+python -m build
+python -m twine check dist/*
+python tools/validate_release.py --dist dist --output release-validation.json
+```
+
+For a release, also pass `--tag vX.Y.Z` using its exact Git tag. This offline
+check does not verify DOI reservation/publication or the uploaded Zenodo ZIP;
+complete the archive checks above before reporting a release as archived.
+
 GitHub auto-archiving is not enabled for this repository. Zenodo's GitHub
 integration documentation does not guarantee that an automatically captured
 release will join this existing, manually created concept DOI lineage. Do not
