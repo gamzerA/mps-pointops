@@ -189,6 +189,14 @@ def main() -> None:
     bvh_d, bvh_i = bvh_result
     auto_d, auto_i = auto_result
     first_d, first_i = bvh_first
+    # The public facade returns only distances and indices. Query the same
+    # already-built BVH once more outside every timed sample so the shader's
+    # per-query bounded-stack recovery counter can be archived as evidence.
+    diagnostic_d, diagnostic_i, diagnostic_stats = bvh._get_bvh().radius(
+        query, args.radius, args.limit,
+    )
+    torch.mps.synchronize()
+    fallback_rows = int(torch.count_nonzero(diagnostic_stats[:, 4]).item())
     mismatch = {
         "bvh_first_vs_scan_indices": int(torch.count_nonzero(first_i != scan_i).item()),
         "bvh_steady_vs_scan_indices": int(torch.count_nonzero(bvh_i != scan_i).item()),
@@ -199,6 +207,10 @@ def main() -> None:
             bvh_d.view(torch.int32) != scan_d.view(torch.int32)).item()),
         "auto_vs_scan_squared_distance_bits": int(torch.count_nonzero(
             auto_d.view(torch.int32) != scan_d.view(torch.int32)).item()),
+        "diagnostic_vs_scan_indices": int(torch.count_nonzero(
+            diagnostic_i != scan_i).item()),
+        "diagnostic_vs_scan_squared_distance_bits": int(torch.count_nonzero(
+            diagnostic_d.view(torch.int32) != scan_d.view(torch.int32)).item()),
     }
     row_counts = _row_counts(scan_i)
     order_violations = _order_violations(scan_i)
@@ -234,6 +246,12 @@ def main() -> None:
         "row_counts": row_counts,
         "original_index_order_violations": order_violations,
         "mismatch": mismatch,
+        "bvh_stack_fallback": {
+            "rows": fallback_rows,
+            "fraction": fallback_rows / len(query),
+            "query_count": len(query),
+            "scope": "one untimed private BVH query after the public timing samples",
+        },
         "input_transfer_ms": transfer_ms,
         "bvh_first_call_including_build_ms": bvh_first_ms,
         "scan_steady_query_ms": scan_ms,
