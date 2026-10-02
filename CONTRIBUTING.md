@@ -94,6 +94,8 @@ versions and commands if they change.
 ## Release archival and DOI lineage
 
 This project prioritizes one Zenodo DOI lineage. The
+[v1.0.0 archive](https://zenodo.org/records/23107348) has version DOI
+`10.5281/zenodo.23107348`. The
 [v0.8.0 archive](https://zenodo.org/records/23092167) has version DOI
 `10.5281/zenodo.23092167`. The
 [v0.7.0 archive](https://zenodo.org/records/23087369) has version DOI
@@ -105,7 +107,7 @@ This project prioritizes one Zenodo DOI lineage. The
 [v0.4.0 archive](https://zenodo.org/records/23078860) has version DOI
 `10.5281/zenodo.23078860`; the earlier
 [v0.3.0 archive](https://zenodo.org/records/23076058) has version DOI
-`10.5281/zenodo.23076058`. All six belong to concept DOI
+`10.5281/zenodo.23076058`. All seven belong to concept DOI
 `10.5281/zenodo.23076057`.
 The README badge uses the concept DOI; papers and `CITATION.cff` cite the
 specific release's version DOI.

@@ -1288,9 +1288,8 @@ local Safe/Fast Math tests, and the seven required CI checks for `main`.
 
 ## Citation
 
-For v1.0.0, cite its reserved
-[version DOI (10.5281/zenodo.23107348)](https://doi.org/10.5281/zenodo.23107348)
-after the Zenodo archive is published. [CITATION.cff](CITATION.cff) records
+For v1.0.0, cite its archived
+[version DOI (10.5281/zenodo.23107348)](https://doi.org/10.5281/zenodo.23107348). [CITATION.cff](CITATION.cff) records
 the same version and DOI. For results using v0.8.0, cite its archived
 [version DOI (10.5281/zenodo.23092167)](https://doi.org/10.5281/zenodo.23092167). For results using v0.7.0, cite its archived
 [version DOI (10.5281/zenodo.23087369)](https://doi.org/10.5281/zenodo.23087369).
