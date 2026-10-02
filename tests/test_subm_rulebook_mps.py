@@ -1,4 +1,4 @@
-"""Bounded Metal rulebook parity against the independent CPU coordinate oracle."""
+"""Metal rulebook parity against the independent CPU coordinate oracle."""
 
 from __future__ import annotations
 
@@ -36,6 +36,7 @@ def _check_rulebook(indices, cpu_rulebook, kernel, dilation):
     assert gpu.pairs.device.type == "mps"
     assert gpu.pair_count.device.type == "mps"
     assert gpu.output_ptr.device.type == "mps"
+    assert gpu.offset_ptr.device.type == "mps"
     count = int(gpu.pair_count.cpu()[0])
     assert count == len(cpu_rulebook.pairs)
     assert torch.equal(gpu.output_indices.cpu(), cpu_rulebook.output_indices)
@@ -45,6 +46,13 @@ def _check_rulebook(indices, cpu_rulebook, kernel, dilation):
     assert torch.equal(gpu.output_ptr.cpu(), cpu_ptr)
     assert torch.equal(gpu.output_sources[:count].cpu(), cpu_sources)
     assert torch.equal(gpu.output_offsets[:count].cpu(), cpu_offsets)
+    cpu_offset_counts = torch.bincount(
+        cpu_rulebook.pairs[:, 0], minlength=kernel[0] * kernel[1] * kernel[2]
+    )
+    cpu_offset_ptr = torch.cat((
+        torch.zeros(1, dtype=torch.int64), cpu_offset_counts.cumsum(0)
+    ))
+    assert torch.equal(gpu.offset_ptr.cpu(), cpu_offset_ptr)
     assert torch.all(gpu.output_sources[count:] == -1).item()
     assert torch.all(gpu.output_offsets[count:] == -1).item()
     return gpu
@@ -81,21 +89,37 @@ def test_mps_pairs_and_output_csr_are_bit_exact(
 
 
 @MPS
-@pytest.mark.parametrize("rows", [1, 7, 64, 256, 1024])
+@pytest.mark.parametrize("rows", [1, 7, 64, 256, 1024, 1025, 10_000])
 def test_mps_rulebook_random_unsorted_clouds(rows):
     # A shuffled, two-batch set catches mistakes that sorted coordinates or
     # one batch would hide. Fixed seeds keep failures reproducible.
     generator = torch.Generator().manual_seed(4812 + rows)
-    universe = torch.randperm(2 * 16 * 8 * 8, generator=generator)[:rows]
+    shape = (64, 32, 16) if rows > 1024 else (16, 8, 8)
+    universe = torch.randperm(2 * shape[0] * shape[1] * shape[2], generator=generator)[:rows]
     coordinates = []
     for flat in universe.tolist():
-        batch, rest = divmod(flat, 16 * 8 * 8)
-        axis0, rest = divmod(rest, 8 * 8)
-        axis1, axis2 = divmod(rest, 8)
+        batch, rest = divmod(flat, shape[0] * shape[1] * shape[2])
+        axis0, rest = divmod(rest, shape[1] * shape[2])
+        axis1, axis2 = divmod(rest, shape[2])
         coordinates.append([batch, axis0, axis1, axis2])
     kernel, dilation = (3, 3, 3), (1, 2, 1)
-    indices, cpu = _oracle(coordinates, (16, 8, 8), 2, kernel, dilation)
+    indices, cpu = _oracle(coordinates, shape, 2, kernel, dilation)
     _check_rulebook(indices, cpu, kernel, dilation)
+
+
+@MPS
+def test_mps_rulebook_accepts_more_than_the_old_slot_limit():
+    shape = (16, 16, 8)
+    flat_rows = torch.randperm(2 * 16 * 16 * 8, generator=torch.Generator().manual_seed(996))[:1024]
+    coordinates = []
+    for flat in flat_rows.tolist():
+        batch, rest = divmod(flat, 16 * 16 * 8)
+        axis0, rest = divmod(rest, 16 * 8)
+        axis1, axis2 = divmod(rest, 8)
+        coordinates.append([batch, axis0, axis1, axis2])
+    kernel = (5, 5, 5)
+    indices, cpu = _oracle(coordinates, shape, 2, kernel, (1, 1, 1))
+    _check_rulebook(indices, cpu, kernel, (1, 1, 1))
 
 
 @MPS
@@ -142,6 +166,16 @@ def test_mps_target_arithmetic_does_not_wrap_int32_coordinate_boundary():
 
 
 @MPS
+def test_mps_rulebook_handles_full_int32_dilation_and_batch_keys():
+    limit = 2**31 - 1
+    indices, cpu = _oracle(
+        [[limit, 0, 0, 0], [0, limit, 0, 0], [0, 0, 0, 0]],
+        (2**31, 1, 1), 2**31, (3, 1, 1), (limit, 1, 1),
+    )
+    _check_rulebook(indices, cpu, (3, 1, 1), (limit, 1, 1))
+
+
+@MPS
 def test_mps_generated_csr_chains_into_metal_forward_without_intermediate_sync():
     coordinates = [[0, 2, 1, 1], [0, 1, 1, 1], [1, 2, 1, 1], [0, 3, 1, 1]]
     shape, kernel = (5, 3, 3), (3, 3, 3)
@@ -177,7 +211,7 @@ def test_mps_generated_csr_chains_into_metal_forward_without_intermediate_sync()
 
 
 @MPS
-def test_mps_rulebook_rejects_invalid_shapes_and_bounded_limit():
+def test_mps_rulebook_rejects_invalid_shapes():
     coordinates = torch.zeros((2, 4), dtype=torch.int32, device="mps")
     with pytest.raises(ValueError, match="MPS int32"):
         generate_subm_rulebook_mps(coordinates.cpu(), kernel_size=3)
@@ -191,11 +225,10 @@ def test_mps_rulebook_rejects_invalid_shapes_and_bounded_limit():
         generate_subm_rulebook_mps(coordinates, kernel_size=3, dilation=0)
     with pytest.raises(ValueError, match="int32"):
         generate_subm_rulebook_mps(coordinates, kernel_size=3, dilation=2**31)
-    with pytest.raises(ValueError, match="bounded"):
+    with pytest.raises(ValueError, match="dispatch limit"):
+        generate_subm_rulebook_mps(coordinates[:1], kernel_size=(65537, 65537, 1))
+    with pytest.raises(ValueError, match="dispatch limit"):
         generate_subm_rulebook_mps(
-            torch.empty((1025, 4), dtype=torch.int32, device="mps"), kernel_size=3
-        )
-    with pytest.raises(ValueError, match="bounded"):
-        generate_subm_rulebook_mps(
-            torch.empty((1024, 4), dtype=torch.int32, device="mps"), kernel_size=5
+            torch.empty((1024, 4), dtype=torch.int32, device="mps"),
+            kernel_size=(2**22 + 1, 1, 1),
         )

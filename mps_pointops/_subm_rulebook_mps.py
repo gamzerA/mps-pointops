@@ -1,9 +1,12 @@
-"""Experimental MPS construction of a bounded SubM sparse rulebook.
+"""Experimental MPS construction of a SubM sparse rulebook.
 
-This private prototype intentionally uses an O(K*N*N) integer lookup. It
-generates exact CPU-oracle pair order for prevalidated unique coordinates,
-without a CPU rulebook or a device-to-host count transfer. It is groundwork
-for a future scalable Metal hash/radix index, not a public ``spconv`` API.
+Four stable device sorts make a lexicographic index over the full int32
+coordinate tuple. PyTorch 2.7 uses a small Metal gather before each sort to
+avoid its MPS int32 index_select boundary bug. Each Metal lookup then uses
+O(log N) binary-search comparisons instead of scanning N rows.
+Total work also includes the MPS sorts, whose algorithm and complexity depend
+on the PyTorch backend, and linear pair compaction. The logical count remains
+on the MPS device.
 """
 
 from __future__ import annotations
@@ -21,8 +24,19 @@ from ._sparse_rulebook import _triple
 
 
 _GROUP_SIZE = 256
-_MAX_ROWS = 1024
-_MAX_SLOTS = 27 * _MAX_ROWS
+# The lookup and compaction kernels use a uint grid position. Leave one
+# position for output_ptr[N] when the kernel volume is one. Each slot also
+# needs several temporary/padded tensors, so the device allocator may reject
+# large requests well before this dispatch limit.
+_MAX_SLOTS = 2**32 - 2
+
+# PyTorch 2.7 MPS index_select/gather can corrupt nearby large int32 values.
+# Its argsort is correct when the source values arrive intact. Use direct
+# Metal reads for sorted coordinate values on that version only.
+_TORCH_MAJOR_MINOR = tuple(
+    int(part) for part in torch.__version__.split("+", 1)[0].split(".")[:2]
+)
+_METAL_GATHER_I32 = _TORCH_MAJOR_MINOR < (2, 8)
 
 
 @dataclass(frozen=True)
@@ -33,6 +47,8 @@ class SubmRulebookMPS:
     ``(offset, input_row, output_row)``. The padded suffix is all -1.
     ``output_ptr/sources/offsets`` are output CSR, ordered by output row then
     offset, and can be passed directly to the private Metal SubM forward.
+    ``offset_ptr`` marks the offset-major ranges of the padded ``pairs``
+    array and stays on MPS for the private weight-gradient kernel.
     ``pair_count`` is a one-element MPS int64 tensor; reading its value on CPU
     synchronizes, so callers should normally use the CSR without readback.
     """
@@ -43,6 +59,7 @@ class SubmRulebookMPS:
     output_ptr: Tensor
     output_sources: Tensor
     output_offsets: Tensor
+    offset_ptr: Tensor
     kernel_size: tuple[int, int, int]
 
 
@@ -59,7 +76,7 @@ def generate_subm_rulebook_mps(
     kernel_size: int | Sequence[int],
     dilation: int | Sequence[int] = 1,
 ) -> SubmRulebookMPS:
-    """Create a private, bounded SubM rulebook entirely on the MPS device.
+    """Create a private SubM rulebook entirely on the MPS device.
 
     Input must be unique, valid MPS int32 coordinates ``[N,4]`` with columns
     ``[batch, axis0, axis1, axis2]``. Device-side coordinate validation and
@@ -68,9 +85,10 @@ def generate_subm_rulebook_mps(
     this precondition. Input row order becomes output coordinate row order.
 
     Odd kernels and positive dilations follow ``generate_subm_rulebook``.
-    At most 1024 active rows and 27648 (kernel offset, output row) slots are
-    accepted; these are prototype limits, not hardware limits. Lookup work is
-    quadratic in the active row count, so this is not a scalable path.
+    The one-dimensional Metal dispatch supports at most 2**32-2
+    (kernel offset, output row) slots. Device memory can impose a lower
+    practical limit. Coordinates use all four signed int32 fields as the
+    search key; target coordinates outside int32 cannot match any input.
     """
     if not isinstance(indices, Tensor):
         raise TypeError("indices must be a torch.Tensor")
@@ -85,10 +103,8 @@ def generate_subm_rulebook_mps(
     rows = indices.shape[0]
     volume = kernel[0] * kernel[1] * kernel[2]
     slots = rows * volume
-    if rows > _MAX_ROWS or slots > _MAX_SLOTS:
-        raise ValueError(
-            f"bounded MPS rulebook supports at most {_MAX_ROWS} rows and {_MAX_SLOTS} slots"
-        )
+    if volume > _MAX_SLOTS or slots > _MAX_SLOTS:
+        raise ValueError(f"MPS rulebook exceeds the Metal 1-D dispatch limit of {_MAX_SLOTS} slots")
 
     device = indices.device
     # CPU oracle output_indices is a clone. Preserve the same snapshot even
@@ -99,17 +115,38 @@ def generate_subm_rulebook_mps(
     output_sources = torch.full((slots,), -1, dtype=torch.int64, device=device)
     output_offsets = torch.full((slots,), -1, dtype=torch.int64, device=device)
     output_ptr = torch.empty((rows + 1,), dtype=torch.int64, device=device)
+    offset_ptr = torch.empty((volume + 1,), dtype=torch.int64, device=device)
     if slots == 0:
         output_ptr.zero_()
+        offset_ptr.zero_()
         return SubmRulebookMPS(
             stable_indices, pairs, torch.zeros((1,), dtype=torch.int64, device=device),
-            output_ptr, output_sources, output_offsets, kernel,
+            output_ptr, output_sources, output_offsets, offset_ptr, kernel,
+        )
+
+    # Stable sorts from the last coordinate field to the first produce a
+    # lexicographic row permutation. PyTorch 2.7's index_select can corrupt
+    # large int32 coordinates, so Metal gathers those values directly before
+    # sorting on that version. No coordinate values move to the host.
+    # Sorting only row IDs leaves output order and source row IDs unchanged.
+    sorted_rows = torch.arange(rows, dtype=torch.int64, device=device)
+    for axis in (3, 2, 1, 0):
+        if _METAL_GATHER_I32:
+            axis_values = torch.empty((rows,), dtype=torch.int32, device=device)
+            _library().subm_rulebook_gather_axis_i32(
+                stable_indices, sorted_rows, axis_values, rows, axis,
+                threads=rows, group_size=min(rows, _GROUP_SIZE),
+            )
+        else:
+            axis_values = stable_indices.index_select(0, sorted_rows)[:, axis]
+        sorted_rows = sorted_rows.index_select(
+            0, torch.argsort(axis_values, stable=True)
         )
 
     dense_sources = torch.empty((slots,), dtype=torch.int64, device=device)
     valid_offset = torch.empty((slots,), dtype=torch.int32, device=device)
     _library().subm_rulebook_lookup_i32(
-        stable_indices, dense_sources, valid_offset,
+        stable_indices, sorted_rows, dense_sources, valid_offset,
         rows, *kernel, *dil,
         threads=slots, group_size=min(slots, _GROUP_SIZE),
     )
@@ -118,10 +155,11 @@ def generate_subm_rulebook_mps(
     output_prefix = torch.cumsum(valid_output, dim=0, dtype=torch.int64)
     _library().subm_rulebook_compact_i64(
         dense_sources, offset_prefix, output_prefix, pairs,
-        output_ptr, output_sources, output_offsets, rows, volume,
-        threads=max(slots, rows + 1), group_size=min(max(slots, rows + 1), _GROUP_SIZE),
+        output_ptr, output_sources, output_offsets, offset_ptr, rows, volume,
+        threads=max(slots, rows + 1, volume + 1),
+        group_size=min(max(slots, rows + 1, volume + 1), _GROUP_SIZE),
     )
     return SubmRulebookMPS(
         stable_indices, pairs, offset_prefix[-1:], output_ptr,
-        output_sources, output_offsets, kernel,
+        output_sources, output_offsets, offset_ptr, kernel,
     )
