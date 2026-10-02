@@ -4,6 +4,10 @@ One fresh Safe-Math process measures one synthetic fixture. Uniform and mixed
 queries are independent of references. The all-coincident stress fixture uses
 half coincident and half displaced queries to exercise both full and empty
 rows; these measurements are not a model workload performance claim.
+
+Use ``--allow-homogeneous-rows`` when probing a large-radius case in which
+every query fills its first-K row. The option only relaxes the fixture-shape
+assertion; index, distance-bit, and output-order checks still apply.
 """
 
 from __future__ import annotations
@@ -113,6 +117,8 @@ def main() -> None:
                         help="default: 16 for uniform/collapsed; 1/64 for cluster-sparse")
     parser.add_argument("--seed", type=int, default=20261002)
     parser.add_argument("--repeats", type=int, default=5)
+    parser.add_argument("--allow-homogeneous-rows", action="store_true",
+                        help="permit all-full or all-empty rows in radius crossover probes")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
@@ -223,6 +229,7 @@ def main() -> None:
                     "seed": args.seed,
                     **detail},
         "repeats": args.repeats,
+        "mixed_rows_required": not args.allow_homogeneous_rows,
         "auto_selected_backend": "bvh" if auto._bvh is not None else "scan",
         "row_counts": row_counts,
         "original_index_order_violations": order_violations,
@@ -259,7 +266,8 @@ def main() -> None:
     print("raw", args.output)
     if any(mismatch.values()) or order_violations:
         raise AssertionError("public Ball Query paths differ in indices, squared bits, or first-K order")
-    if row_counts["first_k_full_rows"] == 0 or row_counts["zero_neighbor_rows"] == 0:
+    if (not args.allow_homogeneous_rows and
+            (row_counts["first_k_full_rows"] == 0 or row_counts["zero_neighbor_rows"] == 0)):
         raise AssertionError("fixture did not exercise both full first-K and empty rows")
 
 
