@@ -14,6 +14,24 @@ const m1RawRoot = resolve(process.env.MPS_POINTOPS_M1_RESULTS
   ?? '/private/tmp/mps-v090-m1-results');
 const haveSource = existsSync(join(sourceRoot, 'bench', 'results'));
 
+test('physical M1 Chamfer parity callout matches the archived upstream matrices',
+  { skip: !haveSource && 'Set MPS_POINTOPS_SOURCE_ROOT to the local source checkout' },
+  () => {
+    const archive = join(sourceRoot, 'docs', 'evidence', 'chamfer-v090-m1-upstream');
+    const read = name => JSON.parse(readFileSync(join(archive, name), 'utf8'));
+    const files = ['chamfer-safe.json', 'chamfer-fast.json',
+      'chamfer-extended-safe.json', 'chamfer-extended-fast.json'];
+    const records = files.map(read);
+    assert.deepEqual(records.map(record => record.summary.mps.cases), [480, 480, 252, 252]);
+    assert.ok(records.every(record => record.summary.mps.failed_elements === 0
+      && (record.summary.mps.failed_checks ?? record.summary.mps.failed_tensors) === 0
+      && record.summary.mps.max_abs <= 1.91e-6
+      && record.environment.mps_fallback === '0'));
+    const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+    assert.match(html, /Physical M1 Chamfer.*480 base \+ 252 normals\/Pointclouds cases, 0 failures, max \|Δ\| 1\.91e-6/);
+    assert.match(html, /docs\/evidence\/chamfer-v090-m1-upstream\/README\.md/);
+  });
+
 function median(samples) {
   assert.ok(Array.isArray(samples) && samples.length > 0);
   assert.ok(samples.every((value) => Number.isFinite(value) && value >= 0));
