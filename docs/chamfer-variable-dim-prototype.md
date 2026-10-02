@@ -80,25 +80,30 @@ metrics, random and tie/coincident fixtures, four point reductions, both
 directions, and four weight settings. Unequal valid lengths and finite padded
 rows are included. Each case checks loss structure, normal-loss slot,
 gradient presence, values, first coordinate and weight gradients, and valid
-nearest indices in both directions when applicable. Values use the established `atol=2e-5, rtol=2e-4` predicate;
+nearest indices in both directions when applicable. Values use the established
+`atol=2e-5, rtol=2e-4` predicate;
 indices and structures must match exactly. The JSON records the pinned source,
 source hashes, runtime, math mode, per-case checks, and failures. The existing
 3D direct-upstream matrix remains a separate required regression gate.
 
-## Local result at source commit `2da9c7c`
+## Local result at source commit `1dc07c9`
 
 On an Apple M5 Pro (48 GB), macOS with PyTorch 2.14.1, all three direct
 comparisons against the pinned PyTorch3D CPU extension passed:
 
 | Port target | Cases | Checks | Failed | Largest absolute value difference | Raw record |
 | --- | ---: | ---: | ---: | ---: | --- |
-| CPU | 384 | 2,976 | 0 | `1.90735e-6` | [CPU JSON](evidence/chamfer-variable-dim/cpu.json) |
-| MPS Safe Math, fallback disabled | 384 | 2,976 | 0 | `3.81470e-6` | [Safe JSON](evidence/chamfer-variable-dim/mps-safe.json) |
-| MPS Fast Math, fallback disabled | 384 | 2,976 | 0 | `3.81470e-6` | [Fast JSON](evidence/chamfer-variable-dim/mps-fast.json) |
+| CPU | 384 | 3,360 | 0 | `1.90735e-6` | [CPU JSON](evidence/chamfer-variable-dim/cpu.json) |
+| MPS Safe Math, fallback disabled | 384 | 3,360 | 0 | `3.81470e-6` | [Safe JSON](evidence/chamfer-variable-dim/mps-safe.json) |
+| MPS Fast Math, fallback disabled | 384 | 3,360 | 0 | `3.81470e-6` | [Fast JSON](evidence/chamfer-variable-dim/mps-fast.json) |
 
-Each record reports `port.commit=2da9c7c28c6dfd07f9238e49b0f36afa0074508e`
-and `port.dirty=false`. The existing D=3 direct-upstream matrix also passed
-480 cases and 3,240 checks in each Safe/Fast mode at this working tree before
-the evidence commit. The focused unit suite passed 110 tests with two
-environment skips in each MPS mode; CPU-oracle spot checks at `D=64,128` for
-both norms matched outputs and first gradients within the same tolerance.
+Each new-dimension record reports
+`port.commit=1dc07c9c91d01f427edae23150ff20108361ff6f` and
+`port.dirty=false`. The unchanged D=3 direct-upstream matrix also passed
+480 cases and 3,240 checks on
+[CPU](evidence/chamfer-variable-dim/legacy-3d-cpu.json),
+[MPS Safe](evidence/chamfer-variable-dim/legacy-3d-mps-safe.json), and
+[MPS Fast](evidence/chamfer-variable-dim/legacy-3d-mps-fast.json), with zero
+failures each. The focused unit suite passed 113 tests with two environment
+skips in each MPS mode. CPU-oracle spot checks at `D=64,128` for both norms
+matched outputs and first gradients within the same tolerance.
