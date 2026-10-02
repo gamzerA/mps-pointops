@@ -51,5 +51,7 @@ exactly coincident pair in isolation: its zero L1 loss has query gradient
 `(-1,-1,-1)` and reference gradient `(+1,+1,+1)`. Safe and Fast Math each
 passed the selected Chamfer/spatial regression set (86 tests) on M5 Pro.
 
-Normal loss and PyTorch3D `Pointclouds` inputs remain unsupported. The
-[v0.8 scope decision](chamfer-api-scope-v0.8.md) lists their acceptance gates.
+Normal loss and optional PyTorch3D `Pointclouds` inputs have a separate
+[v0.9 development prototype and direct parity record](chamfer-normals-pointclouds-v0.9-prototype.md).
+The [v0.8 scope decision](chamfer-api-scope-v0.8.md) remains the published
+v0.8 contract; these changes are not a new release or full API claim.

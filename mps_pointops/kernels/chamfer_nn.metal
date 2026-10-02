@@ -45,6 +45,13 @@ kernel void chamfer_nearest_f32(
     const float qz = query[query_base + 2];
     const ulong ref_base = batch * ulong(refs_per_batch) * 3;
     const uint valid_refs = uint(ref_lengths[batch]);
+    if (valid_refs == 0) {
+        if (lane == 0) {
+            out_distance_sq[row] = 0.0f;
+            out_index[row] = -1;
+        }
+        return;
+    }
     float best_distance = INFINITY;
     uint best_index = UINT_MAX;
     for (ulong j = ulong(lane); j < ulong(valid_refs); j += SIMD) {
@@ -111,6 +118,13 @@ kernel void chamfer_nearest_l1_f32(
     const float qz = query[query_base + 2];
     const ulong ref_base = batch * ulong(refs_per_batch) * 3;
     const uint valid_refs = uint(ref_lengths[batch]);
+    if (valid_refs == 0) {
+        if (lane == 0) {
+            out_distance[row] = 0.0f;
+            out_index[row] = -1;
+        }
+        return;
+    }
     float best_distance = INFINITY;
     uint best_index = UINT_MAX;
     for (ulong j = ulong(lane); j < ulong(valid_refs); j += SIMD) {
