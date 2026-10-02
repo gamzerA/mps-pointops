@@ -28,13 +28,9 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-import scipy
-from scipy.spatial import cKDTree
 import torch
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-from mps_pointops import ops  # noqa: E402
 
 MAX_VERIFY_PAIRS = 16_000_000
 MAX_TIMED_BRUTE_PAIRS = 1_024_000_000
@@ -136,7 +132,7 @@ def check_timed_pair_budget(n: int, query_count: int) -> None:
         raise ValueError(f"N * Q exceeds the {MAX_TIMED_BRUTE_PAIRS:,} timed brute-force pair cap")
 
 
-def scipy_search(tree: cKDTree, queries: np.ndarray, op: str, k: int, radius: float, limit: int, workers: int) -> tuple[np.ndarray, np.ndarray | None]:
+def scipy_search(tree: Any, queries: np.ndarray, op: str, k: int, radius: float, limit: int, workers: int) -> tuple[np.ndarray, np.ndarray | None]:
     if op == "knn":
         distances, indices = tree.query(queries, k=k, eps=0.0, workers=workers)
         return np.asarray(indices, dtype=np.int64).reshape(len(queries), k), np.asarray(distances).reshape(len(queries), k)
@@ -168,6 +164,7 @@ def _mps_memory_sample() -> dict[str, int] | None:
 
 
 def measure_scipy(points: np.ndarray, queries: np.ndarray, op: str, args: argparse.Namespace) -> tuple[dict[str, Any], np.ndarray, np.ndarray | None]:
+    from scipy.spatial import cKDTree
     for _ in range(args.warmup):
         tree = cKDTree(points)
         scipy_search(tree, queries, op, args.k, args.radius, args.ball_k, args.workers)
@@ -192,6 +189,7 @@ def measure_scipy(points: np.ndarray, queries: np.ndarray, op: str, args: argpar
 
 
 def measure_mps(points: np.ndarray, queries: np.ndarray, op: str, args: argparse.Namespace) -> tuple[dict[str, Any], tuple[torch.Tensor, torch.Tensor]]:
+    from mps_pointops import ops
     def run(ref: torch.Tensor, q: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         return ops.knn(q, ref, args.k) if op == "knn" else ops.ball_query(q, ref, args.radius, args.ball_k)
 
@@ -371,6 +369,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def main() -> None:
+    import scipy
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--sizes", type=int, nargs="+", default=[20_000, 100_000, 1_000_000])
     parser.add_argument("--ops", nargs="+", choices=["knn", "ball_query"], default=["knn", "ball_query"])

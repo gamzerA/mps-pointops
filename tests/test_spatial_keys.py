@@ -1,7 +1,18 @@
 """Stage-1 Metal spatial-index key contract, without claiming search speed."""
 
+import sys
+import types
+from pathlib import Path
+
 import pytest
 import torch
+
+# Console pytest tests the installed wheel and need not put the checkout at
+# sys.path[0]. Expose only the experimental bench sources as a namespace.
+if "bench" not in sys.modules:
+    package = types.ModuleType("bench")
+    package.__path__ = [str(Path(__file__).resolve().parents[1] / "bench")]
+    sys.modules["bench"] = package
 
 from bench.spatial_keys import morton_key_cpu, morton_keys_f32
 

@@ -23,6 +23,10 @@ with coordinates resident on their own device. CPU cKDTree construction and
 query are shown separately; MPS index construction includes invalid-key
 checking, stable sorting, and index gathering. Host-to-device input transfer
 is recorded separately in each JSON and excluded from these columns.
+The uniform fixture occupies the cube `[0, 1024)^3`; the one-cell fixture
+occupies a cube of side length `min(cell_size/16, extent/1024) = 1` centered
+near `(512, 512, 512)`. Its radius is only `0.01`, while the uniform radius
+is `16`, so the rows represent deliberately different workloads.
 
 | Distribution and workload | Math | MPS build | MPS query | cKDTree build | cKDTree query | Index mismatch |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
@@ -62,3 +66,28 @@ bound instead of scanning every point in a coarse cell. Its topology build,
 AABB validity, sorted-first-K radius contract, kNN tie rule, memory use, and
 M1/M5 crossover are not implemented or demonstrated yet. The package remains
 at v0.8.0 until those gates and the Chamfer scope are complete.
+
+## Experimental kNN brick slice
+
+`bench/spatial_bricks.py` and `bench/spatial_bricks.metal` now add a bounded
+research kNN path on the same Morton ordering. Each brick contains at most
+128 points. A Metal build pass computes the actual per-brick minimum and
+maximum coordinate; a query thread seeds from the nearest box, scans every
+other box, and prunes a brick only when its lower bound is **strictly greater**
+than the current Kth squared distance. This is intended to retain equally
+distant points with smaller original indices; a floating-point bound proof
+for arbitrary magnitudes and FTZ is still required. Distances use the flat
+Metal kNN order:
+`dx*dx + dy*dy + dz*dz`, with contraction disabled. The path currently accepts
+single-cloud float32 XYZ and `0 <= K <= 32`; it returns squared distances and
+indices with `inf`/`-1` padding. The index borrows the reference tensor; it
+must remain unchanged between build and query.
+
+This is not a hierarchical BVH: scanning every brick box costs `O(Q*N/128)`
+even when point visits are pruned. Bricks can have overlapping wide AABBs,
+especially with all points in one Morton cell, so this is not a general
+performance result. The first gate is differential correctness against the
+existing flat Metal kNN, including repeated exact ties across brick
+boundaries. Full 1M kNN benchmarks, a conservative floating-point bound proof
+for arbitrary magnitudes, clustered distribution handling, and M1 checks
+remain open before public routing.

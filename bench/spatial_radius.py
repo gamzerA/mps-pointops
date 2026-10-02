@@ -9,6 +9,7 @@ large-scale parity and timing evidence before integration.
 from __future__ import annotations
 
 import math
+import struct
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -17,7 +18,14 @@ import torch
 from torch import Tensor
 
 from bench.spatial_keys import morton_keys_f32
-from mps_pointops._flat_search_mps import _torch_cluster_radius_sq
+
+
+def _torch_cluster_radius_sq(radius: float) -> float:
+    """Match the public flat radius threshold without importing the wheel."""
+    try:
+        return struct.unpack("f", struct.pack("f", radius * radius))[0]
+    except OverflowError:
+        return math.inf
 
 _SOURCE = Path(__file__).with_suffix(".metal")
 _GROUP_SIZE = 256

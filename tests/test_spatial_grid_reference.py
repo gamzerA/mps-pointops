@@ -1,8 +1,16 @@
 """Exact CPU research oracle for the proposed v0.9 spatial-index layout."""
 
 import random
+import sys
+import types
+from pathlib import Path
 
 import pytest
+
+if "bench" not in sys.modules:
+    package = types.ModuleType("bench")
+    package.__path__ = [str(Path(__file__).resolve().parents[1] / "bench")]
+    sys.modules["bench"] = package
 
 from bench.spatial_grid_reference import UniformGridReference, brute_knn, brute_radius
 

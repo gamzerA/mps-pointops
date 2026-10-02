@@ -1,15 +1,24 @@
 """Differential tests for the experimental sorted-Morton radius path."""
 
+import sys
+import types
+from pathlib import Path
+
 import pytest
 import torch
 
+if "bench" not in sys.modules:
+    package = types.ModuleType("bench")
+    package.__path__ = [str(Path(__file__).resolve().parents[1] / "bench")]
+    sys.modules["bench"] = package
+
 from bench.spatial_radius import SortedMortonIndex
-from mps_pointops._flat_search_mps import radius_indices
 
 
 @pytest.mark.skipif(not torch.backends.mps.is_available(), reason="MPS unavailable")
 @pytest.mark.parametrize("sorted_input", [False, True])
 def test_sorted_morton_radius_matches_flat_first_k(sorted_input):
+    from mps_pointops._flat_search_mps import radius_indices
     generator = torch.Generator().manual_seed(202609)
     points = torch.randint(0, 64, (1000, 3), generator=generator).float() / 8
     if sorted_input:

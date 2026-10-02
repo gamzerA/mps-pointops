@@ -5,7 +5,7 @@ Run in a fresh process per math mode, for example:
     PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=0 \
       python bench/bench_spatial_morton.py --output bench/results/morton-safe.json
 
-The input is uniform synthetic float32 XYZ; it is not a real point cloud.
+Inputs are uniform or clustered synthetic float32 XYZ, never a real point cloud.
 Build and query times use preloaded CPU/MPS coordinates and synchronize MPS.
 The MPS index is experimental, single-cloud only, and uses one thread/query.
 The CPU result includes cKDTree build. No CPU/MPS transfer is counted in
