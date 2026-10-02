@@ -66,6 +66,32 @@ jobs:
             --upstream-root "$RUNNER_TEMP/pytorch3d" \
             --upstream-build-note 'CPU extension; setup.py C++20 flags only; torch 2.14.1' \
             --devices mps --out "$RUNNER_TEMP/chamfer-fast.json"
+      - name: Variable-dimension Chamfer parity (CPU)
+        env:
+          PYTHONPATH: ${{ runner.temp }}/pytorch3d
+        run: |
+          python tests/verify_upstream_chamfer_nd.py \
+            --upstream-root "$RUNNER_TEMP/pytorch3d" \
+            --upstream-build-note 'CPU extension; setup.py C++20 flags only; torch 2.14.1' \
+            --devices cpu --out "$RUNNER_TEMP/chamfer-nd-cpu.json"
+      - name: Variable-dimension Chamfer parity (Metal safe math)
+        env:
+          PYTHONPATH: ${{ runner.temp }}/pytorch3d
+          PYTORCH_MPS_FAST_MATH: "0"
+        run: |
+          python tests/verify_upstream_chamfer_nd.py \
+            --upstream-root "$RUNNER_TEMP/pytorch3d" \
+            --upstream-build-note 'CPU extension; setup.py C++20 flags only; torch 2.14.1' \
+            --devices mps --out "$RUNNER_TEMP/chamfer-nd-safe.json"
+      - name: Variable-dimension Chamfer parity (Metal fast math)
+        env:
+          PYTHONPATH: ${{ runner.temp }}/pytorch3d
+          PYTORCH_MPS_FAST_MATH: "1"
+        run: |
+          python tests/verify_upstream_chamfer_nd.py \
+            --upstream-root "$RUNNER_TEMP/pytorch3d" \
+            --upstream-build-note 'CPU extension; setup.py C++20 flags only; torch 2.14.1' \
+            --devices mps --out "$RUNNER_TEMP/chamfer-nd-fast.json"
       - name: Preserve case-by-case results
         if: always()
         uses: actions/upload-artifact@v4
@@ -74,4 +100,7 @@ jobs:
           path: |
             ${{ runner.temp }}/chamfer-safe.json
             ${{ runner.temp }}/chamfer-fast.json
+            ${{ runner.temp }}/chamfer-nd-cpu.json
+            ${{ runner.temp }}/chamfer-nd-safe.json
+            ${{ runner.temp }}/chamfer-nd-fast.json
           if-no-files-found: ignore

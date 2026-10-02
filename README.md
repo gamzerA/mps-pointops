@@ -54,9 +54,11 @@ The supported squared-L2 Chamfer subset is checked against a pinned official
 PyTorch3D CPU oracle in [dedicated MPS CI](docs/chamfer-upstream-ci.md), and an
 opt-in [Pointcept PTv1 Seg26 subset](docs/pointcept-ptv1-subset.md) covers one
 documented synthetic model path.
-This development branch also contains an [L1 Chamfer prototype](docs/chamfer-l1-v0.9-prototype.md)
+This development branch also contains an [L1 Chamfer prototype](docs/chamfer-l1-v0.9-prototype.md),
+a [variable-dimension tensor Chamfer prototype](docs/chamfer-variable-dim-prototype.md),
 and an opt-in [reusable spatial index](docs/spatial-api-v090.md) with a
-two-level Morton BVH; neither is part of the published v0.8.0 package.
+two-level Morton BVH. These additions are not part of the published v0.8.0
+package; the linked Chamfer contract above describes that historical release.
 Direct comparisons against the
 [original PointNet++ CUDA extension](docs/parity/pointnet2-upstream.md) and
 [PyTorch3D Chamfer](docs/chamfer-upstream-parity-0.5.0.md) record the tested

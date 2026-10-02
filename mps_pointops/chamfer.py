@@ -3,6 +3,7 @@
 MPS uses a native Metal nearest-neighbor search; other devices use a tiled
 PyTorch search. L1 uses a custom first-order backward to match PyTorch3D's
 subgradient at equal coordinates; bidirectional loss accumulates both searches.
+Tensor coordinates may have any positive dimension. Normal loss remains 3D.
 """
 
 from __future__ import annotations
@@ -18,6 +19,10 @@ from torch import Tensor
 from torch.autograd.function import once_differentiable
 
 _PAIRS_PER_TILE = 1 << 20
+# The broadcasted (B, query tile, reference tile, D) difference is the
+# dominant temporary in the CPU/CUDA path. Keep that tensor near 16 MiB even
+# when a cloud has hundreds or thousands of coordinate dimensions.
+_DELTA_BYTES_PER_TILE = 16 << 20
 _QUERIES_PER_GROUP = 8
 _GROUP_SIZE = 256
 PointReduction = Literal["mean", "sum", "max"] | None
@@ -87,8 +92,8 @@ def _lengths(points: Tensor, value: Tensor | None, name: str) -> Tensor:
 def _validate_clouds(
     x: Tensor, y: Tensor, x_lengths: Tensor | None, y_lengths: Tensor | None
 ) -> tuple[Tensor, Tensor]:
-    if x.ndim != 3 or y.ndim != 3 or x.shape[-1] != 3 or y.shape[-1] != 3:
-        raise ValueError("x and y must have shapes (B, P, 3) and (B, Q, 3)")
+    if x.ndim != 3 or y.ndim != 3 or x.shape[-1] < 1 or y.shape[-1] != x.shape[-1]:
+        raise ValueError("x and y must have shapes (B, P, D) and (B, Q, D) with D >= 1")
     if x.shape[0] != y.shape[0]:
         raise ValueError("x and y must have the same batch size")
     if x.device != y.device or x.dtype != y.dtype:
@@ -120,24 +125,36 @@ def _nearest_mps(
     norm: int = 2,
 ) -> tuple[Tensor, Tensor]:
     """Return distance and first-minimum index from native Metal."""
-    batch, query_count, _ = query.shape
+    batch, query_count, dimension = query.shape
     ref_count = ref.shape[1]
     if ref_count >= 2**32:
         raise ValueError("native Chamfer requires fewer than 2**32 reference points")
+    if dimension >= 2**32:
+        raise ValueError("native Chamfer requires fewer than 2**32 coordinate dimensions")
     distances = torch.empty((batch, query_count), device=query.device, dtype=torch.float32)
     indices = torch.empty((batch, query_count), device=query.device, dtype=torch.int64)
     if distances.numel():
         group_count = (batch * query_count + _QUERIES_PER_GROUP - 1) // _QUERIES_PER_GROUP
-        kernel = (
-            _metal_library().chamfer_nearest_l1_f32
-            if norm == 1 else _metal_library().chamfer_nearest_f32
-        )
-        kernel(
-            query.contiguous(), ref.contiguous(), query_lengths.contiguous(),
-            ref_lengths.contiguous(), distances, indices, batch, query_count,
-            ref_count, threads=[group_count * _GROUP_SIZE, 1, 1],
-            group_size=[_GROUP_SIZE, 1, 1],
-        )
+        if dimension == 3:
+            # Retain the measured 3D kernel and its operation order unchanged.
+            kernel = (
+                _metal_library().chamfer_nearest_l1_f32
+                if norm == 1 else _metal_library().chamfer_nearest_f32
+            )
+            kernel(
+                query.contiguous(), ref.contiguous(), query_lengths.contiguous(),
+                ref_lengths.contiguous(), distances, indices, batch, query_count,
+                ref_count, threads=[group_count * _GROUP_SIZE, 1, 1],
+                group_size=[_GROUP_SIZE, 1, 1],
+            )
+        else:
+            _metal_library().chamfer_nearest_nd_f32(
+                query.contiguous(), ref.contiguous(), query_lengths.contiguous(),
+                ref_lengths.contiguous(), distances, indices, batch, query_count,
+                ref_count, dimension, norm,
+                threads=[group_count * _GROUP_SIZE, 1, 1],
+                group_size=[_GROUP_SIZE, 1, 1],
+            )
     return distances, indices
 
 
@@ -154,35 +171,45 @@ def _nearest_indices(
     if batch == 0 or query_count == 0:
         return torch.empty((batch, query_count), dtype=torch.long, device=query.device)
 
-    query_step = max(1, min(query_count, math.isqrt(max(1, _PAIRS_PER_TILE // batch))))
-    ref_step = max(1, _PAIRS_PER_TILE // (batch * query_step))
-    chunks: list[Tensor] = []
-    for q0 in range(0, query_count, query_step):
-        q = query[:, q0 : q0 + query_step, :]
-        shape = (batch, q.shape[1])
-        best_dist = torch.full(shape, float("inf"), dtype=query.dtype, device=query.device)
-        best_index = torch.full(shape, -1, dtype=torch.long, device=query.device)
-        for r0 in range(0, ref_count, ref_step):
-            r = ref[:, r0 : r0 + ref_step, :]
-            delta = q[:, :, None, :] - r[:, None, :, :]
-            if norm == 1:
-                dist = delta[..., 0].abs()
-                dist = dist + delta[..., 1].abs()
-                dist = dist + delta[..., 2].abs()
-            else:
-                dist = delta[..., 0] * delta[..., 0]
-                dist = dist + delta[..., 1] * delta[..., 1]
-                dist = dist + delta[..., 2] * delta[..., 2]
-            ref_index = torch.arange(r0, r0 + r.shape[1], device=ref.device)
-            dist = dist.masked_fill(ref_index[None, None, :] >= ref_lengths[:, None, None], float("inf"))
-            tile_dist, local_index = dist.min(dim=-1)
-            # Tiles are visited in increasing index order; keeping the old
-            # winner on equal distances implements the lowest-index tie rule.
-            take = ((best_index < 0) & (ref_lengths[:, None] > 0)) | (tile_dist < best_dist)
-            best_dist = torch.where(take, tile_dist, best_dist)
-            best_index = torch.where(take, local_index + r0, best_index)
-        chunks.append(torch.where(ref_lengths[:, None] > 0, best_index, -1))
-    return torch.cat(chunks, dim=1)
+    bytes_per_pair = query.shape[-1] * query.element_size()
+    pair_budget = max(1, min(_PAIRS_PER_TILE, _DELTA_BYTES_PER_TILE // bytes_per_pair))
+    batch_step = min(batch, pair_budget)
+    batch_chunks: list[Tensor] = []
+    for b0 in range(0, batch, batch_step):
+        q_batch = query[b0 : b0 + batch_step]
+        r_batch = ref[b0 : b0 + batch_step]
+        valid_refs = ref_lengths[b0 : b0 + batch_step]
+        batch_size = q_batch.shape[0]
+        query_step = max(1, min(query_count, math.isqrt(max(1, pair_budget // batch_size))))
+        ref_step = max(1, pair_budget // (batch_size * query_step))
+        chunks: list[Tensor] = []
+        for q0 in range(0, query_count, query_step):
+            q = q_batch[:, q0 : q0 + query_step, :]
+            shape = (batch_size, q.shape[1])
+            best_dist = torch.full(shape, float("inf"), dtype=query.dtype, device=query.device)
+            best_index = torch.full(shape, -1, dtype=torch.long, device=query.device)
+            for r0 in range(0, ref_count, ref_step):
+                r = r_batch[:, r0 : r0 + ref_step, :]
+                delta = q[:, :, None, :] - r[:, None, :, :]
+                if norm == 1:
+                    dist = delta[..., 0].abs()
+                    for dimension in range(1, query.shape[-1]):
+                        dist = dist + delta[..., dimension].abs()
+                else:
+                    dist = delta[..., 0] * delta[..., 0]
+                    for dimension in range(1, query.shape[-1]):
+                        dist = dist + delta[..., dimension] * delta[..., dimension]
+                ref_index = torch.arange(r0, r0 + r.shape[1], device=ref.device)
+                dist = dist.masked_fill(ref_index[None, None, :] >= valid_refs[:, None, None], float("inf"))
+                tile_dist, local_index = dist.min(dim=-1)
+                # Tiles are visited in increasing index order; keeping the old
+                # winner on equal distances implements the lowest-index tie rule.
+                take = ((best_index < 0) & (valid_refs[:, None] > 0)) | (tile_dist < best_dist)
+                best_dist = torch.where(take, tile_dist, best_dist)
+                best_index = torch.where(take, local_index + r0, best_index)
+            chunks.append(torch.where(valid_refs[:, None] > 0, best_index, -1))
+        batch_chunks.append(torch.cat(chunks, dim=1))
+    return torch.cat(batch_chunks, dim=0)
 
 
 class _MetalNearestSquared(torch.autograd.Function):
@@ -209,7 +236,7 @@ class _MetalNearestSquared(torch.autograd.Function):
 
         valid = indices >= 0
         safe_indices = indices.clamp_min(0)
-        selected = ref.gather(1, safe_indices.unsqueeze(-1).expand(-1, -1, 3))
+        selected = ref.gather(1, safe_indices.unsqueeze(-1).expand(-1, -1, query.shape[-1]))
         selected = torch.where(valid.unsqueeze(-1), selected, torch.zeros_like(selected))
         safe_query = torch.where(valid.unsqueeze(-1), query, torch.zeros_like(query))
         delta = safe_query - selected
@@ -219,7 +246,7 @@ class _MetalNearestSquared(torch.autograd.Function):
         query_grad = delta * scale.unsqueeze(-1)
         ref_grad = torch.zeros_like(ref, memory_format=torch.contiguous_format)
         ref_grad.scatter_add_(
-            1, safe_indices.unsqueeze(-1).expand(-1, -1, 3), -query_grad
+            1, safe_indices.unsqueeze(-1).expand(-1, -1, query.shape[-1]), -query_grad
         )
         return query_grad, ref_grad, None, None
 
@@ -254,7 +281,7 @@ class _NearestL1(torch.autograd.Function):
             torch.arange(query.shape[1], device=query.device)[None] < query_lengths[:, None]
         )
         safe_indices = indices.clamp_min(0)
-        selected = ref.gather(1, safe_indices.unsqueeze(-1).expand(-1, -1, 3))
+        selected = ref.gather(1, safe_indices.unsqueeze(-1).expand(-1, -1, query.shape[-1]))
         # The pinned PyTorch3D CPU/CUDA kNN backward chooses -1 at equality.
         # torch.abs backward chooses zero there, so it cannot provide parity.
         sign = torch.where(query > selected, 1.0, -1.0)
@@ -262,7 +289,7 @@ class _NearestL1(torch.autograd.Function):
         query_grad = sign * scale.unsqueeze(-1)
         ref_grad = torch.zeros_like(ref, memory_format=torch.contiguous_format)
         ref_grad.scatter_add_(
-            1, safe_indices.unsqueeze(-1).expand(-1, -1, 3), -query_grad
+            1, safe_indices.unsqueeze(-1).expand(-1, -1, query.shape[-1]), -query_grad
         )
         return query_grad, ref_grad, None, None
 
@@ -272,12 +299,12 @@ def _selected_squared_distance(query: Tensor, ref: Tensor, index: Tensor, length
     safe_query = torch.where(valid.unsqueeze(-1), query, torch.zeros_like(query))
     if ref.shape[1] == 0:
         return safe_query.sum(dim=-1) * 0 + ref.sum() * 0
-    near = ref.gather(1, index.clamp_min(0).unsqueeze(-1).expand(-1, -1, 3))
+    near = ref.gather(1, index.clamp_min(0).unsqueeze(-1).expand(-1, -1, query.shape[-1]))
     near = torch.where(valid.unsqueeze(-1), near, torch.zeros_like(near))
     delta = safe_query - near
     dist = delta[..., 0] * delta[..., 0]
-    dist = dist + delta[..., 1] * delta[..., 1]
-    dist = dist + delta[..., 2] * delta[..., 2]
+    for dimension in range(1, query.shape[-1]):
+        dist = dist + delta[..., dimension] * delta[..., dimension]
     return torch.where(valid, dist, torch.zeros_like(dist))
 
 
@@ -286,12 +313,12 @@ def _selected_l1_distance(query: Tensor, ref: Tensor, index: Tensor, lengths: Te
     safe_query = torch.where(valid.unsqueeze(-1), query, torch.zeros_like(query))
     if ref.shape[1] == 0:
         return safe_query.sum(dim=-1) * 0 + ref.sum() * 0
-    near = ref.gather(1, index.clamp_min(0).unsqueeze(-1).expand(-1, -1, 3))
+    near = ref.gather(1, index.clamp_min(0).unsqueeze(-1).expand(-1, -1, query.shape[-1]))
     near = torch.where(valid.unsqueeze(-1), near, torch.zeros_like(near))
     delta = safe_query - near
     dist = delta[..., 0].abs()
-    dist = dist + delta[..., 1].abs()
-    dist = dist + delta[..., 2].abs()
+    for dimension in range(1, query.shape[-1]):
+        dist = dist + delta[..., dimension].abs()
     return torch.where(valid, dist, torch.zeros_like(dist))
 
 
@@ -328,7 +355,8 @@ def chamfer_distance(
 ) -> tuple[Tensor | tuple[Tensor, Tensor], Tensor | tuple[Tensor, Tensor] | None]:
     """L1 or squared-L2 Chamfer loss with PyTorch3D reduction conventions.
 
-    Normals are returned when both clouds provide them. PyTorch3D
+    Tensor coordinates have shape ``(B, P, D)`` with ``D >= 1``. Normals are
+    supported for ``D == 3`` only and returned when both clouds provide them. PyTorch3D
     ``Pointclouds`` inputs are optional and replace explicit lengths/normals
     for that cloud. With
     ``point_reduction=None``, ``loss`` is a pair of padded per-point distance
@@ -354,6 +382,8 @@ def chamfer_distance(
     x, x_lengths, x_normals = _unpack_cloud(x, x_lengths, x_normals, "x")
     y, y_lengths, y_normals = _unpack_cloud(y, y_lengths, y_normals, "y")
     lx, ly = _validate_clouds(x, y, x_lengths, y_lengths)
+    if x.shape[-1] != 3 and (x_normals is not None or y_normals is not None):
+        raise NotImplementedError("normal loss currently requires D == 3")
     _validate_normals(x, x_normals, "x_normals")
     _validate_normals(y, y_normals, "y_normals")
     if point_reduction == "max" and (x_normals is not None or y_normals is not None):
