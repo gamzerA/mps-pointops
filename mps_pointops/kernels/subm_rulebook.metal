@@ -1,6 +1,20 @@
 #include <metal_stdlib>
 using namespace metal;
 
+// PyTorch 2.7 MPS index_select/gather can corrupt int32 values near
+// INT32_MAX. Read the coordinate field directly for the stable sort instead.
+kernel void subm_rulebook_gather_axis_i32(
+    device const int* indices [[buffer(0)]],
+    device const long* sorted_rows [[buffer(1)]],
+    device int* axis_values [[buffer(2)]],
+    constant long& row_count [[buffer(3)]],
+    constant int& axis [[buffer(4)]],
+    uint tid [[thread_position_in_grid]])
+{
+    if (ulong(tid) >= ulong(row_count)) return;
+    axis_values[tid] = indices[4 * ulong(sorted_rows[tid]) + ulong(axis)];
+}
+
 // One (kernel offset, output row) per thread. sorted_rows is a device-side
 // lexicographic permutation of the four signed int32 coordinate fields.
 // Unique coordinates make the binary-search result unambiguous.

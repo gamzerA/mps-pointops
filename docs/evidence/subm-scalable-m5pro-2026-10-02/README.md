@@ -10,9 +10,10 @@ package version remain unchanged.
 The prior lookup compared each of `K*N` targets with up to `N` input rows and
 rejected `N > 1024`. This prototype stably sorts row IDs by the four int32
 coordinate fields, then performs a Metal binary search for each target. On
-PyTorch 2.7 MPS, each field is sorted as unsigned low and signed high 16-bit
-chunks to preserve full-range `int32` ordering. The M5 Pro timings here use
-PyTorch 2.14.0 and its four full-width stable sorts. The
+PyTorch 2.7 MPS, each field is gathered directly by Metal before sorting to
+avoid that version's large-`int32` `index_select` corruption. The M5 Pro
+timings here use PyTorch 2.14.0 and its native gather plus four stable sorts.
+The
 lookup uses `O(K*N*log N)` comparisons rather than `O(K*N²)`. Four stable
 MPS sorts and linear compaction add work; PyTorch does not promise a specific
 sorting algorithm or asymptotic cost for this backend. All work stays on MPS.
