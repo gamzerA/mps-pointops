@@ -61,6 +61,12 @@ fallback counts were zero. The CPU `cKDTree` timings below **do not** establish
 its index parity on ties; the benchmark checks BVH against the package's
 native-scan oracle.
 
+The twelve public Ball Query-dispatch records do **not** contain a per-query
+stack-overflow counter. The five research-BVH counts above come from a
+separate kNN benchmark and must not be transferred to Ball Query. The
+[source-level stack bound and untimed follow-up matrix](spatial-radius-dispatch-v090.md#bounded-dfs-stack-and-fallback-evidence)
+are documented separately; the physical M1 radius count remains unmeasured.
+
 ## Synchronized dispatch timings
 
 Each cell is the median of **three** synchronized host-wall steady-query
