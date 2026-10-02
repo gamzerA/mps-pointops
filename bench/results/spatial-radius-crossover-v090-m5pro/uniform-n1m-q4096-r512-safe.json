@@ -1,12 +1,12 @@
 {
-  "utc": "2026-10-02T11:41:33.231753+00:00",
-  "source_commit": "2738661cd89c213c19bbc994b5f2291008018dc3",
+  "utc": "2026-10-02T11:51:02.694447+00:00",
+  "source_commit": "81c1e939c9a3af215003206dc761ecee8927447a",
   "source_dirty": false,
   "source_status": [],
   "source_sha256": {
-    "bench/bench_spatial_radius_dispatch.py": "5f6560ef5eb018699f2ab1895c9346be40d54ac803abba52192f65065fc499b3",
+    "bench/bench_spatial_radius_dispatch.py": "d611e4e6d7dea1dca53e25d45df9c63ebb8ffa30b78dc1dec9948c92651f41f6",
     "bench/bench_spatial_bvh.py": "241de2b5972612242533ecae4ad24f49f1cfa96e9094af933b3015a4f51dc667",
-    "mps_pointops/spatial.py": "ad0a71bed4d93b134c718124f6d08f085bea3d43915ddc169471185d835f0b8d",
+    "mps_pointops/spatial.py": "804756afa02c16bc89127a8e541a3b985e549be2502dadb44833d07406993a02",
     "mps_pointops/_spatial_bvh.py": "c5aa3761b30ad0d42c4f5d16faafd400c61092075661beea48e7f7a9de9420a0",
     "mps_pointops/_spatial_keys.py": "971b4c67681f52a052b99a4e875d0a201d6314d8a7429acb73722a9ffc022764",
     "mps_pointops/ops.py": "6e3d01426a43286ece66941571bbae3e0489e81cf3090cbcf087121af6e3d1b0",
@@ -54,28 +54,36 @@
     "auto_vs_scan_indices": 0,
     "bvh_first_vs_scan_squared_distance_bits": 0,
     "bvh_steady_vs_scan_squared_distance_bits": 0,
-    "auto_vs_scan_squared_distance_bits": 0
+    "auto_vs_scan_squared_distance_bits": 0,
+    "diagnostic_vs_scan_indices": 0,
+    "diagnostic_vs_scan_squared_distance_bits": 0
+  },
+  "bvh_stack_fallback": {
+    "rows": 0,
+    "fraction": 0.0,
+    "query_count": 4096,
+    "scope": "one untimed private BVH query after the public timing samples"
   },
   "input_transfer_ms": [
-    34.466458
+    136.291208
   ],
   "bvh_first_call_including_build_ms": [
-    43.14475
+    39.141208
   ],
   "scan_steady_query_ms": [
-    0.249291,
-    0.210292,
-    0.190292
+    0.395291,
+    0.227584,
+    0.26625
   ],
   "bvh_steady_query_ms": [
-    24.972083,
-    24.943833,
-    24.86625
+    24.888541,
+    25.031833,
+    25.042166
   ],
   "auto_steady_query_ms": [
-    0.218333,
-    0.185,
-    0.174833
+    0.29375,
+    0.219166,
+    0.198
   ],
   "bvh_resident_index_tensor_bytes": 8458752,
   "memory_samples": {

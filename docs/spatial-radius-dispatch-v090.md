@@ -38,19 +38,24 @@ fixed while changing only the radius. The benchmark's
 `--allow-homogeneous-rows` option permits all-full rows; it does not relax
 index, distance-bit, or original-index-order parity checks. Each median below
 uses three synchronized query samples with inputs resident on MPS and an
-already-built BVH for the steady-query column. The separate first BVH call
-and all raw samples are in the [four JSON records](../bench/results/spatial-radius-crossover-v090-m5pro/).
+already-built BVH for the steady-query column. One additional **untimed**
+query of that BVH reads its per-query stack-fallback counter and checks its
+outputs against the scan. The separate first BVH call and all raw samples are
+in the [four JSON records](../bench/results/spatial-radius-crossover-v090-m5pro/).
 
-| Radius | Full rows / 4,096 | Scan query ms | BVH query ms | Faster path |
-| ---: | ---: | ---: | ---: | --- |
-| 12 | 3 | 170.934 | 6.415 | BVH |
-| 64 | 4,096 | 3.616 | 13.059 | scan |
-| 512 | 4,096 | 0.210 | 24.944 | scan |
-| 1,024 | 4,096 | 0.186 | 15.475 | scan |
+| Radius | Full rows / 4,096 | Scan query ms | BVH query ms | Fallback rows / 4,096 | Faster path |
+| ---: | ---: | ---: | ---: | ---: | --- |
+| 12 | 3 | 170.983 | 6.649 | 0 | BVH |
+| 64 | 4,096 | 3.551 | 13.084 | 0 | scan |
+| 512 | 4,096 | 0.266 | 25.032 | 0 | scan |
+| 1,024 | 4,096 | 0.186 | 14.927 | 0 | scan |
 
 Every record has zero index mismatches, zero float32 distance-bit mismatches,
-and zero order violations against the native Metal scan. At radius 512, the
-BVH is about **119 times slower** than the scan in this fixture. The native
+and zero order violations against the native Metal scan. The untimed
+diagnostic query also matches bit-for-bit; its observed stack-fallback
+frequency is **0/4,096** for each radius. This count describes these four
+fixtures, not every possible point arrangement. At radius 512, the BVH is
+about **94 times slower** than the scan in this fixture. The native
 scan stops as soon as each query has its first `K` matches; a large radius
 can make that happen after very few input points. An automatic rule based
 only on chip, `N`, `Q`, and `K` would therefore create a severe regression.
@@ -61,7 +66,7 @@ predictor that includes its own decision overhead and counterexamples with
 different reference orders. This sweep does not establish a universal
 crossover radius.
 
-The sweep used source commit `2738661cd89c213c19bbc994b5f2291008018dc3`
+The sweep used source commit `81c1e939c9a3af215003206dc761ecee8927447a`
 with `source_dirty=false`, PyTorch 2.14.1, macOS 26.5.2, and
 `PYTORCH_ENABLE_MPS_FALLBACK=0`. Each JSON embeds the source-file SHA-256
 map; the adjacent `SHA256SUMS.txt` records the raw JSON hashes. Reproduce a
