@@ -59,7 +59,8 @@ def verify_checkout(root: Path, expected_commit: str) -> None:
 
 
 def validate_hardware(system: str, machine: str, cpu_brand: str) -> None:
-    if system != "darwin" or machine != "arm64" or not cpu_brand.startswith("Apple M1"):
+    m1_family = cpu_brand == "Apple M1" or cpu_brand.startswith("Apple M1 ")
+    if system != "darwin" or machine != "arm64" or not m1_family:
         raise GateError(
             "this evidence runner requires an Apple M1-family Mac "
             f"(found {system}/{machine}, {cpu_brand!r})"

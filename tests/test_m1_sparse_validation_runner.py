@@ -26,6 +26,7 @@ def test_m1_family_guard_does_not_accept_other_silicon():
     validate_hardware("darwin", "arm64", "Apple M1 Pro")
     for system, machine, brand in (
         ("darwin", "arm64", "Apple M5 Pro"),
+        ("darwin", "arm64", "Apple M10"),
         ("darwin", "x86_64", "Intel Core i7"),
         ("linux", "aarch64", "Apple M1"),
     ):
