@@ -3,7 +3,7 @@
   "meta": {
     "project": "mps-pointops",
     "publishedVersion": "1.0.0",
-    "mainMergeCommit": "905fce5384c681b16db0ebd0fbcd892635544ead",
+    "mainMergeCommit": "ac3789ceaa341f9801658409203a70214327f8bf",
     "developmentSourceCommit": "62fcc0f295e127be47a475fbc122d4de686b4c58",
     "snapshotDate": "2026-10-02",
     "minimumPython": "3.10",
