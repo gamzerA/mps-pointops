@@ -21,15 +21,20 @@ small point bricks**: leaf AABBs must use actual float32 coordinates rather
 than treating quantized Morton cells as exact bounds. This avoids the grid's
 unbounded same-cell candidate scan while supporting both radius and exact
 kNN. Query pruning must use conservative AABB lower bounds; build and memory
-costs need measurement before adoption.
+costs need measurement before adoption. A private
+[two-level Metal BVH](spatial-hierarchy-v0.9-design.md) now implements exact
+kNN and first-K dense Ball Query for a bounded single-cloud Safe Math domain;
+the [opt-in SpatialIndex facade](spatial-api-v090.md) keeps the established
+dense and flat APIs unchanged. This is development scope, not v0.9 completion.
 
 The proposed full pipeline is key generation on Metal, device sorting,
 leaf/topology/AABB construction, then Metal query traversal. Sorting a million
 arbitrary keys is not assumed to fit in one or two dispatches. Report every
 dispatch and every PyTorch/MPS operation in build time. An index may be reused
 across queries; publish both build-plus-one-query and amortized repeated-query
-timings. The current grid prototype uses sorted-key binary searches and has
-no BVH, CSR, batch layout, or kNN traversal yet.
+timings. The original grid prototype uses sorted-key binary searches and has
+no CSR, batch layout, or kNN traversal. The separate BVH has Metal leaf/macro
+builds and query traversal, but no public flat/batched routing or M1 gate.
 The initial [CPU research grid](../bench/spatial_grid_reference.py) checks
 candidate coverage, original-index ordering, exact kNN termination, and
 explicit degenerate fallback. It uses binary64 distances and is **not** a
@@ -41,18 +46,33 @@ build and 2.589 ms to query in Safe Math, compared with 252.358 ms plus
 3.817 ms for cKDTree. With 1M points concentrated in one cell and 16 queries,
 the grid query took 376.175 ms in Safe Math, exceeding cKDTree's 242.007 ms
 build plus 0.019 ms query. These are prototype-specific workloads and do not
-complete the radius/kNN or cross-device release gates; they motivate LBVH.
+complete the radius/kNN or cross-device release gates; they motivated the BVH.
 
-For radius search, inspect every cell intersecting the query ball and check
-the original coordinates with the existing radius comparison policy. Cell
+The [M5 Pro BVH study](spatial-hierarchy-v0.9-design.md) measures
+`Q=16..65,536` on uniform, clustered-plus-sparse, and collapsed point
+clouds. Exact native-Metal neighbor indices and selected squared-distance
+bits agree on the recorded kNN fixtures, while the collapsed case shows why
+a serial BVH cannot be dispatched by Q alone. The private BVH Ball Query
+additionally preserves original-index first-K order under the dense radius
+threshold, with explicit full-scan recovery on stack overflow. The
+[memory study](spatial-memory-v090.md) records PyTorch allocator peaks that
+include transient tensor allocations; total GPU physical-memory peak still
+requires an Instruments trace. Neither evidence set includes the disconnected
+physical M1, so the release gate remains open.
+
+For the original grid radius path, inspect every cell intersecting the query
+ball and check the original coordinates with the existing radius comparison policy. Cell
 occupancy and hash collisions must never silently discard candidates. The
 flat `radius` API returns the **first** `max_num_neighbors` matches in original
 reference order, so a spatial traversal must select by original index before
 writing its result. The set alone is insufficient for API parity. Dense Ball
 Query and PyTorch3D have their own documented boundary and padding rules.
+The BVH instead traverses actual-point node AABBs and preserves the same
+original-index output rule for its bounded dense Ball Query path.
 
-For exact kNN, expand cells until the lower bound on the distance to every
-unvisited cell exceeds the current kth distance. Resolve equal rounded
+For exact grid kNN, expand cells until the lower bound on the distance to every
+unvisited cell exceeds the current kth distance; BVH kNN applies the same
+certificate to unvisited nodes. Resolve equal rounded
 distances by the existing lowest-index rule. If this proof or a bounded-key
 representation cannot be established, use an explicit brute-force fallback
 and report its frequency. Nonfinite coordinates, duplicate points, zero or

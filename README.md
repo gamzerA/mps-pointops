@@ -54,8 +54,8 @@ PyTorch3D CPU oracle in [dedicated MPS CI](docs/chamfer-upstream-ci.md), and an
 opt-in [Pointcept PTv1 Seg26 subset](docs/pointcept-ptv1-subset.md) covers one
 documented synthetic model path.
 This development branch also contains an [L1 Chamfer prototype](docs/chamfer-l1-v0.9-prototype.md)
-and a [sorted-Morton radius research index](docs/milestones-v0.9-v1.0.md);
-neither is part of the published v0.8.0 package.
+and an opt-in [reusable spatial index](docs/spatial-api-v090.md) with a
+two-level Morton BVH; neither is part of the published v0.8.0 package.
 Direct comparisons against the
 [original PointNet++ CUDA extension](docs/parity/pointnet2-upstream.md) and
 [PyTorch3D Chamfer](docs/chamfer-upstream-parity-0.5.0.md) record the tested
@@ -84,6 +84,31 @@ assert neighbor_idx.tolist() == [[[0, 1], [3, 1]]]
 assert radius_idx.tolist() == [[[0, 1], [1, 2]]]
 print("MPS point ops OK")
 ```
+
+### Reusable spatial index (v0.9 development branch)
+
+The opt-in `SpatialIndex` borrows one `[N,3]` reference cloud and can reuse a
+Metal BVH across queries. Existing dense and flat calls retain their kernels.
+Set Safe Math before starting Python to force the research BVH path:
+
+```bash
+PYTORCH_ENABLE_MPS_FALLBACK=0 PYTORCH_MPS_FAST_MATH=0 python your_script.py
+```
+
+```python
+from mps_pointops import SpatialIndex
+
+index = SpatialIndex(xyz[0], backend="bvh")
+dist, neighbors = index.knn(centers[0], 2)       # Euclidean distance
+dist2, first = index.ball_query(centers[0], 1.1, 2)  # squared distance
+```
+
+`backend="auto"` selects BVH only for a measured M5 Pro 1M-point, `k=16`,
+large-query kNN case after a small density check; it keeps the existing scan
+for radius search, Fast Math, M1, and other inputs. The forced BVH supports
+single-cloud MPS float32, `N<=1M`, `K<=32` and a bounded finite coordinate
+domain. See the [API and dispatch contract](docs/spatial-api-v090.md) and
+[M5 memory study](docs/spatial-memory-v090.md). This branch has no v0.9 tag.
 
 The PointNet++ and Chamfer operators introduced in v0.5.0 can be called
 directly:
@@ -1191,13 +1216,17 @@ versions do not indicate completed support.
       Pinned synthetic model forward/backward passed on M5 Pro with one
       temporary CUDA-constructor substitution; broader Pointcept signatures,
       unchanged upstream imports, and CUDA binary parity remain open.
-- [ ] Spatial acceleration structures (uniform grid or BVH) for clouds of
+- [~] Spatial acceleration structures (uniform grid or BVH) for clouds of
       1M+ points. Done when: exact API semantics and memory bounds pass the
       [v0.9 gate](docs/milestones-v0.9-v1.0.md), and synchronized build-plus-query
       timings beat a CPU KD-tree on a specified 1M-point workload on both
-      M5 Pro and a physical M1. The [M5 Pro sorted-Morton prototype](docs/spatial-1m-v0.9-prototype.md)
-      is fast on uniform points but exposes a one-cell cluster slowdown;
-      exact kNN traversal and M1 performance remain pending.
+      M5 Pro and a physical M1. A private [two-level BVH](docs/spatial-hierarchy-v0.9-design.md)
+      now performs exact kNN and first-K Ball Query under bounded Safe Math;
+      [SpatialIndex](docs/spatial-api-v090.md) exposes it as an opt-in single-cloud
+      path. M5 Pro query-count and distribution tests plus
+      [PyTorch allocator peaks](docs/spatial-memory-v090.md) are recorded.
+      M1, total GPU physical-memory peak, public flat/batched routing, and
+      cross-device build-plus-query superiority remain open.
 - [ ] Stretch: approximate optimal transport via entropic regularization
       (Sinkhorn). Specify its numerical contract separately from exact Earth
       Mover's Distance.

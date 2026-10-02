@@ -1,7 +1,6 @@
-"""Safe-Math-only experimental two-level BVH for exact float32 Metal search.
+"""Private Safe-Math-only two-level BVH for exact float32 Metal search.
 
-This private benchmark module is not a public mps-pointops operator. Morton
-keys determine point order only; AABBs use the original stored coordinates.
+Morton keys determine point order only; AABBs use original stored coordinates.
 The conditional Safe-Math pruning argument is documented in the v0.9 spatial
 report. Fast Math is rejected until an independent conservative bound exists.
 """
@@ -10,17 +9,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import lru_cache
-from pathlib import Path
+from importlib import resources
 import math
 import os
 
 import torch
 from torch import Tensor
 
-from bench.spatial_keys import morton_keys_f32
-from mps_pointops._ball_query_mps import _checked_radius_and_k
+from ._spatial_keys import morton_keys_f32
+from ._ball_query_mps import _checked_radius_and_k
 
-_SOURCE = Path(__file__).with_suffix(".metal")
 _BRICK_SIZE = 128
 _MICRO_LEAVES = 64
 _GROUP_SIZE = 128
@@ -30,7 +28,8 @@ _MAX_ABS_BITS = 0x5D800000  # float32 encoding of 2**60
 
 @lru_cache(maxsize=1)
 def _library():
-    return torch.mps.compile_shader(_SOURCE.read_text())
+    source = resources.files(__package__).joinpath("kernels", "spatial_bvh.metal").read_text()
+    return torch.mps.compile_shader(source)
 
 
 def _validate_coordinate_domain(tensor: Tensor, name: str) -> None:
@@ -160,7 +159,7 @@ class MortonTwoLevelBVH:
         Returns squared distances, int64 indices, and per-query counters in
         the same order as ``knn``. Missing slots are ``(0, -1)``. This private
         research path supports one float32 cloud and Safe Math only; it does
-        not install or replace the public batched Ball Query operator.
+        not replace the public batched Ball Query operator.
 
         Stats columns count visited nodes, inspected points, pruned nodes,
         missed qualifying points in a debug-only prune audit, and bounded-stack
