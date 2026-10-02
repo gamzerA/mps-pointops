@@ -36,6 +36,12 @@ dedicated generalized Chamfer kernel preserves the pinned reference's
 selection and gradient rules. Its scan remains $O(BPQD)$ time. The 3D path
 keeps its measured kernel and `O(BPQ)` time bound.
 
+On CPU/CUDA, the `(batch tile, query tile, reference tile, D)` difference
+tensor is budgeted at about 16 MiB. Tile sizes account for `D`, dtype size,
+and batch count; large batches are split as well. This bounds that temporary,
+not all allocator memory. For an extreme `D` where one pair exceeds 16 MiB,
+one pair remains the minimum tile.
+
 Normals remain supported only for `D=3`; supplying normals at other
 dimensions raises `NotImplementedError`. The MPS path accepts float32 only;
 CPU/CUDA also accept float64. Both paths require finite valid coordinates,
@@ -74,7 +80,7 @@ metrics, random and tie/coincident fixtures, four point reductions, both
 directions, and four weight settings. Unequal valid lengths and finite padded
 rows are included. Each case checks loss structure, normal-loss slot,
 gradient presence, values, first coordinate and weight gradients, and valid
-nearest indices. Values use the established `atol=2e-5, rtol=2e-4` predicate;
+nearest indices in both directions when applicable. Values use the established `atol=2e-5, rtol=2e-4` predicate;
 indices and structures must match exactly. The JSON records the pinned source,
 source hashes, runtime, math mode, per-case checks, and failures. The existing
 3D direct-upstream matrix remains a separate required regression gate.

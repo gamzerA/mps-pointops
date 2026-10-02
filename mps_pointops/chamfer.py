@@ -19,6 +19,10 @@ from torch import Tensor
 from torch.autograd.function import once_differentiable
 
 _PAIRS_PER_TILE = 1 << 20
+# The broadcasted (B, query tile, reference tile, D) difference is the
+# dominant temporary in the CPU/CUDA path. Keep that tensor near 16 MiB even
+# when a cloud has hundreds or thousands of coordinate dimensions.
+_DELTA_BYTES_PER_TILE = 16 << 20
 _QUERIES_PER_GROUP = 8
 _GROUP_SIZE = 256
 PointReduction = Literal["mean", "sum", "max"] | None
@@ -167,35 +171,45 @@ def _nearest_indices(
     if batch == 0 or query_count == 0:
         return torch.empty((batch, query_count), dtype=torch.long, device=query.device)
 
-    query_step = max(1, min(query_count, math.isqrt(max(1, _PAIRS_PER_TILE // batch))))
-    ref_step = max(1, _PAIRS_PER_TILE // (batch * query_step))
-    chunks: list[Tensor] = []
-    for q0 in range(0, query_count, query_step):
-        q = query[:, q0 : q0 + query_step, :]
-        shape = (batch, q.shape[1])
-        best_dist = torch.full(shape, float("inf"), dtype=query.dtype, device=query.device)
-        best_index = torch.full(shape, -1, dtype=torch.long, device=query.device)
-        for r0 in range(0, ref_count, ref_step):
-            r = ref[:, r0 : r0 + ref_step, :]
-            delta = q[:, :, None, :] - r[:, None, :, :]
-            if norm == 1:
-                dist = delta[..., 0].abs()
-                for dimension in range(1, query.shape[-1]):
-                    dist = dist + delta[..., dimension].abs()
-            else:
-                dist = delta[..., 0] * delta[..., 0]
-                for dimension in range(1, query.shape[-1]):
-                    dist = dist + delta[..., dimension] * delta[..., dimension]
-            ref_index = torch.arange(r0, r0 + r.shape[1], device=ref.device)
-            dist = dist.masked_fill(ref_index[None, None, :] >= ref_lengths[:, None, None], float("inf"))
-            tile_dist, local_index = dist.min(dim=-1)
-            # Tiles are visited in increasing index order; keeping the old
-            # winner on equal distances implements the lowest-index tie rule.
-            take = ((best_index < 0) & (ref_lengths[:, None] > 0)) | (tile_dist < best_dist)
-            best_dist = torch.where(take, tile_dist, best_dist)
-            best_index = torch.where(take, local_index + r0, best_index)
-        chunks.append(torch.where(ref_lengths[:, None] > 0, best_index, -1))
-    return torch.cat(chunks, dim=1)
+    bytes_per_pair = query.shape[-1] * query.element_size()
+    pair_budget = max(1, min(_PAIRS_PER_TILE, _DELTA_BYTES_PER_TILE // bytes_per_pair))
+    batch_step = min(batch, pair_budget)
+    batch_chunks: list[Tensor] = []
+    for b0 in range(0, batch, batch_step):
+        q_batch = query[b0 : b0 + batch_step]
+        r_batch = ref[b0 : b0 + batch_step]
+        valid_refs = ref_lengths[b0 : b0 + batch_step]
+        batch_size = q_batch.shape[0]
+        query_step = max(1, min(query_count, math.isqrt(max(1, pair_budget // batch_size))))
+        ref_step = max(1, pair_budget // (batch_size * query_step))
+        chunks: list[Tensor] = []
+        for q0 in range(0, query_count, query_step):
+            q = q_batch[:, q0 : q0 + query_step, :]
+            shape = (batch_size, q.shape[1])
+            best_dist = torch.full(shape, float("inf"), dtype=query.dtype, device=query.device)
+            best_index = torch.full(shape, -1, dtype=torch.long, device=query.device)
+            for r0 in range(0, ref_count, ref_step):
+                r = r_batch[:, r0 : r0 + ref_step, :]
+                delta = q[:, :, None, :] - r[:, None, :, :]
+                if norm == 1:
+                    dist = delta[..., 0].abs()
+                    for dimension in range(1, query.shape[-1]):
+                        dist = dist + delta[..., dimension].abs()
+                else:
+                    dist = delta[..., 0] * delta[..., 0]
+                    for dimension in range(1, query.shape[-1]):
+                        dist = dist + delta[..., dimension] * delta[..., dimension]
+                ref_index = torch.arange(r0, r0 + r.shape[1], device=ref.device)
+                dist = dist.masked_fill(ref_index[None, None, :] >= valid_refs[:, None, None], float("inf"))
+                tile_dist, local_index = dist.min(dim=-1)
+                # Tiles are visited in increasing index order; keeping the old
+                # winner on equal distances implements the lowest-index tie rule.
+                take = ((best_index < 0) & (valid_refs[:, None] > 0)) | (tile_dist < best_dist)
+                best_dist = torch.where(take, tile_dist, best_dist)
+                best_index = torch.where(take, local_index + r0, best_index)
+            chunks.append(torch.where(valid_refs[:, None] > 0, best_index, -1))
+        batch_chunks.append(torch.cat(chunks, dim=1))
+    return torch.cat(batch_chunks, dim=0)
 
 
 class _MetalNearestSquared(torch.autograd.Function):

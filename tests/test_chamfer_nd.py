@@ -1,9 +1,50 @@
 """Focused contracts for tensor-coordinate Chamfer outside three dimensions."""
 
+from importlib import import_module
+
 import pytest
 import torch
+from torch.utils._python_dispatch import TorchDispatchMode
 
 from mps_pointops.chamfer import _nearest_mps, chamfer_distance
+
+
+class _DeltaAllocationObserver(TorchDispatchMode):
+    def __init__(self) -> None:
+        super().__init__()
+        self.max_bytes = 0
+
+    def __torch_dispatch__(self, func, types, args=(), kwargs=None):
+        result = func(*args, **(kwargs or {}))
+        if func == torch.ops.aten.sub.Tensor and isinstance(result, torch.Tensor) and result.ndim == 4:
+            self.max_bytes = max(self.max_bytes, result.numel() * result.element_size())
+        return result
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_cpu_high_dimensional_delta_budget_and_batch_tiling(monkeypatch, dtype) -> None:
+    chamfer = import_module("mps_pointops.chamfer")
+    # At D=128, only four float32 or two float64 pairs fit. Five batches
+    # therefore require batch chunks, not only smaller query/reference tiles.
+    byte_budget = 2048
+    monkeypatch.setattr(chamfer, "_DELTA_BYTES_PER_TILE", byte_budget)
+    x = torch.arange(5 * 3 * 128, dtype=dtype).reshape(5, 3, 128) / 7
+    y = x.flip(1).contiguous()
+    lengths = torch.full((5,), 3, dtype=torch.long)
+    observer = _DeltaAllocationObserver()
+    with observer:
+        indices = chamfer._nearest_indices(x, y, lengths, lengths, norm=2)
+    assert indices.tolist() == [[2, 1, 0]] * 5
+    assert 0 < observer.max_bytes <= byte_budget
+
+
+def test_cpu_d4096_shape_and_first_index() -> None:
+    chamfer = import_module("mps_pointops.chamfer")
+    x = torch.zeros((1, 2, 4096), dtype=torch.float32)
+    x[0, 1, 0] = 2
+    y = x.flip(1).contiguous()
+    lengths = torch.tensor([2], dtype=torch.long)
+    assert chamfer._nearest_indices(x, y, lengths, lengths, norm=2).tolist() == [[1, 0]]
 
 
 @pytest.mark.parametrize("device", ["cpu", "mps"])

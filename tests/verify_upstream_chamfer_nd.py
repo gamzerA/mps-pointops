@@ -73,11 +73,21 @@ def run_one(fn, device: str, spec: dict, *, upstream: bool):
     if upstream:
         indices = knn_points(x, y, lengths1=lx, lengths2=ly,
                              norm=spec["norm"], K=1).idx[..., 0]
+        reverse_indices = (
+            None if spec["single_directional"] else
+            knn_points(y, x, lengths1=ly, lengths2=lx,
+                       norm=spec["norm"], K=1).idx[..., 0]
+        )
     else:
         indices = _nearest_indices(x, y, lx, ly, spec["norm"])
+        reverse_indices = (
+            None if spec["single_directional"] else
+            _nearest_indices(y, x, ly, lx, spec["norm"])
+        )
     if device == "mps":
         torch.mps.synchronize()
     valid = torch.arange(x.shape[1], device=device)[None] < lx[:, None]
+    reverse_valid = torch.arange(y.shape[1], device=device)[None] < ly[:, None]
     parts = loss if isinstance(loss, tuple) else (loss,)
     return {
         "loss_shape": [list(part.shape) for part in parts],
@@ -92,6 +102,10 @@ def run_one(fn, device: str, spec: dict, *, upstream: bool):
             for t, g in zip(inputs, grads)
         ],
         "selected_valid_indices": indices[valid].detach().cpu().tolist(),
+        "reverse_selected_valid_indices": (
+            None if reverse_indices is None else
+            reverse_indices[reverse_valid].detach().cpu().tolist()
+        ),
     }
 
 
@@ -110,7 +124,7 @@ def specs():
 def compare(actual: dict, expected: dict):
     checks = {}
     for field in ("loss_shape", "normals_shape", "gradient_present",
-                  "selected_valid_indices"):
+                  "selected_valid_indices", "reverse_selected_valid_indices"):
         checks[field] = signature_metrics(actual[field], expected[field])
     checks["loss"] = error_metrics(actual["loss"], expected["loss"])
     for i, (got, want) in enumerate(zip(actual["gradients"], expected["gradients"])):
