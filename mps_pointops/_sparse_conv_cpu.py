@@ -53,8 +53,9 @@ class SparseConvIndiceData3D:
 
     ``pairs`` use the forward rulebook convention ``(offset, old_row,
     downsampled_row)``. An inverse operation reverses the row direction while
-    keeping the same kernel offset. Coordinates are snapshotted so caller
-    mutation cannot silently change the mapping.
+    keeping the same kernel offset. Coordinates are snapshotted so mutations
+    of the original sparse tensors do not change the mapping. The caller-owned
+    cache and the tensors stored in it must be treated as opaque.
     """
 
     input_indices: torch.Tensor

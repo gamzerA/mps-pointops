@@ -26,7 +26,8 @@ snapshots of the input and output coordinate rows, shapes, geometry, and
 token to the returned `SparseConvResult3D`. A duplicate key fails. Active
 output coordinates above signed `int32` range fail with `ValueError` before
 tensor conversion, even when a very large padding value makes the dense
-spatial shape itself larger than `int32`.
+spatial shape itself larger than `int32`. The caller-owned cache and its saved
+tensors are opaque; callers must not edit saved entries after creation.
 
 `sparse_inverse_conv3d_forward_cpu` requires that key and cache. Its input
 coordinate rows, row order, spatial shape, and batch size must match the saved
