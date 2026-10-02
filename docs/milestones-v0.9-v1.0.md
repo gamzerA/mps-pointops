@@ -6,6 +6,16 @@ an item complete only with a source commit, raw test output, hardware record,
 and a public artifact. Do not advance the package version merely because a
 prototype passes a small fixture.
 
+## Release disposition
+
+The untagged v0.9.0 and v0.10.0 milestones remain proposed full scopes.
+The combined v1.0.0 release freezes the documented, tested public API subset
+in the [migration and version policy](../site-docs/migration.md), with the
+[tested support matrix](../site-docs/support.md) defining device coverage.
+Incomplete Chamfer combinations, the bounded opt-in spatial backend, and
+private sparse research paths retain their stated limitations. Publishing
+v1.0.0 does not mark all of the research gates below complete.
+
 ## v0.9.0: spatial search and Chamfer expansion
 
 ### Spatial index
@@ -114,7 +124,8 @@ than treated as SciPy ordering errors. A speedup claim requires repeated M5 Pro
 and physical M1 measurements with uncertainty intervals and no memory failure.
 The physical M1 has now been measured for the stated fixtures; its
 [raw records and limitations](spatial-m1-v090.md) are part of this plan.
-The broader speedup, physical-memory, and v1.0 support gates remain open.
+The broader speedup and exact physical-memory research gates remain open;
+the bounded v1.0 support scope is defined by the release disposition above.
 For the profiling evidence, report supported GPU execution intervals, tensor
 allocator peaks, observed Metal allocation maxima, and sampled process
 footprint under their own definitions. Runtime Occupancy is optional when a

@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mps-pointops"
-version = "0.8.0"
+version = "1.0.0"
 description = "Point-cloud search, feature propagation, and geometry ops for PyTorch on Apple Silicon (MPS)"
 readme = "README.md"
 license = "Apache-2.0 AND MIT"
 license-files = ["LICENSE", "LICENSES/MIT-ball-query.txt"]
 requires-python = ">=3.10"
 dependencies = ["torch>=2.7", "numpy"]
-authors = [{name = "gamzerA"}]
+authors = [{name = "YeYoung Lee"}]
 keywords = ["metal", "mps", "point-cloud", "pytorch", "pytorch-geometric"]
 classifiers = [
     "Development Status :: 3 - Alpha",

@@ -77,6 +77,8 @@ math modes, despite the shorter forward median.
 
 This prototype still uses CPU geometry generation and small fixed caps. A
 device-resident ordinary rulebook builder, scalable CSR construction, a
-separate sparse transpose operator, upstream `spconv 2.x` CUDA parity for
-these paths, and backbone-level tests remain open. The current result does
-not establish full `spconv` compatibility or a v1.0 release gate.
+separate sparse transpose operator, and broader upstream `spconv 2.x` CUDA
+parity remain open. A later [fixed synthetic OpenPCDet adapter check](sparse-openpcdet-local-integration.md)
+exercised these paths on M5 Pro; it is not a trained-backbone result or a
+direct full-model CUDA comparison. The current result does not establish full
+`spconv` compatibility or completion of the proposed sparse milestone.

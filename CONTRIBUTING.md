@@ -94,6 +94,8 @@ versions and commands if they change.
 ## Release archival and DOI lineage
 
 This project prioritizes one Zenodo DOI lineage. The
+[v0.8.0 archive](https://zenodo.org/records/23092167) has version DOI
+`10.5281/zenodo.23092167`. The
 [v0.7.0 archive](https://zenodo.org/records/23087369) has version DOI
 `10.5281/zenodo.23087369`. The
 [v0.6.0 archive](https://zenodo.org/records/23086417) has version DOI
@@ -103,10 +105,17 @@ This project prioritizes one Zenodo DOI lineage. The
 [v0.4.0 archive](https://zenodo.org/records/23078860) has version DOI
 `10.5281/zenodo.23078860`; the earlier
 [v0.3.0 archive](https://zenodo.org/records/23076058) has version DOI
-`10.5281/zenodo.23076058`. All five belong to concept DOI
+`10.5281/zenodo.23076058`. All six belong to concept DOI
 `10.5281/zenodo.23076057`.
 The README badge uses the concept DOI; papers and `CITATION.cff` cite the
 specific release's version DOI.
+
+The proposed v0.9.0 and v0.10.0 milestones were development targets, not
+published releases. A combined v1.0.0 release may follow v0.8.0 directly if
+its changelog and support matrix identify the tested public API subset and
+keep unfinished research paths experimental. Do not create empty intermediate
+tags or imply that every proposed phase was completed. The v1.0.0 public API
+freeze applies only to documented, tested behavior, not private modules.
 
 For each release, use **New version** from the latest Zenodo record,
 following [Zenodo's versioning guide](https://help.zenodo.org/docs/deposit/manage-versions/):
@@ -119,7 +128,8 @@ following [Zenodo's versioning guide](https://help.zenodo.org/docs/deposit/manag
    required checks pass, then create the Git tag, GitHub release, and PyPI
    distribution from the same commit.
 3. Archive that exact tag as one source ZIP. Compare its files with the Git
-   tree and verify its checksum. Set the Zenodo version, author/ORCID, release
+   tree and verify its checksum. Set the Zenodo version, author YeYoung Lee,
+   ORCID `0009-0001-8245-1803`, release
    links, and component licenses; keep the MIT Ball Query notice in the ZIP
    and explain the mixed license in the description. Publish the Zenodo draft
    after verifying the preview.
