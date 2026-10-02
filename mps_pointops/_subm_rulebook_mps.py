@@ -47,6 +47,8 @@ class SubmRulebookMPS:
     ``(offset, input_row, output_row)``. The padded suffix is all -1.
     ``output_ptr/sources/offsets`` are output CSR, ordered by output row then
     offset, and can be passed directly to the private Metal SubM forward.
+    ``offset_ptr`` marks the offset-major ranges of the padded ``pairs``
+    array and stays on MPS for the private weight-gradient kernel.
     ``pair_count`` is a one-element MPS int64 tensor; reading its value on CPU
     synchronizes, so callers should normally use the CSR without readback.
     """
@@ -57,6 +59,7 @@ class SubmRulebookMPS:
     output_ptr: Tensor
     output_sources: Tensor
     output_offsets: Tensor
+    offset_ptr: Tensor
     kernel_size: tuple[int, int, int]
 
 
@@ -112,11 +115,13 @@ def generate_subm_rulebook_mps(
     output_sources = torch.full((slots,), -1, dtype=torch.int64, device=device)
     output_offsets = torch.full((slots,), -1, dtype=torch.int64, device=device)
     output_ptr = torch.empty((rows + 1,), dtype=torch.int64, device=device)
+    offset_ptr = torch.empty((volume + 1,), dtype=torch.int64, device=device)
     if slots == 0:
         output_ptr.zero_()
+        offset_ptr.zero_()
         return SubmRulebookMPS(
             stable_indices, pairs, torch.zeros((1,), dtype=torch.int64, device=device),
-            output_ptr, output_sources, output_offsets, kernel,
+            output_ptr, output_sources, output_offsets, offset_ptr, kernel,
         )
 
     # Stable sorts from the last coordinate field to the first produce a
@@ -150,10 +155,11 @@ def generate_subm_rulebook_mps(
     output_prefix = torch.cumsum(valid_output, dim=0, dtype=torch.int64)
     _library().subm_rulebook_compact_i64(
         dense_sources, offset_prefix, output_prefix, pairs,
-        output_ptr, output_sources, output_offsets, rows, volume,
-        threads=max(slots, rows + 1), group_size=min(max(slots, rows + 1), _GROUP_SIZE),
+        output_ptr, output_sources, output_offsets, offset_ptr, rows, volume,
+        threads=max(slots, rows + 1, volume + 1),
+        group_size=min(max(slots, rows + 1, volume + 1), _GROUP_SIZE),
     )
     return SubmRulebookMPS(
         stable_indices, pairs, offset_prefix[-1:], output_ptr,
-        output_sources, output_offsets, kernel,
+        output_sources, output_offsets, offset_ptr, kernel,
     )

@@ -6,6 +6,7 @@ import pytest
 import torch
 import torch.nn.functional as F
 
+import mps_pointops._subm_conv_mps as subm_module
 from mps_pointops._subm_conv_mps import _output_csr, subm_conv3d_forward_mps
 
 
@@ -257,3 +258,68 @@ def test_metal_subm_backward_accepts_spatially_transposed_weights():
     torch.testing.assert_close(
         mps_weight_base.grad.cpu(), cpu_weight_base.grad, rtol=1e-4, atol=1e-5
     )
+
+
+@MPS
+@pytest.mark.parametrize(
+    ("coordinates", "shape", "batch", "kernel", "dilation"),
+    [
+        ([[0, 2, 1, 1], [0, 1, 1, 1], [1, 2, 1, 1], [0, 3, 1, 1]],
+         (5, 3, 3), 2, (3, 3, 3), (1, 1, 1)),
+        ([[0, 4, 2, 1], [0, 0, 2, 1], [0, 2, 2, 1]],
+         (5, 5, 3), 1, (3, 1, 1), (2, 1, 1)),
+        ([[0, 0, 0, 0], [0, 3, 3, 3]],
+         (4, 4, 4), 1, (1, 1, 1), (1, 1, 1)),
+        ([[0, n // 121, (n // 11) % 11, n % 11] for n in reversed(range(1025))],
+         (11, 11, 11), 1, (3, 3, 3), (1, 1, 1)),
+        ([[0, n // 1024, (n // 32) % 32, n % 32] for n in reversed(range(10_000))],
+         (10, 32, 32), 1, (3, 3, 3), (1, 1, 1)),
+        ([[0, 2**31 - 2, 1, 1], [0, 2**31 - 3, 1, 1]],
+         (2**31 - 1, 3, 3), 1, (3, 1, 1), (2**31 - 1, 1, 1)),
+        ([], (3, 3, 3), 0, (3, 3, 3), (1, 1, 1)),
+    ],
+)
+def test_gpu_rulebook_full_subm_matches_cpu_rulebook_path(
+    coordinates, shape, batch, kernel, dilation
+):
+    """The integrated path must preserve row order, values, and gradients."""
+    indices = torch.tensor(coordinates, dtype=torch.int32).reshape(-1, 4)
+    generator = torch.Generator().manual_seed(10031)
+    features = torch.randn((len(indices), 3), generator=generator)
+    weights = torch.randn((2, 3, *kernel), generator=generator)
+    bias = torch.randn(2, generator=generator)
+    upstream = torch.randn((len(indices), 2), generator=generator)
+    observed = {}
+    for backend in ("cpu", "mps"):
+        x = features.to("mps").requires_grad_()
+        w = weights.to("mps").requires_grad_()
+        b = bias.to("mps").requires_grad_()
+        result = subm_conv3d_forward_mps(
+            indices, x, w, shape, batch, dilation=dilation,
+            bias=b, rulebook_backend=backend,
+        )
+        (result * upstream.to("mps")).sum().backward()
+        torch.mps.synchronize()
+        observed[backend] = (
+            result.detach().cpu(), x.grad.cpu(), w.grad.cpu(), b.grad.cpu()
+        )
+    # Both paths feed the identical output CSR into the same forward shader.
+    assert torch.equal(observed["mps"][0], observed["cpu"][0])
+    for gpu, cpu in zip(observed["mps"][1:], observed["cpu"][1:]):
+        torch.testing.assert_close(gpu, cpu, rtol=1e-4, atol=1e-5)
+
+
+@MPS
+def test_default_subm_path_does_not_build_cpu_rulebook(monkeypatch):
+    def forbidden(*args, **kwargs):
+        raise AssertionError("CPU rulebook builder was called")
+
+    monkeypatch.setattr(subm_module, "generate_subm_rulebook", forbidden)
+    indices = torch.tensor([[0, 1, 0, 0], [0, 0, 0, 0]], dtype=torch.int32)
+    features = torch.ones((2, 1), device="mps", requires_grad=True)
+    weights = torch.ones((1, 1, 3, 1, 1), device="mps", requires_grad=True)
+    result = subm_conv3d_forward_mps(indices, features, weights, (2, 1, 1), 1)
+    result.sum().backward()
+    torch.mps.synchronize()
+    assert torch.equal(result.cpu(), torch.tensor([[2.], [2.]]))
+    assert torch.equal(features.grad.cpu(), torch.tensor([[2.], [2.]]))

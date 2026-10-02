@@ -100,17 +100,21 @@ kernel void subm_rulebook_compact_i64(
     device long* output_ptr [[buffer(4)]],
     device long* output_sources [[buffer(5)]],
     device long* output_offsets [[buffer(6)]],
-    constant long& row_count [[buffer(7)]],
-    constant long& kernel_volume [[buffer(8)]],
+    device long* offset_ptr [[buffer(7)]],
+    constant long& row_count [[buffer(8)]],
+    constant long& kernel_volume [[buffer(9)]],
     uint tid [[thread_position_in_grid]])
 {
     const ulong rows = ulong(row_count);
     const ulong volume = ulong(kernel_volume);
     const ulong slots = rows * volume;
-    const ulong work = max(slots, rows + 1);
+    const ulong work = max(max(slots, rows + 1), volume + 1);
     if (ulong(tid) >= work) return;
     if (ulong(tid) <= rows) {
         output_ptr[tid] = tid == 0 ? 0 : output_prefix[ulong(tid) * volume - 1];
+    }
+    if (ulong(tid) <= volume) {
+        offset_ptr[tid] = tid == 0 ? 0 : offset_prefix[ulong(tid) * rows - 1];
     }
     if (ulong(tid) >= slots) return;
 

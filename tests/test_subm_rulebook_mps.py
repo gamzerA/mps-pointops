@@ -36,6 +36,7 @@ def _check_rulebook(indices, cpu_rulebook, kernel, dilation):
     assert gpu.pairs.device.type == "mps"
     assert gpu.pair_count.device.type == "mps"
     assert gpu.output_ptr.device.type == "mps"
+    assert gpu.offset_ptr.device.type == "mps"
     count = int(gpu.pair_count.cpu()[0])
     assert count == len(cpu_rulebook.pairs)
     assert torch.equal(gpu.output_indices.cpu(), cpu_rulebook.output_indices)
@@ -45,6 +46,13 @@ def _check_rulebook(indices, cpu_rulebook, kernel, dilation):
     assert torch.equal(gpu.output_ptr.cpu(), cpu_ptr)
     assert torch.equal(gpu.output_sources[:count].cpu(), cpu_sources)
     assert torch.equal(gpu.output_offsets[:count].cpu(), cpu_offsets)
+    cpu_offset_counts = torch.bincount(
+        cpu_rulebook.pairs[:, 0], minlength=kernel[0] * kernel[1] * kernel[2]
+    )
+    cpu_offset_ptr = torch.cat((
+        torch.zeros(1, dtype=torch.int64), cpu_offset_counts.cumsum(0)
+    ))
+    assert torch.equal(gpu.offset_ptr.cpu(), cpu_offset_ptr)
     assert torch.all(gpu.output_sources[count:] == -1).item()
     assert torch.all(gpu.output_offsets[count:] == -1).item()
     return gpu
