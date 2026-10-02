@@ -149,12 +149,14 @@ The default workload guard caps measured `N*Q` at 2,048,000,000 pairs.
 at most five synchronized repetitions, so Q=8192 or 65,536 at N=1M is never
 silently launched.
 
-### Development M5 Pro kNN scaling (pending clean-commit rerun)
+### Clean-commit M5 Pro kNN scaling
 
-The following values were collected from the current **dirty development
-worktree**. Each JSON records the exact source-file hashes and five raw
-synchronized samples, so these observations are reproducible against the
-recorded files. They must be rerun from a clean code commit before publication.
+The 15 raw JSON files in
+[`bench/results/spatial-v090-m5pro-clean/`](../bench/results/spatial-v090-m5pro-clean/)
+were rerun from clean source commit `a80b385e41f7ae80bfc28445ee3b970731ca3a1f`
+(`source_dirty=false`). Each records source-file SHA-256 hashes and five raw
+synchronized samples. These measurements are research evidence, not a public
+operator performance guarantee.
 All rows use 1,000,000 float32 references, `K=16`, seed `20261002`, and M5 Pro
 Safe Math with MPS CPU fallback disabled. Uniform references lie in
 `[0,1024)^3`, with Morton cell size 16. The mixed input places 90% of
@@ -170,26 +172,26 @@ in milliseconds, excluding shader compilation.
 
 | Input | Q | Brick build | Brick query | Metal full scan query | cKDTree build | cKDTree query |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Uniform | 16 | 2.600 | 21.991 | 15.268 | 216.084 | 0.023 |
-| Uniform | 256 | 2.486 | 51.332 | 14.524 | 211.354 | 0.401 |
-| Uniform | 2,048 | 2.512 | 69.961 | 42.114 | 212.408 | 5.478 |
-| Uniform | 4,096 | 2.634 | 58.520 | 81.469 | 241.715 | 12.424 |
-| Uniform | 8,192 | 2.455 | 72.395 | 144.314 | 220.892 | 25.782 |
-| Uniform | 65,536 | 2.506 | 205.629 | 1,115.544 | 258.446 | 223.324 |
-| Mixed, fine cell | 16 | 2.450 | 61.486 | 14.886 | 207.364 | 0.026 |
-| Mixed, fine cell | 256 | 2.585 | 132.148 | 15.110 | 214.254 | 0.630 |
-| Mixed, fine cell | 2,048 | 2.495 | 133.226 | 43.277 | 208.068 | 5.802 |
-| Mixed, fine cell | 4,096 | 2.548 | 129.620 | 77.355 | 213.087 | 13.094 |
-| Mixed, fine cell | 8,192 | 2.420 | 136.420 | 145.398 | 223.686 | 32.785 |
-| Mixed, fine cell | 65,536 | 2.546 | 380.810 | 1,092.182 | 221.667 | 205.372 |
+| Uniform | 16 | 2.453 | 20.121 | 15.351 | 237.481 | 0.024 |
+| Uniform | 256 | 2.439 | 54.736 | 14.313 | 206.637 | 0.455 |
+| Uniform | 2,048 | 2.436 | 68.894 | 40.960 | 202.124 | 5.232 |
+| Uniform | 4,096 | 2.508 | 59.084 | 74.446 | 207.470 | 11.833 |
+| Uniform | 8,192 | 2.492 | 70.620 | 140.675 | 202.648 | 23.076 |
+| Uniform | 65,536 | 2.476 | 204.133 | 1,074.867 | 229.824 | 210.605 |
+| Mixed, fine cell | 16 | 2.453 | 60.145 | 15.246 | 205.043 | 0.025 |
+| Mixed, fine cell | 256 | 2.481 | 147.610 | 15.951 | 258.223 | 1.127 |
+| Mixed, fine cell | 2,048 | 2.514 | 133.843 | 40.537 | 238.067 | 7.418 |
+| Mixed, fine cell | 4,096 | 2.443 | 129.423 | 78.695 | 222.359 | 11.720 |
+| Mixed, fine cell | 8,192 | 2.466 | 134.629 | 146.036 | 212.552 | 24.693 |
+| Mixed, fine cell | 65,536 | 2.504 | 362.907 | 1,094.657 | 207.362 | 192.778 |
 
 For these sampled workloads, the brick **query** median first beats the
 native Metal full scan at Q=4,096 for uniform data and Q=8,192 for the fine
 mixed data. These are observed sampled-size crossovers, not a universal
-threshold. The mixed Q=8,192 raw samples overlap between methods, so its
-small median lead needs additional devices and runs. cKDTree query-only is
-faster on every mixed row; at uniform Q=65,536 the GPU brick and cKDTree
-query medians are close and their raw ranges overlap. The **sum of separately
+threshold. In this run all five mixed Q=8,192 brick-query samples are below
+all five native full-scan samples, but other devices and distributions remain
+unmeasured. cKDTree query-only is faster on every mixed row; at uniform
+Q=65,536 the GPU brick and cKDTree query raw ranges overlap. The **sum of separately
 measured build and query medians** is lower for the GPU path than cKDTree on
 these preloaded resident fixtures; it is not a directly timed total-call
 sample. CPU-to-MPS transfer is excluded and can change the one-shot result.
@@ -202,10 +204,9 @@ Each measured row returned **zero differing index slots** versus the same-mode
 native Metal full scan, and zero bit differences in selected squared distances
 versus an independent Metal probe. This is empirical evidence for these
 fixtures, not a proof of every input. The mixed Q=8,192 and Q=65,536 rows
-have 14 and 120 differing slots versus SciPy respectively; a separate
-diagnostic found all 14 Q=8,192 pairs are exact equal-distance ties in both
-float32 and float64. SciPy's tie order is not the native Metal contract. The
-benchmark now records such tie classification per run. In randomized small
+have 14 and 120 differing slots versus SciPy respectively; the recorded
+classifier identifies **all** of these as exact equal-distance ties in both
+float32 and float64. SciPy's tie order is not the native Metal contract. In randomized small
 Safe-mode audits over three seeds, three cell sizes and three K values, no
 candidate in an actually pruned brick would have beaten the current worst
 pair. Fast-mode tests verify that no boxes are pruned.
@@ -222,9 +223,9 @@ samples yielded:
 
 | Independent mixed Q | Brick build | Brick query | Metal full scan query | cKDTree build | cKDTree query |
 | ---: | ---: | ---: | ---: | ---: | ---: |
-| 16 | 2.609 | 87.759 | 15.641 | 245.210 | 0.025 |
-| 2,048 | 2.536 | 125.569 | 41.107 | 206.996 | 6.578 |
-| 65,536 | 2.532 | 343.532 | 1,075.874 | 208.388 | 240.307 |
+| 16 | 2.491 | 84.839 | 15.527 | 230.184 | 0.024 |
+| 2,048 | 2.513 | 133.051 | 41.852 | 215.909 | 7.750 |
+| 65,536 | 2.695 | 358.479 | 1,073.702 | 212.966 | 198.839 |
 
 The first half of independent queries is sampled from the cluster's side-1
 coordinate **range**, and the second half from the full background cube; no

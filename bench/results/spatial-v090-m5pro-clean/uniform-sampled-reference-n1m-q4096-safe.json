@@ -1,0 +1,128 @@
+{
+  "utc": "2026-10-02T00:55:47.108593+00:00",
+  "source_commit": "a80b385e41f7ae80bfc28445ee3b970731ca3a1f",
+  "source_dirty": false,
+  "source_sha256": {
+    "bench/bench_spatial_bricks.py": "e521db6095fc19cda7cc4bb66f42177f87f6a33d15b29717abe1281332a847a0",
+    "bench/spatial_bricks.py": "e12975898e1b844dc71c556fe1283f4c64373e91522b21b1c59d12975224298b",
+    "bench/spatial_bricks.metal": "434fd82d0d2845915c0325c0da2ee1094ec192d36fe923467d35871da17070e4",
+    "bench/spatial_keys.py": "e9214981f7dcb8413217979972274864c4bcd40771d0e15a9bfaf8f22946d318",
+    "bench/spatial_keys.metal": "e26bc20df349611bc7502aa7038e5692d434286600e4f454a6d273e1b6b7a8bf",
+    "bench/spatial_selected_distances.py": "2317dd418e13ec42d9aa654731b4d5af83e1a70676c59a15add5f1c8347d7ab8",
+    "bench/spatial_selected_distances.metal": "2e4c8797fad9ef5e1496ff9679bef854d3db170090e3a213b286fad5844b5191",
+    "mps_pointops/_flat_search_mps.py": "4fb494f3cf159c09382f510152c650115c86d8a7e89e4612547ff1911ac1002c",
+    "mps_pointops/kernels/flat_search.metal": "92e9f482f7e28d3b38dcedb164669c0c0981335c525c596009aad0c688f1ea6e"
+  },
+  "hardware": "Apple M5 Pro",
+  "macos": "26.5.2",
+  "python": "3.12.13",
+  "torch": "2.14.1",
+  "scipy": "1.18.1",
+  "mps_fast_math": "0",
+  "mps_fallback": "0",
+  "fixture": {
+    "kind": "uniform",
+    "points": 1000000,
+    "queries": 4096,
+    "k": 16,
+    "extent": 1024.0,
+    "cell_size": 16.0,
+    "seed": 20261002,
+    "cube": [
+      0.0,
+      1024.0
+    ],
+    "query_source": "sampled-reference"
+  },
+  "large_q_opt_in": true,
+  "pruning_enabled": true,
+  "input_transfer_ms": 30.932209,
+  "mps_brick_build_ms": [
+    2.680833,
+    2.473959,
+    2.555417,
+    2.507542,
+    2.453791
+  ],
+  "mps_brick_query_ms": [
+    58.841459,
+    59.083667,
+    58.859375,
+    59.3865,
+    60.159875
+  ],
+  "mps_native_brute_query_ms": [
+    76.133875,
+    75.555625,
+    72.192958,
+    73.858334,
+    74.446333
+  ],
+  "cpu_ckdtree_build_ms": [
+    205.345791,
+    200.351541,
+    208.341084,
+    213.13875,
+    207.469667
+  ],
+  "cpu_ckdtree_query_ms": [
+    13.130166,
+    12.01375,
+    11.602375,
+    11.833,
+    11.340292
+  ],
+  "memory_before_build": {
+    "current_allocated_bytes": 20422656,
+    "driver_allocated_bytes": 1082867712
+  },
+  "memory_after_build": {
+    "current_allocated_bytes": 28736768,
+    "driver_allocated_bytes": 1082867712
+  },
+  "memory_after_query": {
+    "current_allocated_bytes": 30047488,
+    "driver_allocated_bytes": 1082867712
+  },
+  "memory_pass_samples": [
+    {
+      "stage": "before",
+      "current_allocated_bytes": 30047488,
+      "driver_allocated_bytes": 1082867712
+    },
+    {
+      "stage": "after_brick_build",
+      "current_allocated_bytes": 38361600,
+      "driver_allocated_bytes": 1082867712
+    },
+    {
+      "stage": "after_brick_query",
+      "current_allocated_bytes": 38361600,
+      "driver_allocated_bytes": 1082867712
+    },
+    {
+      "stage": "after_native_brute_query",
+      "current_allocated_bytes": 38361600,
+      "driver_allocated_bytes": 1082867712
+    }
+  ],
+  "sampled_allocator_highwater_bytes": {
+    "current_allocated_bytes": 38361600,
+    "driver_allocated_bytes": 1082867712
+  },
+  "sampled_allocator_highwater_is_true_gpu_peak": false,
+  "cpu_process_lifetime_peak_rss_bytes": 461438976,
+  "mismatched_indices_vs_native_brute": 0,
+  "mismatched_indices_vs_ckdtree_diagnostic": 0,
+  "ckdtree_difference_classification": {
+    "mismatched_slots": 0,
+    "equal_squared_float32": 0,
+    "equal_squared_float64": 0,
+    "examples": []
+  },
+  "mismatched_sqdist_bits_vs_cpu_float32_diagnostic": 0,
+  "mismatched_sqdist_bits_vs_independent_metal_probe": 0,
+  "max_abs_sqdist_error_vs_cpu_float32": 0.0,
+  "timing_scope": "preloaded resident coordinates; synchronized host wall; shader compilation excluded; separate allocator sampling pass",
+  "memory_scope": "sampled after stages; not true transient GPU peak; CPU RSS covers process lifetime"
+}
