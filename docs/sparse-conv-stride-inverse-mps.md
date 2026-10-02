@@ -57,10 +57,11 @@ beyond that transfer change.
 
 On the M5 Pro, the targeted suites
 `tests/test_sparse_conv_mps.py`, `tests/test_sparse_conv_cpu.py`, and
-`tests/test_sparse_rulebook.py` passed **41/41** with PyTorch 2.7.0 and
+`tests/test_sparse_rulebook.py` passed **42/42** with PyTorch 2.7.0 and
 2.14.1, each in both Safe and Fast modes. The new Metal cases compare forward
 values, output coordinates, and input/weight/bias first gradients to the CPU
 reference for ragged batches, stride, padding, dilation, inverse key reuse,
+two-layer downsample/inverse gradient propagation,
 unreachable points, empty results, and noncontiguous feature/weight views.
 
 This prototype still uses CPU geometry generation and small fixed caps. A

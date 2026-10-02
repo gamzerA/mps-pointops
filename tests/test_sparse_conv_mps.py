@@ -180,6 +180,47 @@ def test_inverse_unmatched_original_row_is_bias_only():
 
 
 @MPS
+def test_downsample_inverse_chain_propagates_first_gradients():
+    rng = torch.Generator().manual_seed(4815)
+    indices = torch.tensor(
+        [[1, 4, 0, 0], [0, 0, 0, 0], [1, 1, 0, 0],
+         [0, 3, 0, 0], [1, 5, 0, 0], [0, 2, 0, 0]], dtype=torch.int32,
+    )
+    values = torch.randn((6, 2), generator=rng)
+    down_values = torch.randn((3, 2, 3, 1, 1), generator=rng)
+    up_values = torch.randn((2, 3, 3, 1, 1), generator=rng)
+    bias_values = torch.randn((2,), generator=rng)
+
+    def run(device, down_op, inverse_op):
+        x, down_w, up_w, bias = (
+            value.detach().to(device).requires_grad_()
+            for value in (values, down_values, up_values, bias_values)
+        )
+        cache = {}
+        down = down_op(
+            SparseTensor3D(indices, x, (6, 1, 1), 2), down_w,
+            stride=(2, 1, 1), padding=(1, 0, 0),
+            indice_key="down", indice_cache=cache,
+        )
+        up = inverse_op(
+            down, up_w, bias=bias, indice_key="down", indice_cache=cache,
+        )
+        (up.features.square().sum()).backward()
+        return up, (x.grad, down_w.grad, up_w.grad, bias.grad)
+
+    reference, cpu_grads = run("cpu", sparse_conv3d_forward_cpu,
+                               sparse_inverse_conv3d_forward_cpu)
+    actual, mps_grads = run("mps", sparse_conv3d_forward_mps,
+                            sparse_inverse_conv3d_forward_mps)
+    torch.mps.synchronize()
+    assert torch.equal(actual.indices, reference.indices)
+    torch.testing.assert_close(actual.features.detach().cpu(), reference.features.detach(),
+                               rtol=1e-4, atol=1e-5)
+    for observed, expected in zip(mps_grads, cpu_grads):
+        torch.testing.assert_close(observed.cpu(), expected, rtol=1e-4, atol=1e-5)
+
+
+@MPS
 def test_empty_and_unreachable_inputs_have_zero_gradients():
     indices = torch.empty((0, 4), dtype=torch.int32)
     features = torch.empty((0, 2), device="mps", requires_grad=True)
