@@ -59,13 +59,14 @@ physical M1 is temporarily disconnected and has no result in this study.
 ## Decision
 
 Keep the sorted-grid path as a bounded-radius prototype. The next structure
-to test for the full v0.9 radius **and exact kNN** gate is a Morton-sorted
-linear BVH over small point bricks with AABBs computed from actual points.
-This lets a query prune an entire dense brick by a conservative distance
-bound instead of scanning every point in a coarse cell. Its topology build,
-AABB validity, sorted-first-K radius contract, kNN tie rule, memory use, and
-M1/M5 crossover are not implemented or demonstrated yet. The package remains
-at v0.8.0 until those gates and the Chamfer scope are complete.
+for the full v0.9 radius **and exact kNN** gate is a Morton-sorted two-level
+BVH over small point bricks with AABBs computed from actual points. This lets
+a query prune an entire dense brick by a conservative distance bound instead
+of scanning every point in a coarse cell. A private exact-kNN prototype now
+implements the hierarchy and measures its M5 Pro crossover below. The
+sorted-first-K radius traversal, public routing, M1 validation, and broader
+numerical and memory gates remain open. The package remains at v0.8.0 until
+those gates and the Chamfer scope are complete.
 
 ## Experimental kNN brick slice
 
