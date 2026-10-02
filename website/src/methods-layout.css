@@ -75,6 +75,9 @@
 #morton .demo-canvas-column { --morton-grid-width: min(100%, 480px); }
 #morton .morton-point-controls,
 #morton-canvas { width: var(--morton-grid-width); }
+#morton-canvas { height: auto; aspect-ratio: 1; }
+#morton .morton-sample-rank { flex-wrap: wrap; }
+#morton .demo-canvas-column .canvas-caption { max-width: var(--morton-grid-width); }
 #morton .morton-point-controls { display: grid; gap: .4rem; margin-bottom: .55rem; }
 #morton .morton-point-controls .coordinate-inputs { gap: .38rem; }
 #morton .morton-point-controls .coordinate-inputs input { font-size: .76rem; }
@@ -107,7 +110,7 @@
   line-height: 1.4;
 }
 #morton .morton-sample-rank { display: flex; align-items: baseline; gap: .48rem; }
-#morton .morton-sample-rank .label-small { margin: 0; white-space: nowrap; }
+#morton .morton-sample-rank .label-small { margin: 0; }
 #morton .morton-rank { padding: 0; font-size: .77rem; }
 #morton .morton-strip {
   gap: .45rem;
@@ -185,14 +188,14 @@
 
 @media (min-width: 901px) {
   #morton .morton-layout {
-    grid-template-columns: minmax(290px, .72fr) minmax(0, 1.28fr);
+    grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
     gap: .8rem 1.2rem;
   }
   #morton .demo-topline { grid-column: 1 / -1; grid-row: 1; }
   #morton .morton-primary { grid-column: 2; grid-row: 2; }
   #morton .demo-canvas-column { grid-column: 1; grid-row: 2; }
-  #morton .morton-secondary { grid-column: 2; grid-row: 3; }
-  #morton .demo-canvas-column { --morton-grid-width: min(100%, clamp(260px, calc(100svh - 330px), 340px)); }
+  #morton .morton-secondary { grid-column: 1 / -1; }
+  #morton .demo-canvas-column { --morton-grid-width: min(100%, clamp(260px, calc(100svh - 430px), 340px)); }
   #morton .demo-canvas-column { width: 100%; }
   #pruning .pruning-layout {
     display: grid;
