@@ -1,11 +1,12 @@
 # Experimental sparse convolution coordinate oracle (v0.10 groundwork)
 
-Status: **CPU rulebook, private bounded CPU stride/inverse reference,
+Status: **CPU rulebook, private bounded CPU and MPS stride/inverse references,
 experimental Metal SubM forward and first-order backward with an integrated
 sorted MPS rulebook path.** These private modules are not exported by
 `mps_pointops` and are not an `spconv` replacement. The v0.10 release gate
 remains open. The [CPU stride/inverse contract](sparse-conv-stride-inverse-cpu.md)
-documents the new reference and its remaining gaps.
+and [bounded Metal arithmetic prototype](sparse-conv-stride-inverse-mps.md)
+document their separate limits.
 
 ## Source contract and our supported subset
 
@@ -96,10 +97,11 @@ atol=1e-5` for float32 forward and backward. The Metal forward and GPU
 controls the remaining native PyTorch operations, including bias reduction
 and the optional CPU-rulebook baseline backward, in separate processes.
 Higher-order gradients,
-coordinate gradients, GPU-side coordinate validation, Metal
-strided/inverse/transpose convolution, and source-compatible `spconv` APIs
-remain unsupported. The CPU stride/inverse reference has separate tests and
-limits described [here](sparse-conv-stride-inverse-cpu.md).
+coordinate gradients, GPU-side coordinate validation, device-resident
+strided/inverse rulebook generation, Metal sparse transpose convolution,
+and source-compatible `spconv` APIs remain unsupported. The bounded
+strided/inverse Metal arithmetic prototype retains CPU coordinate work and
+has separate tests and limits [here](sparse-conv-stride-inverse-mps.md).
 
 ## Private MPS-native sorted rulebook prototype
 
@@ -195,8 +197,9 @@ convolution wrapper or upstream `spconv` parity.
 2. Specify duplicate-input handling, empty outputs, missing cells, and
    `indice_key` reuse against upstream behavior instead of assuming parity.
 3. Profile the integrated SubM path across dense and sparse large clouds and
-   older Apple Silicon devices, including device-memory peaks. Implement
-   strided and inverse Metal forward/backward and a separate transpose path.
+   older Apple Silicon devices, including device-memory peaks. Replace the
+   bounded CPU coordinate builder for strided/inverse with a scalable GPU
+   rulebook and implement a separate transpose path.
 4. Verify at least one pinned sparse 3D backbone end to end on supported
    Apple Silicon hardware. The physical M1 test above covers only small
    operator fixtures, not a backbone or large-cloud workload.
