@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// The radius arithmetic below adapts this project's MIT-licensed Ball Query
+// numerical helper. Its preserved notice is LICENSES/MIT-ball-query.txt.
 #include <metal_stdlib>
 using namespace metal;
 

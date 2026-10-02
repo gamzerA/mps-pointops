@@ -108,7 +108,10 @@ large-query kNN case after a small density check; it keeps the existing scan
 for radius search, Fast Math, M1, and other inputs. The forced BVH supports
 single-cloud MPS float32, `N<=1M`, `K<=32` and a bounded finite coordinate
 domain. See the [API and dispatch contract](docs/spatial-api-v090.md) and
-[M5 memory study](docs/spatial-memory-v090.md). This branch has no v0.9 tag.
+the synchronized M5 Pro [kNN dispatch](docs/spatial-dispatch-v090.md),
+[Ball Query](docs/spatial-radius-dispatch-v090.md), and
+[allocator-memory](docs/spatial-memory-v090.md) studies. This branch has no
+v0.9 tag.
 
 The PointNet++ and Chamfer operators introduced in v0.5.0 can be called
 directly:
@@ -1276,9 +1279,11 @@ version's citation metadata and author ORCID to GitHub's citation menu.
 
 ## License
 
-Apache-2.0 for the repository. The Ball Query kernel, Python implementation,
-contract tests, numerical documentation and probe were ported from an earlier
-MIT-licensed local prototype; its full notice is retained in
+Apache-2.0 covers the repository's new code. The Ball Query kernel, Python
+implementation, contract tests, numerical documentation and probe were ported
+from an earlier MIT-licensed local prototype. Its numerical radius helpers
+are also adapted in the flat search and experimental BVH shaders; the MIT
+notice applies to those portions and is retained in
 [LICENSES/MIT-ball-query.txt](LICENSES/MIT-ball-query.txt). No PyTorch3D or
 PointNet++ source was copied into those files. See the
 [provenance note](docs/ball-query-provenance.md).

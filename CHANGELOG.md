@@ -12,6 +12,8 @@
   radius comparison, `(0,-1)` padding, and first-order coordinate gradients
   through the public index facade. Adversarial M5 Pro tests compare full
   indices and selected squared-distance bits to the existing dense kernel.
+  The kNN path retains finite-coordinate candidates whose float32 squared
+  distance overflows to `+inf`, preserving the dense kernel's index ordering.
 - Record stage-separated PyTorch MPS allocator peaks and sampled driver
   allocation in a [source-pinned memory study](docs/spatial-memory-v090.md).
   Total GPU physical-memory peak and physical M1 validation remain open;

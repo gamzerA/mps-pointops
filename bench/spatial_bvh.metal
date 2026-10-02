@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
+// The radius arithmetic below adapts this project's MIT-licensed Ball Query
+// numerical helper. Its preserved notice is LICENSES/MIT-ball-query.txt.
 // Experimental two-level balanced BVH over Morton-sorted 128-point leaves.
 // Safe Math only; no public operator.
 #pragma METAL fp contract(off)
