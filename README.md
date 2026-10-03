@@ -26,6 +26,7 @@ Compatibility stand-ins cover supported `pointnet2_ops`, `knn_cuda`, and
 
 [Interactive explainer](https://gamzerA.github.io/mps-pointops/) ·
 [API reference](https://gamzerA.github.io/mps-pointops/reference/) ·
+[Preprint](https://doi.org/10.5281/zenodo.23113332) ·
 [Quick start](#quick-start) · [Results](#benchmark) ·
 [Equations](#the-operators-in-equations) · [Compatibility](#compatibility) ·
 [Numerical contract](docs/ball-query-math.md) · [Citation](#citation)
@@ -1287,6 +1288,12 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for issue and pull request guidance,
 local Safe/Fast Math tests, and the seven required CI checks for `main`.
 
 ## Citation
+
+For the methods and evidence study, see the
+[Zenodo preprint](https://doi.org/10.5281/zenodo.23113332),
+*mps-pointops: Numerically Specified Point-Cloud Operators and Adaptive
+Spatial Search on Apple Silicon* (2026). This preprint has not been peer
+reviewed.
 
 For v1.0.0, cite its archived
 [version DOI (10.5281/zenodo.23107348)](https://doi.org/10.5281/zenodo.23107348). [CITATION.cff](CITATION.cff) records
